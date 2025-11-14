@@ -6,6 +6,8 @@ import {
   CheckSquare, 
   Calendar, 
   BarChart3,
+  Users,
+  Building2,
   Menu,
   X,
   LogOut
@@ -16,6 +18,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -44,6 +47,19 @@ const navigationItems = [
     title: "Reports",
     url: createPageUrl("Reports"),
     icon: BarChart3,
+  },
+];
+
+const transferItems = [
+  {
+    title: "Spieler",
+    url: createPageUrl("Players"),
+    icon: Users,
+  },
+  {
+    title: "Vereinsanfragen",
+    url: createPageUrl("ClubRequests"),
+    icon: Building2,
   },
 ];
 
@@ -77,9 +93,42 @@ export default function Layout({ children, currentPageName }) {
           
           <SidebarContent className="p-3">
             <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 mb-2">
+                Organisation
+              </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {navigationItems.map((item) => {
+                    const isActive = location.pathname === item.url;
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton 
+                          asChild 
+                          className={`group transition-all duration-200 rounded-lg mb-1 ${
+                            isActive 
+                              ? 'bg-blue-900 text-white hover:bg-blue-800' 
+                              : 'hover:bg-slate-100 text-slate-700 hover:text-slate-900'
+                          }`}
+                        >
+                          <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
+                            <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'}`} />
+                            <span className="font-medium">{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup className="mt-4">
+              <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 mb-2">
+                Transfer Management
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {transferItems.map((item) => {
                     const isActive = location.pathname === item.url;
                     return (
                       <SidebarMenuItem key={item.title}>
