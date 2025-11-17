@@ -67,32 +67,22 @@ export default function PlayerDetail() {
 
   const handleSavePlayer = () => {
     const playerData = {
-      name: editedPlayer.name,
-      position: editedPlayer.position,
+      ...player,
+      ...editedPlayer,
       secondary_positions: Array.isArray(editedPlayer.secondary_positions) ? editedPlayer.secondary_positions : [],
-      date_of_birth: editedPlayer.date_of_birth || undefined,
-      age: editedPlayer.age ? parseInt(editedPlayer.age) : undefined,
-      nationality: editedPlayer.nationality || undefined,
-      current_club: editedPlayer.current_club || undefined,
-      market_value: editedPlayer.market_value ? parseFloat(editedPlayer.market_value) : undefined,
-      contract_until: editedPlayer.contract_until || undefined,
-      transfermarkt_url: editedPlayer.transfermarkt_url || undefined,
-      category: editedPlayer.category,
-      potential_clubs: editedPlayer.potential_clubs || [],
-      notes: editedPlayer.notes || undefined,
-      status: editedPlayer.status,
-      strengths: editedPlayer.strengths || undefined,
-      foot: editedPlayer.foot || undefined,
-      height: editedPlayer.height ? parseFloat(editedPlayer.height) : undefined,
+      age: editedPlayer.age ? parseInt(editedPlayer.age) : player.age,
+      market_value: editedPlayer.market_value ? parseFloat(editedPlayer.market_value) : player.market_value,
+      height: editedPlayer.height ? parseFloat(editedPlayer.height) : player.height,
     };
     
+    console.log("Saving player with secondary_positions:", playerData.secondary_positions);
     updatePlayerMutation.mutate({ id: playerId, data: playerData });
   };
 
   const handleSavePreferences = (preferences) => {
     updatePlayerMutation.mutate({ 
       id: playerId, 
-      data: { preferences }
+      data: { ...player, preferences }
     });
   };
 
@@ -107,7 +97,6 @@ export default function PlayerDetail() {
   const calculateBidirectionalMatchScore = (request) => {
     if (!player || !request) return 0;
 
-    // Position muss übereinstimmen - K.O. Kriterium
     const mainPositionMatch = player.position === request.position_needed;
     const secondaryPositionMatch = Array.isArray(player.secondary_positions) && player.secondary_positions.includes(request.position_needed);
     
@@ -118,15 +107,13 @@ export default function PlayerDetail() {
     let totalWeight = 0;
     let achievedWeight = 0;
 
-    // Position matching with higher weight for main position
     totalWeight += 3;
     if (mainPositionMatch) {
-      achievedWeight += 3; // Hauptposition = volle Punkte
+      achievedWeight += 3;
     } else if (secondaryPositionMatch) {
-      achievedWeight += 1.5; // Nebenposition = halbe Punkte
+      achievedWeight += 1.5;
     }
 
-    // Age matching
     if (request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max) {
       totalWeight += 2;
       achievedWeight += 2;
@@ -134,7 +121,6 @@ export default function PlayerDetail() {
       totalWeight += 2;
     }
 
-    // Budget matching
     if (request.budget_max && player.market_value && player.market_value <= request.budget_max) {
       totalWeight += 2;
       achievedWeight += 2;
@@ -142,10 +128,8 @@ export default function PlayerDetail() {
       totalWeight += 2;
     }
 
-    // Player preferences matching
     const prefs = player.preferences || {};
     
-    // Excluded clubs - K.O. Kriterium
     if (prefs.excluded_clubs?.length > 0 && prefs.excluded_clubs.includes(request.club_name)) {
       return 0;
     }
