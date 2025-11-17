@@ -18,6 +18,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import OnlineUsers from "@/components/OnlineUsers";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 
 const navigationItems = [
   {
@@ -201,16 +202,19 @@ export default function Layout({ children, currentPageName }) {
               <h2 className="font-bold text-slate-900 text-sm">STS Sports</h2>
             </div>
           </div>
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="w-6 h-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[280px]">
-              <SidebarNav onNavClick={() => setMobileMenuOpen(false)} />
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center gap-2">
+            <NotificationCenter />
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="w-6 h-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-[280px]">
+                <SidebarNav onNavClick={() => setMobileMenuOpen(false)} />
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
 
@@ -221,6 +225,9 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="hidden lg:flex items-center justify-end px-6 py-4 bg-white border-b border-slate-200">
+          <NotificationCenter />
+        </div>
         <div className="flex-1 overflow-auto">
           {children}
         </div>
