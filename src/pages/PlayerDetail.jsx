@@ -260,6 +260,10 @@ export default function PlayerDetail() {
     return matchesSearch && matchesPriority && matchesStatus && matchesCountry;
   });
 
+  const favoriteMatches = clubRequests.filter(req => 
+    (player.favorite_matches || []).includes(req.id)
+  );
+
   const uniqueCountries = [...new Set(matchingRequests.map(r => r.country).filter(Boolean))];
 
   const currentPlayerData = editMode ? editedPlayer : player;
@@ -568,6 +572,38 @@ export default function PlayerDetail() {
               </div>
 
               <div className="space-y-6">
+                <Card className="border-slate-200 bg-white">
+                  <CardHeader className="border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                      <CardTitle className="text-lg">Favorisierte Matches</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {favoriteMatches.length > 0 ? (
+                      <div className="space-y-2">
+                        {favoriteMatches.map((request) => (
+                          <div 
+                            key={request.id}
+                            onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
+                            className="flex items-start justify-between gap-2 p-2 rounded hover:bg-slate-50 cursor-pointer transition-colors"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-slate-900 text-sm truncate">{request.club_name}</p>
+                              <p className="text-xs text-slate-600 truncate">{request.league}</p>
+                            </div>
+                            <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 text-center py-4">
+                        Keine Favoriten
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <Card className="border-slate-200 bg-white">
                   <CardHeader className="border-b border-slate-100">
                     <CardTitle className="text-lg">Potentielle Vereine</CardTitle>
