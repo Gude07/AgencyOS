@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +16,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
@@ -41,6 +52,7 @@ export default function PlayerDetail() {
   const [editMode, setEditMode] = useState(false);
   const [editedPlayer, setEditedPlayer] = useState(null);
   const [activeTab, setActiveTab] = useState("info");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const [matchFilters, setMatchFilters] = useState({
     search: "",
@@ -72,6 +84,14 @@ export default function PlayerDetail() {
     },
   });
 
+  const deletePlayerMutation = useMutation({
+    mutationFn: (id) => base44.entities.Player.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['players'] });
+      navigate(createPageUrl("Players"));
+    },
+  });
+
   useEffect(() => {
     if (player && editMode) {
       console.log("Player loaded for editing:", player);
@@ -98,6 +118,10 @@ export default function PlayerDetail() {
     console.log("=== SAVE PLAYER END ===");
     
     updatePlayerMutation.mutate({ id: playerId, data: playerData });
+  };
+
+  const handleDeletePlayer = () => {
+    deletePlayerMutation.mutate(playerId);
   };
 
   const handleSavePreferences = (preferences) => {
@@ -239,9 +263,19 @@ export default function PlayerDetail() {
             <h1 className="text-2xl font-bold text-slate-900">Spielerdetails</h1>
           </div>
           {!editMode ? (
-            <Button onClick={handleStartEdit} variant="outline">
-              Bearbeiten
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleStartEdit} variant="outline">
+                Bearbeiten
+              </Button>
+              <Button 
+                onClick={() => setShowDeleteDialog(true)} 
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Löschen
+              </Button>
+            </div>
           ) : (
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setEditMode(false)}>
@@ -673,6 +707,26 @@ export default function PlayerDetail() {
             </div>
           </TabsContent>
         </Tabs>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Spieler löschen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Sind Sie sicher, dass Sie {player.name} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeletePlayer}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Löschen
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

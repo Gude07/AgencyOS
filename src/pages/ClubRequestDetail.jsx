@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +16,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import MatchingCriteriaEditor from "../components/clubRequests/MatchingCriteriaEditor";
@@ -45,6 +56,7 @@ export default function ClubRequestDetail() {
   const [editMode, setEditMode] = useState(false);
   const [editedRequest, setEditedRequest] = useState(null);
   const [activeTab, setActiveTab] = useState("matched");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const [matchFilters, setMatchFilters] = useState({
     search: "",
@@ -77,6 +89,14 @@ export default function ClubRequestDetail() {
     },
   });
 
+  const deleteRequestMutation = useMutation({
+    mutationFn: (id) => base44.entities.ClubRequest.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
+      navigate(createPageUrl("ClubRequests"));
+    },
+  });
+
   const handleSaveRequest = () => {
     const requestData = {
       ...editedRequest,
@@ -86,6 +106,10 @@ export default function ClubRequestDetail() {
       age_max: editedRequest.age_max ? parseInt(editedRequest.age_max) : undefined,
     };
     updateRequestMutation.mutate({ id: requestId, data: requestData });
+  };
+
+  const handleDeleteRequest = () => {
+    deleteRequestMutation.mutate(requestId);
   };
 
   const handleToggleShortlist = (playerId) => {
@@ -311,9 +335,19 @@ export default function ClubRequestDetail() {
             <h1 className="text-2xl font-bold text-slate-900">Anfrage Details</h1>
           </div>
           {!editMode ? (
-            <Button onClick={() => { setEditMode(true); setEditedRequest(request); }} variant="outline">
-              Bearbeiten
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => { setEditMode(true); setEditedRequest(request); }} variant="outline">
+                Bearbeiten
+              </Button>
+              <Button 
+                onClick={() => setShowDeleteDialog(true)} 
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Löschen
+              </Button>
+            </div>
           ) : (
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setEditMode(false)}>
@@ -628,6 +662,26 @@ export default function ClubRequestDetail() {
             </Tabs>
           </div>
         </div>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Anfrage löschen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Sind Sie sicher, dass Sie die Anfrage von {request.club_name} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteRequest}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Löschen
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
