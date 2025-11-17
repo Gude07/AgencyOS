@@ -32,27 +32,50 @@ export default function SecondaryPositionsEditor({ mainPosition, secondaryPositi
   );
 
   const handleAdd = () => {
-    if (selectedPosition && !currentPositions.includes(selectedPosition)) {
-      const updated = [...currentPositions, selectedPosition];
-      console.log("Adding secondary position:", selectedPosition, "New array:", updated);
-      onChange(updated);
-      setSelectedPosition("");
+    console.log("=== HANDLE ADD CLICKED ===");
+    console.log("selectedPosition:", selectedPosition);
+    console.log("currentPositions:", currentPositions);
+    console.log("availablePositions:", availablePositions);
+    
+    if (!selectedPosition) {
+      console.log("ERROR: selectedPosition is empty!");
+      return;
     }
+    
+    if (currentPositions.includes(selectedPosition)) {
+      console.log("ERROR: position already exists!");
+      return;
+    }
+    
+    const updated = [...currentPositions, selectedPosition];
+    console.log("Calling onChange with:", updated);
+    onChange(updated);
+    setSelectedPosition("");
+    console.log("=== HANDLE ADD COMPLETE ===");
   };
 
   const handleRemove = (position) => {
+    console.log("=== HANDLE REMOVE ===");
+    console.log("Removing:", position);
     const updated = currentPositions.filter(p => p !== position);
-    console.log("Removing secondary position:", position, "New array:", updated);
+    console.log("New array:", updated);
     onChange(updated);
   };
 
   console.log("SecondaryPositionsEditor render - current positions:", currentPositions);
+  console.log("SecondaryPositionsEditor render - selectedPosition:", selectedPosition);
 
   return (
     <div className="space-y-3">
       <Label className="text-sm">Nebenpositionen</Label>
       <div className="flex gap-2">
-        <Select value={selectedPosition} onValueChange={setSelectedPosition}>
+        <Select 
+          value={selectedPosition} 
+          onValueChange={(value) => {
+            console.log("Select changed to:", value);
+            setSelectedPosition(value);
+          }}
+        >
           <SelectTrigger className="flex-1">
             <SelectValue placeholder="Nebenposition hinzufügen..." />
           </SelectTrigger>
@@ -74,7 +97,10 @@ export default function SecondaryPositionsEditor({ mainPosition, secondaryPositi
           type="button"
           size="icon"
           variant="outline"
-          onClick={handleAdd}
+          onClick={() => {
+            console.log("Plus button clicked!");
+            handleAdd();
+          }}
           disabled={!selectedPosition || availablePositions.length === 0}
         >
           <Plus className="w-4 h-4" />
