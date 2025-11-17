@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,8 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import TaskCard from "../components/tasks/TaskCard";
+import MultiUserSelect from "../components/tasks/MultiUserSelect";
 
 export default function Tasks() {
   const queryClient = useQueryClient();
@@ -28,7 +29,6 @@ export default function Tasks() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState("alle");
   const [filterStatus, setFilterStatus] = useState("alle");
-  const [filterAssignee, setFilterAssignee] = useState("alle");
   const [filterCategory, setFilterCategory] = useState("alle");
   const [sortBy, setSortBy] = useState("-created_date");
 
@@ -39,7 +39,7 @@ export default function Tasks() {
     status: "offen",
     category: "sonstiges",
     deadline: "",
-    assigned_to: "",
+    assigned_to: [],
     progress: 0,
   });
 
@@ -65,7 +65,7 @@ export default function Tasks() {
         status: "offen",
         category: "sonstiges",
         deadline: "",
-        assigned_to: "",
+        assigned_to: [],
         progress: 0,
       });
     },
@@ -83,13 +83,11 @@ export default function Tasks() {
       
       const matchesPriority = filterPriority === "alle" || task.priority === filterPriority;
       const matchesStatus = filterStatus === "alle" || task.status === filterStatus;
-      const matchesAssignee = filterAssignee === "alle" || task.assigned_to === filterAssignee;
       const matchesCategory = filterCategory === "alle" || task.category === filterCategory;
       
-      return matchesSearch && matchesPriority && matchesStatus && matchesAssignee && matchesCategory;
+      return matchesSearch && matchesPriority && matchesStatus && matchesCategory;
     });
 
-    // Sortierung
     filtered.sort((a, b) => {
       switch(sortBy) {
         case "-created_date":
@@ -115,7 +113,7 @@ export default function Tasks() {
     });
 
     return filtered;
-  }, [tasks, searchTerm, filterPriority, filterStatus, filterAssignee, filterCategory, sortBy]);
+  }, [tasks, searchTerm, filterPriority, filterStatus, filterCategory, sortBy]);
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
@@ -141,7 +139,7 @@ export default function Tasks() {
               <span className="text-sm font-semibold text-slate-700">Filter & Sortierung</span>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-3">
+            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-3">
               <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <Input
@@ -193,9 +191,11 @@ export default function Tasks() {
                   <SelectItem value="sonstiges">Sonstiges</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
 
+            <div className="mt-3">
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
+                <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Sortieren" />
                 </SelectTrigger>
                 <SelectContent>
@@ -205,22 +205,6 @@ export default function Tasks() {
                   <SelectItem value="-deadline">Deadline absteigend</SelectItem>
                   <SelectItem value="priority">Nach Priorität</SelectItem>
                   <SelectItem value="title">Nach Titel</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="mt-3">
-              <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Bearbeiter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="alle">Alle Bearbeiter</SelectItem>
-                  {users.map(user => (
-                    <SelectItem key={user.email} value={user.email}>
-                      {user.full_name}
-                    </SelectItem>
-                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -306,7 +290,7 @@ export default function Tasks() {
                   </Select>
                 </div>
 
-                <div>
+                <div className="col-span-2">
                   <Label htmlFor="deadline">Deadline</Label>
                   <Input
                     id="deadline"
@@ -317,20 +301,15 @@ export default function Tasks() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="assigned_to">Zugewiesen an</Label>
-                  <Select value={newTask.assigned_to} onValueChange={(value) => setNewTask({...newTask, assigned_to: value})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Wählen..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {users.map(user => (
-                        <SelectItem key={user.email} value={user.email}>
-                          {user.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="col-span-2">
+                  <Label>Zugewiesen an</Label>
+                  <div className="mt-1.5">
+                    <MultiUserSelect
+                      selectedUsers={newTask.assigned_to}
+                      users={users}
+                      onChange={(selected) => setNewTask({...newTask, assigned_to: selected})}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

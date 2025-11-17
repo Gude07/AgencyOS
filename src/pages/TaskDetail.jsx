@@ -33,6 +33,7 @@ import PriorityBadge from "../components/tasks/PriorityBadge";
 import StatusBadge from "../components/tasks/StatusBadge";
 import TaskComments from "../components/tasks/TaskComments";
 import TaskSubtasks from "../components/tasks/TaskSubtasks";
+import MultiUserSelect from "../components/tasks/MultiUserSelect";
 
 export default function TaskDetail() {
   const navigate = useNavigate();
@@ -47,8 +48,8 @@ export default function TaskDetail() {
   const { data: task, isLoading } = useQuery({
     queryKey: ['task', taskId],
     queryFn: async () => {
-      const tasks = await base44.entities.Task.filter({ id: taskId });
-      return tasks[0];
+      const tasks = await base44.entities.Task.list();
+      return tasks.find(t => t.id === taskId);
     },
     enabled: !!taskId,
   });
@@ -109,6 +110,7 @@ export default function TaskDetail() {
   }
 
   const currentTaskData = editMode ? editedTask : task;
+  const assignedUsers = Array.isArray(currentTaskData?.assigned_to) ? currentTaskData.assigned_to : [];
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
@@ -283,28 +285,28 @@ export default function TaskDetail() {
                     Zugewiesen an
                   </Label>
                   {editMode ? (
-                    <Select 
-                      value={editedTask.assigned_to || ""} 
-                      onValueChange={(value) => setEditedTask({...editedTask, assigned_to: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Wählen..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {users.map(user => (
-                          <SelectItem key={user.email} value={user.email}>
-                            {user.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <MultiUserSelect
+                      selectedUsers={Array.isArray(editedTask.assigned_to) ? editedTask.assigned_to : []}
+                      users={users}
+                      onChange={(selected) => setEditedTask({...editedTask, assigned_to: selected})}
+                    />
                   ) : (
-                    <p className="font-medium text-slate-900">
-                      {currentTaskData.assigned_to 
-                        ? users.find(u => u.email === currentTaskData.assigned_to)?.full_name || currentTaskData.assigned_to
-                        : "Nicht zugewiesen"
-                      }
-                    </p>
+                    <div>
+                      {assignedUsers.length > 0 ? (
+                        <div className="space-y-1">
+                          {assignedUsers.map(email => {
+                            const user = users.find(u => u.email === email);
+                            return (
+                              <p key={email} className="text-sm text-slate-700">
+                                {user ? user.full_name : email}
+                              </p>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500">Nicht zugewiesen</p>
+                      )}
+                    </div>
                   )}
                 </div>
 
