@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -150,6 +149,19 @@ export default function PlayerDetail() {
     });
   };
 
+  const handleToggleFavorite = (requestId) => {
+    if (!player) return;
+    const favorites = player.favorite_matches || [];
+    const newFavorites = favorites.includes(requestId)
+      ? favorites.filter(id => id !== requestId)
+      : [...favorites, requestId];
+    
+    updatePlayerMutation.mutate({ 
+      id: playerId, 
+      data: { favorite_matches: newFavorites }
+    });
+  };
+
   const calculateBidirectionalMatchScore = (request) => {
     if (!player || !request) return 0;
 
@@ -228,7 +240,13 @@ export default function PlayerDetail() {
       matchScore: calculateBidirectionalMatchScore(request)
     }))
     .filter(request => request.matchScore > 0)
-    .sort((a, b) => b.matchScore - a.matchScore);
+    .sort((a, b) => {
+      const aIsFavorite = (player.favorite_matches || []).includes(a.id);
+      const bIsFavorite = (player.favorite_matches || []).includes(b.id);
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      return b.matchScore - a.matchScore;
+    });
 
   const filteredMatchingRequests = matchingRequests.filter(request => {
     const matchesSearch = matchFilters.search === "" || 
@@ -665,39 +683,57 @@ export default function PlayerDetail() {
                 </Card>
               ) : (
                 <div className="grid md:grid-cols-2 gap-4">
-                  {filteredMatchingRequests.map(request => (
-                    <Card 
-                      key={request.id}
-                      className="border-slate-200 bg-white hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div>
-                            <h4 className="font-semibold text-slate-900">{request.club_name}</h4>
-                            <p className="text-sm text-slate-600 mt-1">{request.league} • {request.country}</p>
+                  {filteredMatchingRequests.map(request => {
+                    const isFavorite = (player.favorite_matches || []).includes(request.id);
+                    return (
+                      <Card 
+                        key={request.id}
+                        className={`border-slate-200 bg-white hover:shadow-md transition-all cursor-pointer ${
+                          isFavorite ? 'ring-2 ring-yellow-400' : ''
+                        }`}
+                        onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div>
+                              <h4 className="font-semibold text-slate-900">{request.club_name}</h4>
+                              <p className="text-sm text-slate-600 mt-1">{request.league} • {request.country}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleFavorite(request.id);
+                                }}
+                                className={`p-1 rounded hover:bg-slate-100 transition-colors ${
+                                  isFavorite ? 'text-yellow-500' : 'text-slate-400'
+                                }`}
+                              >
+                                <Star className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                              </button>
+                              <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
+                                <Star className="w-3 h-3 fill-current" />
+                                <span className="text-sm font-bold">{request.matchScore}%</span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
-                            <Star className="w-3 h-3 fill-current" />
-                            <span className="text-sm font-bold">{request.matchScore}%</span>
+                          <div className="space-y-2">
+                            <div className="text-sm">
+                              <span className="text-slate-600">Position: </span>
+                              <span className="font-semibold text-slate-900">{request.position_needed}</span>
+                            </div>
+                            <div className="text-sm">
+                              <span className="text-slate-600">Budget: </span>
+                              <span className="font-semibold text-slate-900">
+                                {request.budget_min ? `${(request.budget_min / 1000000).toFixed(1)}M` : '?'} - 
+                                {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="text-sm">
-                            <span className="text-slate-600">Position: </span>
-                            <span className="font-semibold text-slate-900">{request.position_needed}</span>
-                          </div>
-                          <div className="text-sm">
-                            <span className="text-slate-600">Budget: </span>
-                            <span className="font-semibold text-slate-900">
-                              {request.budget_min ? `${(request.budget_min / 1000000).toFixed(1)}M` : '?'} - 
-                              {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
-                            </span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </div>
