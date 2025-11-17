@@ -71,6 +71,7 @@ export default function PlayerDetail() {
       age: editedPlayer.age ? parseInt(editedPlayer.age) : undefined,
       market_value: editedPlayer.market_value ? parseFloat(editedPlayer.market_value) : undefined,
       height: editedPlayer.height ? parseFloat(editedPlayer.height) : undefined,
+      secondary_positions: editedPlayer.secondary_positions || [],
     };
     updatePlayerMutation.mutate({ id: playerId, data: playerData });
   };
@@ -79,6 +80,14 @@ export default function PlayerDetail() {
     updatePlayerMutation.mutate({ 
       id: playerId, 
       data: { preferences }
+    });
+  };
+
+  const handleStartEdit = () => {
+    setEditMode(true);
+    setEditedPlayer({
+      ...player,
+      secondary_positions: player.secondary_positions || []
     });
   };
 
@@ -186,7 +195,7 @@ export default function PlayerDetail() {
             <h1 className="text-2xl font-bold text-slate-900">Spielerdetails</h1>
           </div>
           {!editMode ? (
-            <Button onClick={() => { setEditMode(true); setEditedPlayer(player); }} variant="outline">
+            <Button onClick={handleStartEdit} variant="outline">
               Bearbeiten
             </Button>
           ) : (
