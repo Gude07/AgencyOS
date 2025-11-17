@@ -29,7 +29,11 @@ export default function Dashboard() {
     queryFn: () => base44.auth.me(),
   });
 
-  const myTasks = tasks.filter(t => t.assigned_to === user?.email);
+  const myTasks = tasks.filter(t => {
+    const assignedUsers = Array.isArray(t.assigned_to) ? t.assigned_to : [];
+    return assignedUsers.includes(user?.email);
+  });
+  
   const openTasks = tasks.filter(t => t.status === 'offen' || t.status === 'in_bearbeitung');
   const completedTasks = tasks.filter(t => t.status === 'abgeschlossen');
   const overdueTasks = tasks.filter(t => {
@@ -140,7 +144,6 @@ export default function Dashboard() {
                   <TaskCard 
                     key={task.id} 
                     task={task}
-                    onClick={() => navigate(createPageUrl("TaskDetail") + "?id=" + task.id)}
                   />
                 ))
               )}
@@ -164,7 +167,6 @@ export default function Dashboard() {
                   <TaskCard 
                     key={task.id} 
                     task={task}
-                    onClick={() => navigate(createPageUrl("TaskDetail") + "?id=" + task.id)}
                   />
                 ))
               )}
