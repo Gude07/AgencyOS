@@ -24,14 +24,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Calendar, User, MessageSquare, Plus, Trash2, Send } from "lucide-react";
+import { ArrowLeft, Calendar, User, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import PriorityBadge from "../components/tasks/PriorityBadge";
 import StatusBadge from "../components/tasks/StatusBadge";
+import TaskComments from "../components/tasks/TaskComments";
+import TaskSubtasks from "../components/tasks/TaskSubtasks";
 
 export default function TaskDetail() {
   const navigate = useNavigate();
@@ -41,22 +42,14 @@ export default function TaskDetail() {
 
   const [editMode, setEditMode] = useState(false);
   const [editedTask, setEditedTask] = useState(null);
-  const [newComment, setNewComment] = useState("");
-  const [newSubtask, setNewSubtask] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const { data: task, isLoading } = useQuery({
     queryKey: ['task', taskId],
     queryFn: async () => {
-      const tasks = await base44.entities.Task.list();
-      return tasks.find(t => t.id === taskId);
+      const tasks = await base44.entities.Task.filter({ id: taskId });
+      return tasks[0];
     },
-    enabled: !!taskId,
-  });
-
-  const { data: comments = [] } = useQuery({
-    queryKey: ['comments', taskId],
-    queryFn: () => base44.entities.Comment.filter({ task_id: taskId }, '-created_date'),
     enabled: !!taskId,
   });
 
@@ -65,25 +58,12 @@ export default function TaskDetail() {
     queryFn: () => base44.entities.User.list(),
   });
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
-
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setEditMode(false);
-    },
-  });
-
-  const createCommentMutation = useMutation({
-    mutationFn: (commentData) => base44.entities.Comment.create(commentData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', taskId] });
-      setNewComment("");
     },
   });
 
@@ -103,40 +83,12 @@ export default function TaskDetail() {
     deleteTaskMutation.mutate(taskId);
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    createCommentMutation.mutate({
-      task_id: taskId,
-      content: newComment,
-    });
-  };
-
-  const handleAddSubtask = () => {
-    if (!newSubtask.trim()) return;
-    const subtasks = [...(task.subtasks || []), { title: newSubtask, completed: false }];
-    updateTaskMutation.mutate({ 
-      id: taskId, 
-      data: { subtasks }
-    });
-    setNewSubtask("");
-  };
-
-  const handleToggleSubtask = (index) => {
-    const subtasks = [...(task.subtasks || [])];
-    subtasks[index].completed = !subtasks[index].completed;
+  const handleUpdateSubtasks = (subtasks) => {
     const completedCount = subtasks.filter(st => st.completed).length;
-    const progress = Math.round((completedCount / subtasks.length) * 100);
+    const progress = subtasks.length > 0 ? Math.round((completedCount / subtasks.length) * 100) : 0;
     updateTaskMutation.mutate({ 
       id: taskId, 
       data: { subtasks, progress }
-    });
-  };
-
-  const handleDeleteSubtask = (index) => {
-    const subtasks = task.subtasks.filter((_, i) => i !== index);
-    updateTaskMutation.mutate({ 
-      id: taskId, 
-      data: { subtasks }
     });
   };
 
@@ -188,8 +140,12 @@ export default function TaskDetail() {
               <Button variant="outline" onClick={() => setEditMode(false)}>
                 Abbrechen
               </Button>
-              <Button onClick={handleSaveTask} className="bg-blue-900 hover:bg-blue-800">
-                Speichern
+              <Button 
+                onClick={handleSaveTask} 
+                disabled={updateTaskMutation.isPending}
+                className="bg-blue-900 hover:bg-blue-800"
+              >
+                {updateTaskMutation.isPending ? "Wird gespeichert..." : "Speichern"}
               </Button>
             </div>
           )}
@@ -264,43 +220,10 @@ export default function TaskDetail() {
                   )}
                 </div>
 
-                <div>
-                  <Label className="text-sm font-semibold text-slate-700 mb-3 block">
-                    Unteraufgaben ({task.subtasks?.filter(st => st.completed).length || 0}/{task.subtasks?.length || 0})
-                  </Label>
-                  <div className="space-y-2">
-                    {task.subtasks?.map((subtask, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                        <Checkbox
-                          checked={subtask.completed}
-                          onCheckedChange={() => handleToggleSubtask(index)}
-                        />
-                        <span className={`flex-1 ${subtask.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                          {subtask.title}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteSubtask(index)}
-                          className="h-8 w-8 hover:bg-slate-200"
-                        >
-                          <Trash2 className="w-4 h-4 text-slate-500" />
-                        </Button>
-                      </div>
-                    ))}
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Neue Unteraufgabe..."
-                        value={newSubtask}
-                        onChange={(e) => setNewSubtask(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleAddSubtask()}
-                      />
-                      <Button onClick={handleAddSubtask} size="icon" className="bg-blue-900 hover:bg-blue-800">
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <TaskSubtasks 
+                  subtasks={task.subtasks || []} 
+                  onUpdate={handleUpdateSubtasks}
+                />
 
                 <div>
                   <Label className="text-sm font-semibold text-slate-700 mb-2 block">Fortschritt</Label>
@@ -324,54 +247,7 @@ export default function TaskDetail() {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 bg-white">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  Kommentare ({comments.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                {comments.map(comment => (
-                  <div key={comment.id} className="p-4 bg-slate-50 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-slate-700 text-sm font-semibold">
-                          {comment.created_by?.[0]?.toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-slate-900 text-sm">
-                            {comment.created_by?.split('@')[0]}
-                          </span>
-                          <span className="text-xs text-slate-500">
-                            {format(new Date(comment.created_date), "d. MMM yyyy, HH:mm", { locale: de })}
-                          </span>
-                        </div>
-                        <p className="text-slate-700 text-sm">{comment.content}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                <div className="flex gap-2 pt-2">
-                  <Textarea
-                    placeholder="Kommentar hinzufügen..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={handleAddComment}
-                    disabled={!newComment.trim()}
-                    className="bg-blue-900 hover:bg-blue-800"
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <TaskComments taskId={taskId} />
           </div>
 
           <div className="space-y-6">
