@@ -27,6 +27,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
 
 const categoryColors = {
   "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-200",
@@ -51,6 +52,7 @@ export default function Players() {
     age: "",
     nationality: "",
     position: "",
+    secondary_positions: [],
     current_club: "",
     market_value: "",
     contract_until: "",
@@ -80,6 +82,7 @@ export default function Players() {
         age: "",
         nationality: "",
         position: "",
+        secondary_positions: [],
         current_club: "",
         market_value: "",
         contract_until: "",
@@ -231,9 +234,14 @@ export default function Players() {
                         <Badge variant="secondary" className={categoryColors[player.category] + " border"}>
                           {player.category}
                         </Badge>
-                        <Badge variant="outline" className="border-slate-200">
+                        <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 font-semibold">
                           {player.position}
                         </Badge>
+                        {player.secondary_positions?.map((pos) => (
+                          <Badge key={pos} variant="outline" className="border-slate-200 text-xs">
+                            {pos}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
                   </CardHeader>
@@ -328,7 +336,7 @@ export default function Players() {
                 </div>
 
                 <div>
-                  <Label htmlFor="position">Position *</Label>
+                  <Label htmlFor="position">Hauptposition *</Label>
                   <Select value={newPlayer.position} onValueChange={(value) => setNewPlayer({...newPlayer, position: value})}>
                     <SelectTrigger className="mt-1.5">
                       <SelectValue placeholder="Wählen..." />
@@ -344,6 +352,14 @@ export default function Players() {
                       <SelectItem value="Stürmer">Stürmer</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="col-span-2">
+                  <SecondaryPositionsEditor
+                    mainPosition={newPlayer.position}
+                    secondaryPositions={newPlayer.secondary_positions}
+                    onChange={(positions) => setNewPlayer({...newPlayer, secondary_positions: positions})}
+                  />
                 </div>
 
                 <div>

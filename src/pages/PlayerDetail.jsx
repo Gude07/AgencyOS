@@ -21,6 +21,7 @@ import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import PlayerPreferences from "../components/players/PlayerPreferences";
+import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
 
 const categoryColors = {
   "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-200",
@@ -84,14 +85,40 @@ export default function PlayerDetail() {
   const calculateBidirectionalMatchScore = (request) => {
     if (!player || !request) return 0;
 
+    // Position muss übereinstimmen - K.O. Kriterium
+    const mainPositionMatch = player.position === request.position_needed;
+    const secondaryPositionMatch = player.secondary_positions?.includes(request.position_needed);
+    
+    if (!mainPositionMatch && !secondaryPositionMatch) {
+      return 0;
+    }
+
     let totalWeight = 0;
     let achievedWeight = 0;
 
-    // Basic matching (Position, Alter, Budget)
+    // Position matching with higher weight for main position
     totalWeight += 3;
-    if (player.position === request.position_needed) achievedWeight += 1;
-    if (request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max) achievedWeight += 1;
-    if (request.budget_max && player.market_value && player.market_value <= request.budget_max) achievedWeight += 1;
+    if (mainPositionMatch) {
+      achievedWeight += 3; // Hauptposition = volle Punkte
+    } else if (secondaryPositionMatch) {
+      achievedWeight += 1.5; // Nebenposition = halbe Punkte
+    }
+
+    // Age matching
+    if (request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max) {
+      totalWeight += 2;
+      achievedWeight += 2;
+    } else if (request.age_min || request.age_max) {
+      totalWeight += 2;
+    }
+
+    // Budget matching
+    if (request.budget_max && player.market_value && player.market_value <= request.budget_max) {
+      totalWeight += 2;
+      achievedWeight += 2;
+    } else if (request.budget_max) {
+      totalWeight += 2;
+    }
 
     // Player preferences matching
     const prefs = player.preferences || {};
@@ -226,35 +253,73 @@ export default function PlayerDetail() {
                           </a>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {editMode ? (
-                          <Select 
-                            value={editedPlayer.category} 
-                            onValueChange={(value) => setEditedPlayer({...editedPlayer, category: value})}
-                          >
-                            <SelectTrigger className="w-48">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Wintertransferperiode">Wintertransferperiode</SelectItem>
-                              <SelectItem value="Sommertransferperiode">Sommertransferperiode</SelectItem>
-                              <SelectItem value="Zukunft">Zukunft</SelectItem>
-                              <SelectItem value="Beobachtungsliste">Beobachtungsliste</SelectItem>
-                              <SelectItem value="Top-Priorität">Top-Priorität</SelectItem>
-                              <SelectItem value="Vertragsende">Vertragsende</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Badge variant="secondary" className={categoryColors[currentPlayerData.category] + " border"}>
-                            {currentPlayerData.category}
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                          {editMode ? (
+                            <Select 
+                              value={editedPlayer.category} 
+                              onValueChange={(value) => setEditedPlayer({...editedPlayer, category: value})}
+                            >
+                              <SelectTrigger className="w-48">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Wintertransferperiode">Wintertransferperiode</SelectItem>
+                                <SelectItem value="Sommertransferperiode">Sommertransferperiode</SelectItem>
+                                <SelectItem value="Zukunft">Zukunft</SelectItem>
+                                <SelectItem value="Beobachtungsliste">Beobachtungsliste</SelectItem>
+                                <SelectItem value="Top-Priorität">Top-Priorität</SelectItem>
+                                <SelectItem value="Vertragsende">Vertragsende</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge variant="secondary" className={categoryColors[currentPlayerData.category] + " border"}>
+                              {currentPlayerData.category}
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 font-semibold">
+                            {currentPlayerData.position}
                           </Badge>
+                          {currentPlayerData.secondary_positions?.map((pos) => (
+                            <Badge key={pos} variant="outline" className="border-slate-200">
+                              {pos}
+                            </Badge>
+                          ))}
+                          <Badge variant="outline" className="border-slate-200">
+                            {currentPlayerData.status}
+                          </Badge>
+                        </div>
+
+                        {editMode && (
+                          <div className="space-y-3">
+                            <div>
+                              <Label>Hauptposition *</Label>
+                              <Select 
+                                value={editedPlayer.position} 
+                                onValueChange={(value) => setEditedPlayer({...editedPlayer, position: value})}
+                              >
+                                <SelectTrigger className="mt-1.5">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Torwart">Torwart</SelectItem>
+                                  <SelectItem value="Innenverteidiger">Innenverteidiger</SelectItem>
+                                  <SelectItem value="Außenverteidiger">Außenverteidiger</SelectItem>
+                                  <SelectItem value="Defensives Mittelfeld">Defensives Mittelfeld</SelectItem>
+                                  <SelectItem value="Zentrales Mittelfeld">Zentrales Mittelfeld</SelectItem>
+                                  <SelectItem value="Offensives Mittelfeld">Offensives Mittelfeld</SelectItem>
+                                  <SelectItem value="Flügelspieler">Flügelspieler</SelectItem>
+                                  <SelectItem value="Stürmer">Stürmer</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <SecondaryPositionsEditor
+                              mainPosition={editedPlayer.position}
+                              secondaryPositions={editedPlayer.secondary_positions || []}
+                              onChange={(positions) => setEditedPlayer({...editedPlayer, secondary_positions: positions})}
+                            />
+                          </div>
                         )}
-                        <Badge variant="outline" className="border-slate-200">
-                          {currentPlayerData.position}
-                        </Badge>
-                        <Badge variant="outline" className="border-slate-200">
-                          {currentPlayerData.status}
-                        </Badge>
                       </div>
                     </div>
                   </CardHeader>

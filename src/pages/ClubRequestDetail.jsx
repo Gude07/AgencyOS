@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -102,15 +103,29 @@ export default function ClubRequestDetail() {
 
   const calculateMatchScore = (player) => {
     if (!request) return 0;
+
+    // Position muss übereinstimmen - K.O. Kriterium
+    const mainPositionMatch = player.position === request.position_needed;
+    const secondaryPositionMatch = player.secondary_positions?.includes(request.position_needed);
+    
+    if (!mainPositionMatch && !secondaryPositionMatch) {
+      return 0;
+    }
     
     if (!request.matching_criteria || request.matching_criteria.length === 0) {
       // Fallback auf einfaches Matching
       let score = 0;
       let maxScore = 3;
 
-      if (player.position === request.position_needed) score += 1;
-      if (request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max) score += 1;
-      if (request.budget_max && player.market_value && player.market_value <= request.budget_max) score += 1;
+      // Position matching with higher weight for main position
+      if (mainPositionMatch) {
+        score += 1.5; // Hauptposition
+      } else if (secondaryPositionMatch) {
+        score += 0.75; // Nebenposition
+      }
+
+      if (request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max) score += 0.75;
+      if (request.budget_max && player.market_value && player.market_value <= request.budget_max) score += 0.75;
 
       return Math.round((score / maxScore) * 100);
     }
@@ -119,13 +134,25 @@ export default function ClubRequestDetail() {
     let achievedWeight = 0;
 
     for (const criterion of request.matching_criteria) {
+      if (criterion.criterion === "position") {
+        totalWeight += criterion.weight; // Add full weight for position, then adjust based on match type
+        if (mainPositionMatch) {
+          achievedWeight += criterion.weight; // Volle Gewichtung für Hauptposition
+        } else if (secondaryPositionMatch) {
+          achievedWeight += criterion.weight * 0.5; // Halbe Gewichtung für Nebenposition
+          // Adjust totalWeight to reflect that secondary position only counts for half
+          // This ensures the percentage is calculated correctly if secondary position is the only match
+          // If totalWeight is already adjusted by another criterion that didn't match, this might need re-evaluation.
+          // For simplicity, we are reducing the achievable weight for this criterion.
+          totalWeight -= criterion.weight * 0.5; 
+        }
+        continue; // Skip normal processing for position
+      }
+
       totalWeight += criterion.weight;
 
       let matches = false;
       switch (criterion.criterion) {
-        case "position":
-          matches = player.position === request.position_needed;
-          break;
         case "age":
           matches = request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max;
           break;
@@ -158,7 +185,8 @@ export default function ClubRequestDetail() {
         return 0;
       }
     }
-
+    
+    // Ensure totalWeight doesn't become 0 if all weights are reduced due to secondary position matches
     return totalWeight > 0 ? Math.round((achievedWeight / totalWeight) * 100) : 0;
   };
 
@@ -203,6 +231,16 @@ export default function ClubRequestDetail() {
         >
           <h4 className="font-semibold text-slate-900">{player.name}</h4>
           <p className="text-sm text-slate-600 mt-1">{player.current_club}</p>
+          <div className="flex flex-wrap gap-1 mt-2">
+            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 text-xs">
+              {player.position}
+            </Badge>
+            {player.secondary_positions?.map((pos) => (
+              <Badge key={pos} variant="outline" className="border-slate-200 text-xs">
+                {pos}
+              </Badge>
+            ))}
+          </div>
         </div>
         {showMatchScore && player.matchScore !== undefined && (
           <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
