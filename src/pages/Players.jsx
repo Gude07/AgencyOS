@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -104,7 +105,9 @@ export default function Players() {
       age: newPlayer.age ? parseInt(newPlayer.age) : undefined,
       market_value: newPlayer.market_value ? parseFloat(newPlayer.market_value) : undefined,
       height: newPlayer.height ? parseFloat(newPlayer.height) : undefined,
+      secondary_positions: Array.isArray(newPlayer.secondary_positions) ? newPlayer.secondary_positions : [],
     };
+    console.log("Creating player with data:", playerData);
     createPlayerMutation.mutate(playerData);
   };
 
