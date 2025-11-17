@@ -135,7 +135,6 @@ export default function ClubRequestDetail() {
   const calculateMatchScore = (player) => {
     if (!request) return 0;
 
-    // Position muss übereinstimmen - K.O. Kriterium
     const mainPositionMatch = player.position === request.position_needed;
     const secondaryPositionMatch = player.secondary_positions?.includes(request.position_needed);
     
@@ -144,15 +143,13 @@ export default function ClubRequestDetail() {
     }
     
     if (!request.matching_criteria || request.matching_criteria.length === 0) {
-      // Fallback auf einfaches Matching
       let score = 0;
       let maxScore = 3;
 
-      // Position matching with higher weight for main position
       if (mainPositionMatch) {
-        score += 1.5; // Hauptposition
+        score += 1.5;
       } else if (secondaryPositionMatch) {
-        score += 0.75; // Nebenposition
+        score += 0.75;
       }
 
       if (request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max) score += 0.75;
@@ -336,16 +333,12 @@ export default function ClubRequestDetail() {
           </div>
           {!editMode ? (
             <div className="flex gap-2">
-              <Button onClick={() => { setEditMode(true); setEditedRequest(request); }} variant="outline">
-                Bearbeiten
-              </Button>
-              <Button 
-                onClick={() => setShowDeleteDialog(true)} 
-                variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
+              <Button onClick={() => setShowDeleteDialog(true)} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Löschen
+              </Button>
+              <Button onClick={() => { setEditMode(true); setEditedRequest(request); }} variant="outline">
+                Bearbeiten
               </Button>
             </div>
           ) : (
@@ -666,17 +659,14 @@ export default function ClubRequestDetail() {
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Anfrage löschen?</AlertDialogTitle>
+              <AlertDialogTitle>Vereinsanfrage löschen?</AlertDialogTitle>
               <AlertDialogDescription>
-                Sind Sie sicher, dass Sie die Anfrage von {request.club_name} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+                Sind Sie sicher, dass Sie die Anfrage von {request.club_name} dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteRequest}
-                className="bg-red-600 hover:bg-red-700"
-              >
+              <AlertDialogAction onClick={handleDeleteRequest} className="bg-red-600 hover:bg-red-700">
                 Löschen
               </AlertDialogAction>
             </AlertDialogFooter>

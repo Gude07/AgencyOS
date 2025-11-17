@@ -264,16 +264,12 @@ export default function PlayerDetail() {
           </div>
           {!editMode ? (
             <div className="flex gap-2">
-              <Button onClick={handleStartEdit} variant="outline">
-                Bearbeiten
-              </Button>
-              <Button 
-                onClick={() => setShowDeleteDialog(true)} 
-                variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
+              <Button onClick={() => setShowDeleteDialog(true)} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Löschen
+              </Button>
+              <Button onClick={handleStartEdit} variant="outline">
+                Bearbeiten
               </Button>
             </div>
           ) : (
@@ -713,15 +709,12 @@ export default function PlayerDetail() {
             <AlertDialogHeader>
               <AlertDialogTitle>Spieler löschen?</AlertDialogTitle>
               <AlertDialogDescription>
-                Sind Sie sicher, dass Sie {player.name} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+                Sind Sie sicher, dass Sie {player.name} dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeletePlayer}
-                className="bg-red-600 hover:bg-red-700"
-              >
+              <AlertDialogAction onClick={handleDeletePlayer} className="bg-red-600 hover:bg-red-700">
                 Löschen
               </AlertDialogAction>
             </AlertDialogFooter>
