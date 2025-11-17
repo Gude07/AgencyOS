@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -14,11 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
+import PlayerPreferences from "../components/players/PlayerPreferences";
 
 const categoryColors = {
   "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-200",
@@ -37,6 +39,7 @@ export default function PlayerDetail() {
 
   const [editMode, setEditMode] = useState(false);
   const [editedPlayer, setEditedPlayer] = useState(null);
+  const [activeTab, setActiveTab] = useState("info");
 
   const { data: player, isLoading } = useQuery({
     queryKey: ['player', playerId],
@@ -71,9 +74,48 @@ export default function PlayerDetail() {
     updatePlayerMutation.mutate({ id: playerId, data: playerData });
   };
 
-  const matchedRequests = clubRequests.filter(req => 
-    player?.matched_requests?.includes(req.id)
-  );
+  const handleSavePreferences = (preferences) => {
+    updatePlayerMutation.mutate({ 
+      id: playerId, 
+      data: { preferences }
+    });
+  };
+
+  const calculateBidirectionalMatchScore = (request) => {
+    if (!player || !request) return 0;
+
+    let totalWeight = 0;
+    let achievedWeight = 0;
+
+    // Basic matching (Position, Alter, Budget)
+    totalWeight += 3;
+    if (player.position === request.position_needed) achievedWeight += 1;
+    if (request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max) achievedWeight += 1;
+    if (request.budget_max && player.market_value && player.market_value <= request.budget_max) achievedWeight += 1;
+
+    // Player preferences matching
+    const prefs = player.preferences || {};
+    
+    // Excluded clubs - K.O. Kriterium
+    if (prefs.excluded_clubs?.length > 0 && prefs.excluded_clubs.includes(request.club_name)) {
+      return 0;
+    }
+
+    if (prefs.preferred_leagues?.length > 0 || prefs.preferred_countries?.length > 0) {
+      totalWeight += 2;
+      if (prefs.preferred_leagues?.includes(request.league)) achievedWeight += 1;
+      if (prefs.preferred_countries?.includes(request.country)) achievedWeight += 1;
+    }
+
+    if (prefs.min_salary || prefs.max_salary) {
+      totalWeight += 1;
+      const budgetMatch = (!prefs.min_salary || request.budget_min >= prefs.min_salary) &&
+                         (!prefs.max_salary || request.budget_max <= prefs.max_salary);
+      if (budgetMatch) achievedWeight += 1;
+    }
+
+    return totalWeight > 0 ? Math.round((achievedWeight / totalWeight) * 100) : 0;
+  };
 
   if (isLoading) {
     return (
@@ -90,6 +132,14 @@ export default function PlayerDetail() {
       </div>
     );
   }
+
+  const matchingRequests = clubRequests
+    .map(request => ({
+      ...request,
+      matchScore: calculateBidirectionalMatchScore(request)
+    }))
+    .filter(request => request.matchScore > 0)
+    .sort((a, b) => b.matchScore - a.matchScore);
 
   const currentPlayerData = editMode ? editedPlayer : player;
 
@@ -124,276 +174,316 @@ export default function PlayerDetail() {
           )}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="border-slate-200 bg-white">
-              <CardHeader className="border-b border-slate-100">
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="info">Spielerinfo</TabsTrigger>
+            <TabsTrigger value="preferences" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Präferenzen
+            </TabsTrigger>
+            <TabsTrigger value="matches" className="flex items-center gap-2">
+              <Star className="w-4 h-4" />
+              Matches ({matchingRequests.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="info">
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="border-slate-200 bg-white">
+                  <CardHeader className="border-b border-slate-100">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          {editMode ? (
+                            <Input
+                              value={editedPlayer.name}
+                              onChange={(e) => setEditedPlayer({...editedPlayer, name: e.target.value})}
+                              className="text-2xl font-bold mb-2"
+                            />
+                          ) : (
+                            <CardTitle className="text-2xl">{currentPlayerData.name}</CardTitle>
+                          )}
+                          {editMode ? (
+                            <Input
+                              value={editedPlayer.current_club || ""}
+                              onChange={(e) => setEditedPlayer({...editedPlayer, current_club: e.target.value})}
+                              placeholder="Aktueller Verein"
+                              className="mt-2"
+                            />
+                          ) : (
+                            <p className="text-slate-600 mt-1">{currentPlayerData.current_club}</p>
+                          )}
+                        </div>
+                        {currentPlayerData.transfermarkt_url && (
+                          <a
+                            href={currentPlayerData.transfermarkt_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                          >
+                            <ExternalLink className="w-5 h-5 text-blue-900" />
+                          </a>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {editMode ? (
+                          <Select 
+                            value={editedPlayer.category} 
+                            onValueChange={(value) => setEditedPlayer({...editedPlayer, category: value})}
+                          >
+                            <SelectTrigger className="w-48">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Wintertransferperiode">Wintertransferperiode</SelectItem>
+                              <SelectItem value="Sommertransferperiode">Sommertransferperiode</SelectItem>
+                              <SelectItem value="Zukunft">Zukunft</SelectItem>
+                              <SelectItem value="Beobachtungsliste">Beobachtungsliste</SelectItem>
+                              <SelectItem value="Top-Priorität">Top-Priorität</SelectItem>
+                              <SelectItem value="Vertragsende">Vertragsende</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge variant="secondary" className={categoryColors[currentPlayerData.category] + " border"}>
+                            {currentPlayerData.category}
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="border-slate-200">
+                          {currentPlayerData.position}
+                        </Badge>
+                        <Badge variant="outline" className="border-slate-200">
+                          {currentPlayerData.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                      <div>
+                        <Label className="text-sm text-slate-600 mb-1.5 block">Alter</Label>
+                        {editMode ? (
+                          <Input
+                            type="number"
+                            value={editedPlayer.age || ""}
+                            onChange={(e) => setEditedPlayer({...editedPlayer, age: e.target.value})}
+                          />
+                        ) : (
+                          <p className="font-semibold text-slate-900">{currentPlayerData.age || '-'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label className="text-sm text-slate-600 mb-1.5 block">Nationalität</Label>
+                        {editMode ? (
+                          <Input
+                            value={editedPlayer.nationality || ""}
+                            onChange={(e) => setEditedPlayer({...editedPlayer, nationality: e.target.value})}
+                          />
+                        ) : (
+                          <p className="font-semibold text-slate-900">{currentPlayerData.nationality || '-'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label className="text-sm text-slate-600 mb-1.5 block">Größe</Label>
+                        {editMode ? (
+                          <Input
+                            type="number"
+                            value={editedPlayer.height || ""}
+                            onChange={(e) => setEditedPlayer({...editedPlayer, height: e.target.value})}
+                            placeholder="cm"
+                          />
+                        ) : (
+                          <p className="font-semibold text-slate-900">
+                            {currentPlayerData.height ? `${currentPlayerData.height} cm` : '-'}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Label className="text-sm text-slate-600 mb-1.5 block">Starker Fuß</Label>
+                        {editMode ? (
+                          <Select 
+                            value={editedPlayer.foot || ""} 
+                            onValueChange={(value) => setEditedPlayer({...editedPlayer, foot: value})}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Wählen..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="rechts">Rechts</SelectItem>
+                              <SelectItem value="links">Links</SelectItem>
+                              <SelectItem value="beidfüßig">Beidfüßig</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <p className="font-semibold text-slate-900 capitalize">{currentPlayerData.foot || '-'}</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label className="text-sm text-slate-600 mb-1.5 block">Marktwert</Label>
+                        {editMode ? (
+                          <Input
+                            type="number"
+                            value={editedPlayer.market_value || ""}
+                            onChange={(e) => setEditedPlayer({...editedPlayer, market_value: e.target.value})}
+                            placeholder="€"
+                          />
+                        ) : (
+                          <p className="font-semibold text-slate-900">
+                            {currentPlayerData.market_value 
+                              ? `${(currentPlayerData.market_value / 1000000).toFixed(1)}M €`
+                              : '-'
+                            }
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Label className="text-sm text-slate-600 mb-1.5 block">Vertrag bis</Label>
+                        {editMode ? (
+                          <Input
+                            type="date"
+                            value={editedPlayer.contract_until || ""}
+                            onChange={(e) => setEditedPlayer({...editedPlayer, contract_until: e.target.value})}
+                          />
+                        ) : (
+                          <p className="font-semibold text-slate-900">
+                            {currentPlayerData.contract_until 
+                              ? format(new Date(currentPlayerData.contract_until), "MM/yyyy")
+                              : '-'
+                            }
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-semibold text-slate-700 mb-2 block">Stärken</Label>
                       {editMode ? (
-                        <Input
-                          value={editedPlayer.name}
-                          onChange={(e) => setEditedPlayer({...editedPlayer, name: e.target.value})}
-                          className="text-2xl font-bold mb-2"
+                        <Textarea
+                          value={editedPlayer.strengths || ""}
+                          onChange={(e) => setEditedPlayer({...editedPlayer, strengths: e.target.value})}
+                          className="h-24"
                         />
                       ) : (
-                        <CardTitle className="text-2xl">{currentPlayerData.name}</CardTitle>
-                      )}
-                      {editMode ? (
-                        <Input
-                          value={editedPlayer.current_club || ""}
-                          onChange={(e) => setEditedPlayer({...editedPlayer, current_club: e.target.value})}
-                          placeholder="Aktueller Verein"
-                          className="mt-2"
-                        />
-                      ) : (
-                        <p className="text-slate-600 mt-1">{currentPlayerData.current_club}</p>
+                        <p className="text-slate-600">{currentPlayerData.strengths || "Keine Angaben"}</p>
                       )}
                     </div>
+
+                    <div>
+                      <Label className="text-sm font-semibold text-slate-700 mb-2 block">Notizen</Label>
+                      {editMode ? (
+                        <Textarea
+                          value={editedPlayer.notes || ""}
+                          onChange={(e) => setEditedPlayer({...editedPlayer, notes: e.target.value})}
+                          className="h-32"
+                        />
+                      ) : (
+                        <p className="text-slate-600">{currentPlayerData.notes || "Keine Notizen"}</p>
+                      )}
+                    </div>
+
                     {currentPlayerData.transfermarkt_url && (
-                      <a
-                        href={currentPlayerData.transfermarkt_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                      >
-                        <ExternalLink className="w-5 h-5 text-blue-900" />
-                      </a>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {editMode ? (
-                      <Select 
-                        value={editedPlayer.category} 
-                        onValueChange={(value) => setEditedPlayer({...editedPlayer, category: value})}
-                      >
-                        <SelectTrigger className="w-48">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Wintertransferperiode">Wintertransferperiode</SelectItem>
-                          <SelectItem value="Sommertransferperiode">Sommertransferperiode</SelectItem>
-                          <SelectItem value="Zukunft">Zukunft</SelectItem>
-                          <SelectItem value="Beobachtungsliste">Beobachtungsliste</SelectItem>
-                          <SelectItem value="Top-Priorität">Top-Priorität</SelectItem>
-                          <SelectItem value="Vertragsende">Vertragsende</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Badge variant="secondary" className={categoryColors[currentPlayerData.category] + " border"}>
-                        {currentPlayerData.category}
-                      </Badge>
-                    )}
-                    <Badge variant="outline" className="border-slate-200">
-                      {currentPlayerData.position}
-                    </Badge>
-                    <Badge variant="outline" className="border-slate-200">
-                      {currentPlayerData.status}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                  <div>
-                    <Label className="text-sm text-slate-600 mb-1.5 block">Alter</Label>
-                    {editMode ? (
-                      <Input
-                        type="number"
-                        value={editedPlayer.age || ""}
-                        onChange={(e) => setEditedPlayer({...editedPlayer, age: e.target.value})}
-                      />
-                    ) : (
-                      <p className="font-semibold text-slate-900">{currentPlayerData.age || '-'}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-sm text-slate-600 mb-1.5 block">Nationalität</Label>
-                    {editMode ? (
-                      <Input
-                        value={editedPlayer.nationality || ""}
-                        onChange={(e) => setEditedPlayer({...editedPlayer, nationality: e.target.value})}
-                      />
-                    ) : (
-                      <p className="font-semibold text-slate-900">{currentPlayerData.nationality || '-'}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-sm text-slate-600 mb-1.5 block">Größe</Label>
-                    {editMode ? (
-                      <Input
-                        type="number"
-                        value={editedPlayer.height || ""}
-                        onChange={(e) => setEditedPlayer({...editedPlayer, height: e.target.value})}
-                        placeholder="cm"
-                      />
-                    ) : (
-                      <p className="font-semibold text-slate-900">
-                        {currentPlayerData.height ? `${currentPlayerData.height} cm` : '-'}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-sm text-slate-600 mb-1.5 block">Starker Fuß</Label>
-                    {editMode ? (
-                      <Select 
-                        value={editedPlayer.foot || ""} 
-                        onValueChange={(value) => setEditedPlayer({...editedPlayer, foot: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Wählen..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="rechts">Rechts</SelectItem>
-                          <SelectItem value="links">Links</SelectItem>
-                          <SelectItem value="beidfüßig">Beidfüßig</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <p className="font-semibold text-slate-900 capitalize">{currentPlayerData.foot || '-'}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-sm text-slate-600 mb-1.5 block">Marktwert</Label>
-                    {editMode ? (
-                      <Input
-                        type="number"
-                        value={editedPlayer.market_value || ""}
-                        onChange={(e) => setEditedPlayer({...editedPlayer, market_value: e.target.value})}
-                        placeholder="€"
-                      />
-                    ) : (
-                      <p className="font-semibold text-slate-900">
-                        {currentPlayerData.market_value 
-                          ? `${(currentPlayerData.market_value / 1000000).toFixed(1)}M €`
-                          : '-'
-                        }
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-sm text-slate-600 mb-1.5 block">Vertrag bis</Label>
-                    {editMode ? (
-                      <Input
-                        type="date"
-                        value={editedPlayer.contract_until || ""}
-                        onChange={(e) => setEditedPlayer({...editedPlayer, contract_until: e.target.value})}
-                      />
-                    ) : (
-                      <p className="font-semibold text-slate-900">
-                        {currentPlayerData.contract_until 
-                          ? format(new Date(currentPlayerData.contract_until), "MM/yyyy")
-                          : '-'
-                        }
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">Stärken</Label>
-                  {editMode ? (
-                    <Textarea
-                      value={editedPlayer.strengths || ""}
-                      onChange={(e) => setEditedPlayer({...editedPlayer, strengths: e.target.value})}
-                      className="h-24"
-                    />
-                  ) : (
-                    <p className="text-slate-600">{currentPlayerData.strengths || "Keine Angaben"}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">Notizen</Label>
-                  {editMode ? (
-                    <Textarea
-                      value={editedPlayer.notes || ""}
-                      onChange={(e) => setEditedPlayer({...editedPlayer, notes: e.target.value})}
-                      className="h-32"
-                    />
-                  ) : (
-                    <p className="text-slate-600">{currentPlayerData.notes || "Keine Notizen"}</p>
-                  )}
-                </div>
-
-                {currentPlayerData.transfermarkt_url && (
-                  <div>
-                    <Label className="text-sm font-semibold text-slate-700 mb-2 block flex items-center gap-2">
-                      <LinkIcon className="w-4 h-4" />
-                      Transfermarkt.de Profil
-                    </Label>
-                    <a
-                      href={currentPlayerData.transfermarkt_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-900 hover:underline break-all"
-                    >
-                      {currentPlayerData.transfermarkt_url}
-                    </a>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Card className="border-slate-200 bg-white">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Building2 className="w-5 h-5" />
-                  Passende Vereinsanfragen
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4">
-                {matchedRequests.length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-4">
-                    Keine passenden Anfragen
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {matchedRequests.map(request => (
-                      <div 
-                        key={request.id}
-                        className="p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                        onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
-                      >
-                        <h4 className="font-semibold text-slate-900">{request.club_name}</h4>
-                        <p className="text-sm text-slate-600 mt-1">{request.position_needed}</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Budget: {request.budget_min ? `${(request.budget_min / 1000000).toFixed(1)}M` : '?'} - 
-                          {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
-                        </p>
+                      <div>
+                        <Label className="text-sm font-semibold text-slate-700 mb-2 block flex items-center gap-2">
+                          <LinkIcon className="w-4 h-4" />
+                          Transfermarkt.de Profil
+                        </Label>
+                        <a
+                          href={currentPlayerData.transfermarkt_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-900 hover:underline break-all"
+                        >
+                          {currentPlayerData.transfermarkt_url}
+                        </a>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
-            <Card className="border-slate-200 bg-white">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-lg">Potentielle Vereine</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4">
-                {currentPlayerData.potential_clubs?.length > 0 ? (
-                  <div className="space-y-2">
-                    {currentPlayerData.potential_clubs.map((club, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <Building2 className="w-4 h-4 text-slate-400" />
-                        <span className="text-slate-700">{club}</span>
+              <div className="space-y-6">
+                <Card className="border-slate-200 bg-white">
+                  <CardHeader className="border-b border-slate-100">
+                    <CardTitle className="text-lg">Potentielle Vereine</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {currentPlayerData.potential_clubs?.length > 0 ? (
+                      <div className="space-y-2">
+                        {currentPlayerData.potential_clubs.map((club, index) => (
+                          <div key={index} className="flex items-center gap-2 text-sm">
+                            <Building2 className="w-4 h-4 text-slate-400" />
+                            <span className="text-slate-700">{club}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500 text-center py-4">
-                    Keine Vereine hinterlegt
+                    ) : (
+                      <p className="text-sm text-slate-500 text-center py-4">
+                        Keine Vereine hinterlegt
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="preferences">
+            <PlayerPreferences 
+              preferences={player.preferences || {}}
+              onSave={handleSavePreferences}
+            />
+          </TabsContent>
+
+          <TabsContent value="matches">
+            {matchingRequests.length === 0 ? (
+              <Card className="border-slate-200 bg-white">
+                <CardContent className="p-8 text-center">
+                  <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-600">Keine passenden Vereinsanfragen gefunden</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Definieren Sie Spielerpräferenzen für bessere Matches
                   </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {matchingRequests.map(request => (
+                  <Card 
+                    key={request.id}
+                    className="border-slate-200 bg-white hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                          <h4 className="font-semibold text-slate-900">{request.club_name}</h4>
+                          <p className="text-sm text-slate-600 mt-1">{request.league} • {request.country}</p>
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
+                          <Star className="w-3 h-3 fill-current" />
+                          <span className="text-sm font-bold">{request.matchScore}%</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-sm">
+                          <span className="text-slate-600">Position: </span>
+                          <span className="font-semibold text-slate-900">{request.position_needed}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-slate-600">Budget: </span>
+                          <span className="font-semibold text-slate-900">
+                            {request.budget_min ? `${(request.budget_min / 1000000).toFixed(1)}M` : '?'} - 
+                            {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
