@@ -25,7 +25,6 @@ const ALL_POSITIONS = [
 export default function SecondaryPositionsEditor({ mainPosition, secondaryPositions, onChange }) {
   const [selectedPosition, setSelectedPosition] = useState("");
   
-  // Ensure secondaryPositions is always an array
   const currentPositions = Array.isArray(secondaryPositions) ? secondaryPositions : [];
 
   const availablePositions = ALL_POSITIONS.filter(
@@ -35,6 +34,7 @@ export default function SecondaryPositionsEditor({ mainPosition, secondaryPositi
   const handleAdd = () => {
     if (selectedPosition && !currentPositions.includes(selectedPosition)) {
       const updated = [...currentPositions, selectedPosition];
+      console.log("Adding secondary position:", selectedPosition, "New array:", updated);
       onChange(updated);
       setSelectedPosition("");
     }
@@ -42,8 +42,11 @@ export default function SecondaryPositionsEditor({ mainPosition, secondaryPositi
 
   const handleRemove = (position) => {
     const updated = currentPositions.filter(p => p !== position);
+    console.log("Removing secondary position:", position, "New array:", updated);
     onChange(updated);
   };
+
+  console.log("SecondaryPositionsEditor render - current positions:", currentPositions);
 
   return (
     <div className="space-y-3">

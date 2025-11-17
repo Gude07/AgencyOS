@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -65,17 +66,31 @@ export default function PlayerDetail() {
     },
   });
 
+  useEffect(() => {
+    if (player && editMode) {
+      console.log("Player loaded for editing:", player);
+      console.log("Secondary positions from DB:", player.secondary_positions);
+    }
+  }, [player, editMode]);
+
   const handleSavePlayer = () => {
+    console.log("=== SAVE PLAYER START ===");
+    console.log("editedPlayer state:", editedPlayer);
+    console.log("editedPlayer.secondary_positions:", editedPlayer?.secondary_positions);
+    
     const playerData = {
       ...player,
       ...editedPlayer,
-      secondary_positions: Array.isArray(editedPlayer.secondary_positions) ? editedPlayer.secondary_positions : [],
-      age: editedPlayer.age ? parseInt(editedPlayer.age) : player.age,
-      market_value: editedPlayer.market_value ? parseFloat(editedPlayer.market_value) : player.market_value,
-      height: editedPlayer.height ? parseFloat(editedPlayer.height) : player.height,
+      secondary_positions: Array.isArray(editedPlayer?.secondary_positions) ? editedPlayer.secondary_positions : [],
+      age: editedPlayer?.age ? parseInt(editedPlayer.age) : player.age,
+      market_value: editedPlayer?.market_value ? parseFloat(editedPlayer.market_value) : player.market_value,
+      height: editedPlayer?.height ? parseFloat(editedPlayer.height) : player.height,
     };
     
-    console.log("Saving player with secondary_positions:", playerData.secondary_positions);
+    console.log("Final playerData to save:", playerData);
+    console.log("Final secondary_positions:", playerData.secondary_positions);
+    console.log("=== SAVE PLAYER END ===");
+    
     updatePlayerMutation.mutate({ id: playerId, data: playerData });
   };
 
@@ -87,10 +102,21 @@ export default function PlayerDetail() {
   };
 
   const handleStartEdit = () => {
-    setEditMode(true);
-    setEditedPlayer({
+    const initialEditState = {
       ...player,
       secondary_positions: Array.isArray(player.secondary_positions) ? player.secondary_positions : []
+    };
+    console.log("Starting edit mode with:", initialEditState);
+    setEditMode(true);
+    setEditedPlayer(initialEditState);
+  };
+
+  const handleSecondaryPositionsChange = (positions) => {
+    console.log("Secondary positions changed to:", positions);
+    setEditedPlayer(prev => {
+      const updated = {...prev, secondary_positions: positions};
+      console.log("Updated editedPlayer:", updated);
+      return updated;
     });
   };
 
@@ -175,7 +201,7 @@ export default function PlayerDetail() {
     .sort((a, b) => b.matchScore - a.matchScore);
 
   const currentPlayerData = editMode ? editedPlayer : player;
-  const currentSecondaryPositions = Array.isArray(currentPlayerData.secondary_positions) ? currentPlayerData.secondary_positions : [];
+  const currentSecondaryPositions = Array.isArray(currentPlayerData?.secondary_positions) ? currentPlayerData.secondary_positions : [];
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
@@ -231,25 +257,25 @@ export default function PlayerDetail() {
                         <div className="flex-1">
                           {editMode ? (
                             <Input
-                              value={editedPlayer.name}
+                              value={editedPlayer?.name || ""}
                               onChange={(e) => setEditedPlayer({...editedPlayer, name: e.target.value})}
                               className="text-2xl font-bold mb-2"
                             />
                           ) : (
-                            <CardTitle className="text-2xl">{currentPlayerData.name}</CardTitle>
+                            <CardTitle className="text-2xl">{currentPlayerData?.name}</CardTitle>
                           )}
                           {editMode ? (
                             <Input
-                              value={editedPlayer.current_club || ""}
+                              value={editedPlayer?.current_club || ""}
                               onChange={(e) => setEditedPlayer({...editedPlayer, current_club: e.target.value})}
                               placeholder="Aktueller Verein"
                               className="mt-2"
                             />
                           ) : (
-                            <p className="text-slate-600 mt-1">{currentPlayerData.current_club}</p>
+                            <p className="text-slate-600 mt-1">{currentPlayerData?.current_club}</p>
                           )}
                         </div>
-                        {currentPlayerData.transfermarkt_url && (
+                        {currentPlayerData?.transfermarkt_url && (
                           <a
                             href={currentPlayerData.transfermarkt_url}
                             target="_blank"
@@ -264,7 +290,7 @@ export default function PlayerDetail() {
                         <div className="flex flex-wrap gap-2">
                           {editMode ? (
                             <Select 
-                              value={editedPlayer.category} 
+                              value={editedPlayer?.category || "Beobachtungsliste"} 
                               onValueChange={(value) => setEditedPlayer({...editedPlayer, category: value})}
                             >
                               <SelectTrigger className="w-48">
@@ -280,12 +306,12 @@ export default function PlayerDetail() {
                               </SelectContent>
                             </Select>
                           ) : (
-                            <Badge variant="secondary" className={categoryColors[currentPlayerData.category] + " border"}>
-                              {currentPlayerData.category}
+                            <Badge variant="secondary" className={categoryColors[currentPlayerData?.category] + " border"}>
+                              {currentPlayerData?.category}
                             </Badge>
                           )}
                           <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 font-semibold">
-                            {currentPlayerData.position}
+                            {currentPlayerData?.position}
                           </Badge>
                           {currentSecondaryPositions.map((pos) => (
                             <Badge key={pos} variant="outline" className="border-slate-200">
@@ -293,11 +319,11 @@ export default function PlayerDetail() {
                             </Badge>
                           ))}
                           <Badge variant="outline" className="border-slate-200">
-                            {currentPlayerData.status}
+                            {currentPlayerData?.status}
                           </Badge>
                         </div>
 
-                        {editMode && (
+                        {editMode && editedPlayer && (
                           <div className="space-y-3">
                             <div>
                               <Label>Hauptposition *</Label>
@@ -323,7 +349,7 @@ export default function PlayerDetail() {
                             <SecondaryPositionsEditor
                               mainPosition={editedPlayer.position}
                               secondaryPositions={editedPlayer.secondary_positions}
-                              onChange={(positions) => setEditedPlayer({...editedPlayer, secondary_positions: positions})}
+                              onChange={handleSecondaryPositionsChange}
                             />
                           </div>
                         )}
@@ -337,22 +363,22 @@ export default function PlayerDetail() {
                         {editMode ? (
                           <Input
                             type="number"
-                            value={editedPlayer.age || ""}
+                            value={editedPlayer?.age || ""}
                             onChange={(e) => setEditedPlayer({...editedPlayer, age: e.target.value})}
                           />
                         ) : (
-                          <p className="font-semibold text-slate-900">{currentPlayerData.age || '-'}</p>
+                          <p className="font-semibold text-slate-900">{currentPlayerData?.age || '-'}</p>
                         )}
                       </div>
                       <div>
                         <Label className="text-sm text-slate-600 mb-1.5 block">Nationalität</Label>
                         {editMode ? (
                           <Input
-                            value={editedPlayer.nationality || ""}
+                            value={editedPlayer?.nationality || ""}
                             onChange={(e) => setEditedPlayer({...editedPlayer, nationality: e.target.value})}
                           />
                         ) : (
-                          <p className="font-semibold text-slate-900">{currentPlayerData.nationality || '-'}</p>
+                          <p className="font-semibold text-slate-900">{currentPlayerData?.nationality || '-'}</p>
                         )}
                       </div>
                       <div>
@@ -360,13 +386,13 @@ export default function PlayerDetail() {
                         {editMode ? (
                           <Input
                             type="number"
-                            value={editedPlayer.height || ""}
+                            value={editedPlayer?.height || ""}
                             onChange={(e) => setEditedPlayer({...editedPlayer, height: e.target.value})}
                             placeholder="cm"
                           />
                         ) : (
                           <p className="font-semibold text-slate-900">
-                            {currentPlayerData.height ? `${currentPlayerData.height} cm` : '-'}
+                            {currentPlayerData?.height ? `${currentPlayerData.height} cm` : '-'}
                           </p>
                         )}
                       </div>
@@ -374,7 +400,7 @@ export default function PlayerDetail() {
                         <Label className="text-sm text-slate-600 mb-1.5 block">Starker Fuß</Label>
                         {editMode ? (
                           <Select 
-                            value={editedPlayer.foot || ""} 
+                            value={editedPlayer?.foot || ""} 
                             onValueChange={(value) => setEditedPlayer({...editedPlayer, foot: value})}
                           >
                             <SelectTrigger>
@@ -387,7 +413,7 @@ export default function PlayerDetail() {
                             </SelectContent>
                           </Select>
                         ) : (
-                          <p className="font-semibold text-slate-900 capitalize">{currentPlayerData.foot || '-'}</p>
+                          <p className="font-semibold text-slate-900 capitalize">{currentPlayerData?.foot || '-'}</p>
                         )}
                       </div>
                       <div>
@@ -395,13 +421,13 @@ export default function PlayerDetail() {
                         {editMode ? (
                           <Input
                             type="number"
-                            value={editedPlayer.market_value || ""}
+                            value={editedPlayer?.market_value || ""}
                             onChange={(e) => setEditedPlayer({...editedPlayer, market_value: e.target.value})}
                             placeholder="€"
                           />
                         ) : (
                           <p className="font-semibold text-slate-900">
-                            {currentPlayerData.market_value 
+                            {currentPlayerData?.market_value 
                               ? `${(currentPlayerData.market_value / 1000000).toFixed(1)}M €`
                               : '-'
                             }
@@ -413,12 +439,12 @@ export default function PlayerDetail() {
                         {editMode ? (
                           <Input
                             type="date"
-                            value={editedPlayer.contract_until || ""}
+                            value={editedPlayer?.contract_until || ""}
                             onChange={(e) => setEditedPlayer({...editedPlayer, contract_until: e.target.value})}
                           />
                         ) : (
                           <p className="font-semibold text-slate-900">
-                            {currentPlayerData.contract_until 
+                            {currentPlayerData?.contract_until 
                               ? format(new Date(currentPlayerData.contract_until), "MM/yyyy")
                               : '-'
                             }
@@ -431,12 +457,12 @@ export default function PlayerDetail() {
                       <Label className="text-sm font-semibold text-slate-700 mb-2 block">Stärken</Label>
                       {editMode ? (
                         <Textarea
-                          value={editedPlayer.strengths || ""}
+                          value={editedPlayer?.strengths || ""}
                           onChange={(e) => setEditedPlayer({...editedPlayer, strengths: e.target.value})}
                           className="h-24"
                         />
                       ) : (
-                        <p className="text-slate-600">{currentPlayerData.strengths || "Keine Angaben"}</p>
+                        <p className="text-slate-600">{currentPlayerData?.strengths || "Keine Angaben"}</p>
                       )}
                     </div>
 
@@ -444,16 +470,16 @@ export default function PlayerDetail() {
                       <Label className="text-sm font-semibold text-slate-700 mb-2 block">Notizen</Label>
                       {editMode ? (
                         <Textarea
-                          value={editedPlayer.notes || ""}
+                          value={editedPlayer?.notes || ""}
                           onChange={(e) => setEditedPlayer({...editedPlayer, notes: e.target.value})}
                           className="h-32"
                         />
                       ) : (
-                        <p className="text-slate-600">{currentPlayerData.notes || "Keine Notizen"}</p>
+                        <p className="text-slate-600">{currentPlayerData?.notes || "Keine Notizen"}</p>
                       )}
                     </div>
 
-                    {currentPlayerData.transfermarkt_url && (
+                    {currentPlayerData?.transfermarkt_url && (
                       <div>
                         <Label className="text-sm font-semibold text-slate-700 mb-2 block flex items-center gap-2">
                           <LinkIcon className="w-4 h-4" />
@@ -479,7 +505,7 @@ export default function PlayerDetail() {
                     <CardTitle className="text-lg">Potentielle Vereine</CardTitle>
                   </CardHeader>
                   <CardContent className="p-4">
-                    {currentPlayerData.potential_clubs?.length > 0 ? (
+                    {currentPlayerData?.potential_clubs?.length > 0 ? (
                       <div className="space-y-2">
                         {currentPlayerData.potential_clubs.map((club, index) => (
                           <div key={index} className="flex items-center gap-2 text-sm">
