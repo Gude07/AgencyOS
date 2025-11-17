@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -15,9 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Mail, Phone, Building2, Users, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import MatchingCriteriaEditor from "../components/clubRequests/MatchingCriteriaEditor";
+import CommunicationHistory from "../components/clubRequests/CommunicationHistory";
 
 const priorityColors = {
   niedrig: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -42,6 +44,7 @@ export default function ClubRequestDetail() {
 
   const [editMode, setEditMode] = useState(false);
   const [editedRequest, setEditedRequest] = useState(null);
+  const [activeTab, setActiveTab] = useState("matched");
 
   const { data: request, isLoading } = useQuery({
     queryKey: ['clubRequest', requestId],
@@ -77,29 +80,95 @@ export default function ClubRequestDetail() {
     updateRequestMutation.mutate({ id: requestId, data: requestData });
   };
 
-  const handleTogglePlayer = (playerId) => {
-    const matchedPlayers = request.matched_players || [];
-    const newMatchedPlayers = matchedPlayers.includes(playerId)
-      ? matchedPlayers.filter(id => id !== playerId)
-      : [...matchedPlayers, playerId];
+  const handleToggleShortlist = (playerId) => {
+    const shortlist = request.shortlist || [];
+    const newShortlist = shortlist.includes(playerId)
+      ? shortlist.filter(id => id !== playerId)
+      : [...shortlist, playerId];
     
     updateRequestMutation.mutate({ 
       id: requestId, 
-      data: { matched_players: newMatchedPlayers }
+      data: { shortlist: newShortlist }
     });
   };
 
-  // Filter matching players based on request criteria
-  const matchingPlayers = players.filter(player => {
-    if (!player.position || player.position !== request?.position_needed) return false;
-    
-    const ageMatch = (!request.age_min || player.age >= request.age_min) &&
-                     (!request.age_max || player.age <= request.age_max);
-    
-    const budgetMatch = (!request.budget_max || !player.market_value || player.market_value <= request.budget_max);
-    
-    return ageMatch && budgetMatch;
-  });
+  const handleSaveMatchingCriteria = (criteria) => {
+    updateRequestMutation.mutate({ 
+      id: requestId, 
+      data: { matching_criteria: criteria }
+    });
+  };
+
+  const calculateMatchScore = (player) => {
+    if (!request.matching_criteria || request.matching_criteria.length === 0) {
+      // Fallback auf einfaches Matching
+      let score = 0;
+      let maxScore = 3;
+
+      if (player.position === request.position_needed) score += 1;
+      if (request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max) score += 1;
+      if (request.budget_max && player.market_value && player.market_value <= request.budget_max) score += 1;
+
+      return Math.round((score / maxScore) * 100);
+    }
+
+    let totalWeight = 0;
+    let achievedWeight = 0;
+
+    for (const criterion of request.matching_criteria) {
+      totalWeight += criterion.weight;
+
+      let matches = false;
+      switch (criterion.criterion) {
+        case "position":
+          matches = player.position === request.position_needed;
+          break;
+        case "age":
+          matches = request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max;
+          break;
+        case "market_value":
+          matches = request.budget_max && player.market_value && player.market_value <= request.budget_max;
+          break;
+        case "nationality":
+          matches = player.nationality === request.country;
+          break;
+        case "foot":
+          matches = !!player.foot;
+          break;
+        case "height":
+          matches = !!player.height;
+          break;
+        case "contract_until":
+          matches = !!player.contract_until;
+          break;
+        case "category":
+          matches = player.category === "Wintertransferperiode" || player.category === "Sommertransferperiode";
+          break;
+        default:
+          matches = false;
+      }
+
+      if (matches) {
+        achievedWeight += criterion.weight;
+      } else if (criterion.required) {
+        // K.O.-Kriterium nicht erfüllt
+        return 0;
+      }
+    }
+
+    return totalWeight > 0 ? Math.round((achievedWeight / totalWeight) * 100) : 0;
+  };
+
+  // Filter matching players based on criteria and score
+  const matchingPlayers = players
+    .map(player => ({
+      ...player,
+      matchScore: calculateMatchScore(player)
+    }))
+    .filter(player => player.matchScore > 0)
+    .sort((a, b) => b.matchScore - a.matchScore);
+
+  const shortlistPlayers = players.filter(p => request?.shortlist?.includes(p.id));
 
   if (isLoading) {
     return (
@@ -119,9 +188,57 @@ export default function ClubRequestDetail() {
 
   const currentRequestData = editMode ? editedRequest : request;
 
+  const renderPlayerCard = (player, showMatchScore = false) => (
+    <div 
+      key={player.id}
+      className="p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-blue-300 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div 
+          className="flex-1 cursor-pointer"
+          onClick={() => navigate(createPageUrl("PlayerDetail") + "?id=" + player.id)}
+        >
+          <h4 className="font-semibold text-slate-900">{player.name}</h4>
+          <p className="text-sm text-slate-600 mt-1">{player.current_club}</p>
+        </div>
+        {showMatchScore && player.matchScore !== undefined && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
+            <Star className="w-3 h-3 fill-current" />
+            <span className="text-sm font-bold">{player.matchScore}%</span>
+          </div>
+        )}
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+        <div>
+          <p className="text-slate-600">Alter</p>
+          <p className="font-semibold text-slate-900">{player.age || '-'}</p>
+        </div>
+        <div>
+          <p className="text-slate-600">Marktwert</p>
+          <p className="font-semibold text-slate-900">
+            {player.market_value ? `${(player.market_value / 1000000).toFixed(1)}M €` : '-'}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleToggleShortlist(player.id)}
+          className={`flex-1 ${request.shortlist?.includes(player.id) ? 'bg-blue-50 border-blue-300 text-blue-900' : ''}`}
+        >
+          <ListChecks className="w-4 h-4 mr-2" />
+          {request.shortlist?.includes(player.id) ? 'Auf Shortlist' : 'Zu Shortlist'}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -151,7 +268,7 @@ export default function ClubRequestDetail() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-1">
             <Card className="border-slate-200 bg-white">
               <CardHeader className="border-b border-slate-100">
                 <div className="space-y-3">
@@ -161,10 +278,10 @@ export default function ClubRequestDetail() {
                       <Input
                         value={editedRequest.club_name}
                         onChange={(e) => setEditedRequest({...editedRequest, club_name: e.target.value})}
-                        className="text-2xl font-bold"
+                        className="text-xl font-bold"
                       />
                     ) : (
-                      <CardTitle className="text-2xl">{currentRequestData.club_name}</CardTitle>
+                      <CardTitle className="text-xl">{currentRequestData.club_name}</CardTitle>
                     )}
                   </div>
                   {editMode ? (
@@ -233,215 +350,141 @@ export default function ClubRequestDetail() {
                 <div>
                   <Label className="text-sm font-semibold text-slate-700 mb-3 block">Kontaktinformationen</Label>
                   <div className="space-y-3 p-4 bg-slate-50 rounded-lg">
-                    {editMode ? (
-                      <>
-                        <Input
-                          value={editedRequest.contact_person || ""}
-                          onChange={(e) => setEditedRequest({...editedRequest, contact_person: e.target.value})}
-                          placeholder="Ansprechpartner"
-                        />
-                        <Input
-                          value={editedRequest.contact_email || ""}
-                          onChange={(e) => setEditedRequest({...editedRequest, contact_email: e.target.value})}
-                          placeholder="E-Mail"
-                        />
-                        <Input
-                          value={editedRequest.contact_phone || ""}
-                          onChange={(e) => setEditedRequest({...editedRequest, contact_phone: e.target.value})}
-                          placeholder="Telefon"
-                        />
-                      </>
-                    ) : (
-                      <>
-                        {currentRequestData.contact_person && (
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-slate-500" />
-                            <span className="text-slate-700">{currentRequestData.contact_person}</span>
-                          </div>
-                        )}
-                        {currentRequestData.contact_email && (
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4 text-slate-500" />
-                            <a href={`mailto:${currentRequestData.contact_email}`} className="text-blue-900 hover:underline">
-                              {currentRequestData.contact_email}
-                            </a>
-                          </div>
-                        )}
-                        {currentRequestData.contact_phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-slate-500" />
-                            <a href={`tel:${currentRequestData.contact_phone}`} className="text-blue-900 hover:underline">
-                              {currentRequestData.contact_phone}
-                            </a>
-                          </div>
-                        )}
-                      </>
+                    {currentRequestData.contact_person && (
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-slate-500" />
+                        <span className="text-slate-700">{currentRequestData.contact_person}</span>
+                      </div>
+                    )}
+                    {currentRequestData.contact_email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-slate-500" />
+                        <a href={`mailto:${currentRequestData.contact_email}`} className="text-blue-900 hover:underline text-sm">
+                          {currentRequestData.contact_email}
+                        </a>
+                      </div>
+                    )}
+                    {currentRequestData.contact_phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-slate-500" />
+                        <a href={`tel:${currentRequestData.contact_phone}`} className="text-blue-900 hover:underline">
+                          {currentRequestData.contact_phone}
+                        </a>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-3">
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Gesuchte Position</Label>
-                    {editMode ? (
-                      <Select 
-                        value={editedRequest.position_needed} 
-                        onValueChange={(value) => setEditedRequest({...editedRequest, position_needed: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Torwart">Torwart</SelectItem>
-                          <SelectItem value="Innenverteidiger">Innenverteidiger</SelectItem>
-                          <SelectItem value="Außenverteidiger">Außenverteidiger</SelectItem>
-                          <SelectItem value="Defensives Mittelfeld">Defensives Mittelfeld</SelectItem>
-                          <SelectItem value="Zentrales Mittelfeld">Zentrales Mittelfeld</SelectItem>
-                          <SelectItem value="Offensives Mittelfeld">Offensives Mittelfeld</SelectItem>
-                          <SelectItem value="Flügelspieler">Flügelspieler</SelectItem>
-                          <SelectItem value="Stürmer">Stürmer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <p className="font-semibold text-slate-900">{currentRequestData.position_needed}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label className="text-sm text-slate-600 mb-1.5 block">Transferperiode</Label>
-                    {editMode ? (
-                      <Select 
-                        value={editedRequest.transfer_period || ""} 
-                        onValueChange={(value) => setEditedRequest({...editedRequest, transfer_period: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Wählen..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Winter 2024/25">Winter 2024/25</SelectItem>
-                          <SelectItem value="Sommer 2025">Sommer 2025</SelectItem>
-                          <SelectItem value="Winter 2025/26">Winter 2025/26</SelectItem>
-                          <SelectItem value="Sommer 2026">Sommer 2026</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <p className="font-semibold text-slate-900">{currentRequestData.transfer_period || '-'}</p>
-                    )}
+                    <p className="font-semibold text-slate-900">{currentRequestData.position_needed}</p>
                   </div>
 
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Budget</Label>
-                    {editMode ? (
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          value={editedRequest.budget_min || ""}
-                          onChange={(e) => setEditedRequest({...editedRequest, budget_min: e.target.value})}
-                          placeholder="Min"
-                        />
-                        <Input
-                          type="number"
-                          value={editedRequest.budget_max || ""}
-                          onChange={(e) => setEditedRequest({...editedRequest, budget_max: e.target.value})}
-                          placeholder="Max"
-                        />
-                      </div>
-                    ) : (
-                      <p className="font-semibold text-slate-900">
-                        {currentRequestData.budget_min ? `${(currentRequestData.budget_min / 1000000).toFixed(1)}M` : '?'} - 
-                        {currentRequestData.budget_max ? ` ${(currentRequestData.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
-                      </p>
-                    )}
+                    <p className="font-semibold text-slate-900">
+                      {currentRequestData.budget_min ? `${(currentRequestData.budget_min / 1000000).toFixed(1)}M` : '?'} - 
+                      {currentRequestData.budget_max ? ` ${(currentRequestData.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
+                    </p>
                   </div>
 
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Altersbereich</Label>
-                    {editMode ? (
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          value={editedRequest.age_min || ""}
-                          onChange={(e) => setEditedRequest({...editedRequest, age_min: e.target.value})}
-                          placeholder="Min"
-                        />
-                        <Input
-                          type="number"
-                          value={editedRequest.age_max || ""}
-                          onChange={(e) => setEditedRequest({...editedRequest, age_max: e.target.value})}
-                          placeholder="Max"
-                        />
-                      </div>
-                    ) : (
-                      <p className="font-semibold text-slate-900">
-                        {currentRequestData.age_min || '?'} - {currentRequestData.age_max || '?'} Jahre
-                      </p>
-                    )}
+                    <p className="font-semibold text-slate-900">
+                      {currentRequestData.age_min || '?'} - {currentRequestData.age_max || '?'} Jahre
+                    </p>
                   </div>
-                </div>
 
-                <div>
-                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">Anforderungen</Label>
-                  {editMode ? (
-                    <Textarea
-                      value={editedRequest.requirements || ""}
-                      onChange={(e) => setEditedRequest({...editedRequest, requirements: e.target.value})}
-                      className="h-32"
-                    />
-                  ) : (
-                    <p className="text-slate-600">{currentRequestData.requirements || "Keine weiteren Anforderungen"}</p>
+                  {currentRequestData.transfer_period && (
+                    <div>
+                      <Label className="text-sm text-slate-600 mb-1.5 block">Transferperiode</Label>
+                      <p className="font-semibold text-slate-900">{currentRequestData.transfer_period}</p>
+                    </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          <div className="space-y-6">
-            <Card className="border-slate-200 bg-white">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-lg">Passende Spieler ({matchingPlayers.length})</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4">
-                {matchingPlayers.length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-4">
-                    Keine passenden Spieler gefunden
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {matchingPlayers.map(player => {
-                      const isMatched = request.matched_players?.includes(player.id);
-                      return (
-                        <div 
-                          key={player.id}
-                          className={`p-3 rounded-lg border transition-colors ${
-                            isMatched ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <Checkbox
-                              checked={isMatched}
-                              onCheckedChange={() => handleTogglePlayer(player.id)}
-                              className="mt-1"
-                            />
-                            <div 
-                              className="flex-1 min-w-0 cursor-pointer"
-                              onClick={() => navigate(createPageUrl("PlayerDetail") + "?id=" + player.id)}
-                            >
-                              <h4 className="font-semibold text-slate-900">{player.name}</h4>
-                              <p className="text-sm text-slate-600 mt-1">{player.current_club}</p>
-                              <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
-                                <span>{player.age} Jahre</span>
-                                <span>•</span>
-                                <span>{player.market_value ? `${(player.market_value / 1000000).toFixed(1)}M €` : '-'}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                {currentRequestData.requirements && (
+                  <div>
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 block">Anforderungen</Label>
+                    <p className="text-sm text-slate-600">{currentRequestData.requirements}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
+          </div>
+
+          <div className="lg:col-span-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-4 mb-6">
+                <TabsTrigger value="matched" className="flex items-center gap-2">
+                  <Star className="w-4 h-4" />
+                  Matches ({matchingPlayers.length})
+                </TabsTrigger>
+                <TabsTrigger value="shortlist" className="flex items-center gap-2">
+                  <ListChecks className="w-4 h-4" />
+                  Shortlist ({shortlistPlayers.length})
+                </TabsTrigger>
+                <TabsTrigger value="criteria" className="flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  Kriterien
+                </TabsTrigger>
+                <TabsTrigger value="communication" className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Kommunikation
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="matched" className="space-y-4">
+                {matchingPlayers.length === 0 ? (
+                  <Card className="border-slate-200 bg-white">
+                    <CardContent className="p-8 text-center">
+                      <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                      <p className="text-slate-600">Keine passenden Spieler gefunden</p>
+                      <p className="text-sm text-slate-500 mt-1">
+                        Passen Sie die Matching-Kriterien an oder fügen Sie neue Spieler hinzu
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {matchingPlayers.map(player => renderPlayerCard(player, true))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="shortlist" className="space-y-4">
+                {shortlistPlayers.length === 0 ? (
+                  <Card className="border-slate-200 bg-white">
+                    <CardContent className="p-8 text-center">
+                      <ListChecks className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                      <p className="text-slate-600">Noch keine Spieler auf der Shortlist</p>
+                      <p className="text-sm text-slate-500 mt-1">
+                        Fügen Sie Spieler aus den Matches hinzu
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {shortlistPlayers.map(player => renderPlayerCard(player, false))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="criteria">
+                <MatchingCriteriaEditor 
+                  criteria={request.matching_criteria || []}
+                  onSave={handleSaveMatchingCriteria}
+                />
+              </TabsContent>
+
+              <TabsContent value="communication">
+                <CommunicationHistory 
+                  clubRequestId={requestId}
+                  players={[...matchingPlayers, ...shortlistPlayers]}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

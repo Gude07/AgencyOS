@@ -7,7 +7,7 @@ import Players from './pages/Players';
 import PlayerDetail from './pages/PlayerDetail';
 import ClubRequests from './pages/ClubRequests';
 import ClubRequestDetail from './pages/ClubRequestDetail';
-import Layout from './Layout.jsx';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -25,5 +25,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
-    Layout: Layout,
+    Layout: __Layout,
 };
