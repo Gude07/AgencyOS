@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import MatchingCriteriaEditor from "../components/clubRequests/MatchingCriteriaEditor";
@@ -46,6 +45,14 @@ export default function ClubRequestDetail() {
   const [editMode, setEditMode] = useState(false);
   const [editedRequest, setEditedRequest] = useState(null);
   const [activeTab, setActiveTab] = useState("matched");
+  
+  const [matchFilters, setMatchFilters] = useState({
+    search: "",
+    category: "alle",
+    status: "alle",
+    nationality: "alle",
+    positionType: "alle"
+  });
 
   const { data: request, isLoading } = useQuery({
     queryKey: ['clubRequest', requestId],
@@ -135,18 +142,14 @@ export default function ClubRequestDetail() {
 
     for (const criterion of request.matching_criteria) {
       if (criterion.criterion === "position") {
-        totalWeight += criterion.weight; // Add full weight for position, then adjust based on match type
+        totalWeight += criterion.weight;
         if (mainPositionMatch) {
-          achievedWeight += criterion.weight; // Volle Gewichtung für Hauptposition
+          achievedWeight += criterion.weight;
         } else if (secondaryPositionMatch) {
-          achievedWeight += criterion.weight * 0.5; // Halbe Gewichtung für Nebenposition
-          // Adjust totalWeight to reflect that secondary position only counts for half
-          // This ensures the percentage is calculated correctly if secondary position is the only match
-          // If totalWeight is already adjusted by another criterion that didn't match, this might need re-evaluation.
-          // For simplicity, we are reducing the achievable weight for this criterion.
+          achievedWeight += criterion.weight * 0.5;
           totalWeight -= criterion.weight * 0.5; 
         }
-        continue; // Skip normal processing for position
+        continue;
       }
 
       totalWeight += criterion.weight;
@@ -181,12 +184,10 @@ export default function ClubRequestDetail() {
       if (matches) {
         achievedWeight += criterion.weight;
       } else if (criterion.required) {
-        // K.O.-Kriterium nicht erfüllt
         return 0;
       }
     }
     
-    // Ensure totalWeight doesn't become 0 if all weights are reduced due to secondary position matches
     return totalWeight > 0 ? Math.round((achievedWeight / totalWeight) * 100) : 0;
   };
 
@@ -206,15 +207,32 @@ export default function ClubRequestDetail() {
     );
   }
 
-  // Filter matching players based on criteria and score
   const matchingPlayers = players
     .map(player => ({
       ...player,
-      matchScore: calculateMatchScore(player)
+      matchScore: calculateMatchScore(player),
+      positionMatch: player.position === request.position_needed ? 'main' : 
+                     (player.secondary_positions?.includes(request.position_needed) ? 'secondary' : 'none')
     }))
     .filter(player => player.matchScore > 0)
     .sort((a, b) => b.matchScore - a.matchScore);
 
+  const filteredMatchingPlayers = matchingPlayers.filter(player => {
+    const matchesSearch = matchFilters.search === "" || 
+      player.name?.toLowerCase().includes(matchFilters.search.toLowerCase()) ||
+      player.current_club?.toLowerCase().includes(matchFilters.search.toLowerCase());
+    
+    const matchesCategory = matchFilters.category === "alle" || player.category === matchFilters.category;
+    const matchesStatus = matchFilters.status === "alle" || player.status === matchFilters.status;
+    const matchesNationality = matchFilters.nationality === "alle" || player.nationality === matchFilters.nationality;
+    const matchesPositionType = matchFilters.positionType === "alle" || 
+      (matchFilters.positionType === "main" && player.positionMatch === "main") ||
+      (matchFilters.positionType === "secondary" && player.positionMatch === "secondary");
+    
+    return matchesSearch && matchesCategory && matchesStatus && matchesNationality && matchesPositionType;
+  });
+
+  const uniqueNationalities = [...new Set(matchingPlayers.map(p => p.nationality).filter(Boolean))];
   const shortlistPlayers = players.filter(p => request.shortlist?.includes(p.id));
 
   const currentRequestData = editMode ? editedRequest : request;
@@ -232,11 +250,11 @@ export default function ClubRequestDetail() {
           <h4 className="font-semibold text-slate-900">{player.name}</h4>
           <p className="text-sm text-slate-600 mt-1">{player.current_club}</p>
           <div className="flex flex-wrap gap-1 mt-2">
-            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 text-xs">
+            <Badge variant="outline" className={`text-xs ${player.positionMatch === 'main' ? 'border-blue-300 bg-blue-50 text-blue-900' : 'border-slate-200'}`}>
               {player.position}
             </Badge>
             {player.secondary_positions?.map((pos) => (
-              <Badge key={pos} variant="outline" className="border-slate-200 text-xs">
+              <Badge key={pos} variant="outline" className={`text-xs ${pos === request.position_needed ? 'border-blue-200 bg-blue-50 text-blue-800' : 'border-slate-200'}`}>
                 {pos}
               </Badge>
             ))}
@@ -460,7 +478,7 @@ export default function ClubRequestDetail() {
               <TabsList className="grid w-full grid-cols-4 mb-6">
                 <TabsTrigger value="matched" className="flex items-center gap-2">
                   <Star className="w-4 h-4" />
-                  Matches ({matchingPlayers.length})
+                  Matches ({filteredMatchingPlayers.length})
                 </TabsTrigger>
                 <TabsTrigger value="shortlist" className="flex items-center gap-2">
                   <ListChecks className="w-4 h-4" />
@@ -477,19 +495,101 @@ export default function ClubRequestDetail() {
               </TabsList>
 
               <TabsContent value="matched" className="space-y-4">
-                {matchingPlayers.length === 0 ? (
+                <Card className="border-slate-200 bg-white">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <SlidersHorizontal className="w-4 h-4 text-slate-500" />
+                      <span className="text-sm font-semibold text-slate-700">Filter</span>
+                    </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="relative lg:col-span-2">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                        <Input
+                          placeholder="Spieler oder Verein..."
+                          value={matchFilters.search}
+                          onChange={(e) => setMatchFilters({...matchFilters, search: e.target.value})}
+                          className="pl-9"
+                        />
+                      </div>
+                      <Select 
+                        value={matchFilters.positionType} 
+                        onValueChange={(value) => setMatchFilters({...matchFilters, positionType: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Positionsart" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alle">Alle Positionen</SelectItem>
+                          <SelectItem value="main">Nur Hauptposition</SelectItem>
+                          <SelectItem value="secondary">Nur Nebenposition</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select 
+                        value={matchFilters.category} 
+                        onValueChange={(value) => setMatchFilters({...matchFilters, category: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Kategorie" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alle">Alle Kategorien</SelectItem>
+                          <SelectItem value="Wintertransferperiode">Winter</SelectItem>
+                          <SelectItem value="Sommertransferperiode">Sommer</SelectItem>
+                          <SelectItem value="Top-Priorität">Top-Priorität</SelectItem>
+                          <SelectItem value="Beobachtungsliste">Beobachtung</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select 
+                        value={matchFilters.status} 
+                        onValueChange={(value) => setMatchFilters({...matchFilters, status: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alle">Alle Status</SelectItem>
+                          <SelectItem value="aktiv">Aktiv</SelectItem>
+                          <SelectItem value="in_verhandlung">In Verhandlung</SelectItem>
+                          <SelectItem value="transferiert">Transferiert</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select 
+                        value={matchFilters.nationality} 
+                        onValueChange={(value) => setMatchFilters({...matchFilters, nationality: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Nationalität" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alle">Alle Nationalitäten</SelectItem>
+                          {uniqueNationalities.map(nationality => (
+                            <SelectItem key={nationality} value={nationality}>{nationality}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {filteredMatchingPlayers.length === 0 ? (
                   <Card className="border-slate-200 bg-white">
                     <CardContent className="p-8 text-center">
                       <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                      <p className="text-slate-600">Keine passenden Spieler gefunden</p>
+                      <p className="text-slate-600">
+                        {matchingPlayers.length === 0 
+                          ? "Keine passenden Spieler gefunden" 
+                          : "Keine Ergebnisse für die ausgewählten Filter"}
+                      </p>
                       <p className="text-sm text-slate-500 mt-1">
-                        Passen Sie die Matching-Kriterien an oder fügen Sie neue Spieler hinzu
+                        {matchingPlayers.length === 0 
+                          ? "Passen Sie die Matching-Kriterien an oder fügen Sie neue Spieler hinzu"
+                          : "Versuchen Sie andere Filtereinstellungen"}
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
                   <div className="grid md:grid-cols-2 gap-4">
-                    {matchingPlayers.map(player => renderPlayerCard(player, true))}
+                    {filteredMatchingPlayers.map(player => renderPlayerCard(player, true))}
                   </div>
                 )}
               </TabsContent>

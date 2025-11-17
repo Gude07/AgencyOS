@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings } from "lucide-react";
+import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
@@ -42,6 +41,13 @@ export default function PlayerDetail() {
   const [editMode, setEditMode] = useState(false);
   const [editedPlayer, setEditedPlayer] = useState(null);
   const [activeTab, setActiveTab] = useState("info");
+  
+  const [matchFilters, setMatchFilters] = useState({
+    search: "",
+    priority: "alle",
+    status: "alle",
+    country: "alle"
+  });
 
   const { data: player, isLoading } = useQuery({
     queryKey: ['player', playerId],
@@ -76,15 +82,15 @@ export default function PlayerDetail() {
   const handleSavePlayer = () => {
     console.log("=== SAVE PLAYER START ===");
     console.log("editedPlayer state:", editedPlayer);
-    console.log("editedPlayer.secondary_positions:", editedPlayer?.secondary_positions);
+    console.log("editedPlayer.secondary_positions:", editedPlayer.secondary_positions);
     
     const playerData = {
       ...player,
       ...editedPlayer,
-      secondary_positions: Array.isArray(editedPlayer?.secondary_positions) ? editedPlayer.secondary_positions : [],
-      age: editedPlayer?.age ? parseInt(editedPlayer.age) : player.age,
-      market_value: editedPlayer?.market_value ? parseFloat(editedPlayer.market_value) : player.market_value,
-      height: editedPlayer?.height ? parseFloat(editedPlayer.height) : player.height,
+      secondary_positions: Array.isArray(editedPlayer.secondary_positions) ? editedPlayer.secondary_positions : [],
+      age: editedPlayer.age ? parseInt(editedPlayer.age) : player.age,
+      market_value: editedPlayer.market_value ? parseFloat(editedPlayer.market_value) : player.market_value,
+      height: editedPlayer.height ? parseFloat(editedPlayer.height) : player.height,
     };
     
     console.log("Final playerData to save:", playerData);
@@ -200,6 +206,20 @@ export default function PlayerDetail() {
     .filter(request => request.matchScore > 0)
     .sort((a, b) => b.matchScore - a.matchScore);
 
+  const filteredMatchingRequests = matchingRequests.filter(request => {
+    const matchesSearch = matchFilters.search === "" || 
+      request.club_name?.toLowerCase().includes(matchFilters.search.toLowerCase()) ||
+      request.league?.toLowerCase().includes(matchFilters.search.toLowerCase());
+    
+    const matchesPriority = matchFilters.priority === "alle" || request.priority === matchFilters.priority;
+    const matchesStatus = matchFilters.status === "alle" || request.status === matchFilters.status;
+    const matchesCountry = matchFilters.country === "alle" || request.country === matchFilters.country;
+    
+    return matchesSearch && matchesPriority && matchesStatus && matchesCountry;
+  });
+
+  const uniqueCountries = [...new Set(matchingRequests.map(r => r.country).filter(Boolean))];
+
   const currentPlayerData = editMode ? editedPlayer : player;
   const currentSecondaryPositions = Array.isArray(currentPlayerData?.secondary_positions) ? currentPlayerData.secondary_positions : [];
 
@@ -243,7 +263,7 @@ export default function PlayerDetail() {
             </TabsTrigger>
             <TabsTrigger value="matches" className="flex items-center gap-2">
               <Star className="w-4 h-4" />
-              Matches ({matchingRequests.length})
+              Matches ({filteredMatchingRequests.length})
             </TabsTrigger>
           </TabsList>
 
@@ -533,53 +553,124 @@ export default function PlayerDetail() {
           </TabsContent>
 
           <TabsContent value="matches">
-            {matchingRequests.length === 0 ? (
+            <div className="space-y-4">
               <Card className="border-slate-200 bg-white">
-                <CardContent className="p-8 text-center">
-                  <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-600">Keine passenden Vereinsanfragen gefunden</p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    Definieren Sie Spielerpräferenzen für bessere Matches
-                  </p>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <SlidersHorizontal className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm font-semibold text-slate-700">Filter</span>
+                  </div>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                      <Input
+                        placeholder="Verein oder Liga..."
+                        value={matchFilters.search}
+                        onChange={(e) => setMatchFilters({...matchFilters, search: e.target.value})}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select 
+                      value={matchFilters.priority} 
+                      onValueChange={(value) => setMatchFilters({...matchFilters, priority: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Priorität" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="alle">Alle Prioritäten</SelectItem>
+                        <SelectItem value="dringend">Dringend</SelectItem>
+                        <SelectItem value="hoch">Hoch</SelectItem>
+                        <SelectItem value="mittel">Mittel</SelectItem>
+                        <SelectItem value="niedrig">Niedrig</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select 
+                      value={matchFilters.status} 
+                      onValueChange={(value) => setMatchFilters({...matchFilters, status: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="alle">Alle Status</SelectItem>
+                        <SelectItem value="offen">Offen</SelectItem>
+                        <SelectItem value="in_bearbeitung">In Bearbeitung</SelectItem>
+                        <SelectItem value="angebote_gesendet">Angebote gesendet</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select 
+                      value={matchFilters.country} 
+                      onValueChange={(value) => setMatchFilters({...matchFilters, country: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Land" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="alle">Alle Länder</SelectItem>
+                        {uniqueCountries.map(country => (
+                          <SelectItem key={country} value={country}>{country}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              <div className="grid md:grid-cols-2 gap-4">
-                {matchingRequests.map(request => (
-                  <Card 
-                    key={request.id}
-                    className="border-slate-200 bg-white hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div>
-                          <h4 className="font-semibold text-slate-900">{request.club_name}</h4>
-                          <p className="text-sm text-slate-600 mt-1">{request.league} • {request.country}</p>
+
+              {filteredMatchingRequests.length === 0 ? (
+                <Card className="border-slate-200 bg-white">
+                  <CardContent className="p-8 text-center">
+                    <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-600">
+                      {matchingRequests.length === 0 
+                        ? "Keine passenden Vereinsanfragen gefunden" 
+                        : "Keine Ergebnisse für die ausgewählten Filter"}
+                    </p>
+                    <p className="text-sm text-slate-500 mt-1">
+                      {matchingRequests.length === 0 
+                        ? "Definieren Sie Spielerpräferenzen für bessere Matches"
+                        : "Versuchen Sie andere Filtereinstellungen"}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {filteredMatchingRequests.map(request => (
+                    <Card 
+                      key={request.id}
+                      className="border-slate-200 bg-white hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <h4 className="font-semibold text-slate-900">{request.club_name}</h4>
+                            <p className="text-sm text-slate-600 mt-1">{request.league} • {request.country}</p>
+                          </div>
+                          <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
+                            <Star className="w-3 h-3 fill-current" />
+                            <span className="text-sm font-bold">{request.matchScore}%</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
-                          <Star className="w-3 h-3 fill-current" />
-                          <span className="text-sm font-bold">{request.matchScore}%</span>
+                        <div className="space-y-2">
+                          <div className="text-sm">
+                            <span className="text-slate-600">Position: </span>
+                            <span className="font-semibold text-slate-900">{request.position_needed}</span>
+                          </div>
+                          <div className="text-sm">
+                            <span className="text-slate-600">Budget: </span>
+                            <span className="font-semibold text-slate-900">
+                              {request.budget_min ? `${(request.budget_min / 1000000).toFixed(1)}M` : '?'} - 
+                              {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="text-sm">
-                          <span className="text-slate-600">Position: </span>
-                          <span className="font-semibold text-slate-900">{request.position_needed}</span>
-                        </div>
-                        <div className="text-sm">
-                          <span className="text-slate-600">Budget: </span>
-                          <span className="font-semibold text-slate-900">
-                            {request.budget_min ? `${(request.budget_min / 1000000).toFixed(1)}M` : '?'} - 
-                            {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
