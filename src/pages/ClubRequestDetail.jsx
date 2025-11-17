@@ -81,6 +81,7 @@ export default function ClubRequestDetail() {
   };
 
   const handleToggleShortlist = (playerId) => {
+    if (!request) return;
     const shortlist = request.shortlist || [];
     const newShortlist = shortlist.includes(playerId)
       ? shortlist.filter(id => id !== playerId)
@@ -100,6 +101,8 @@ export default function ClubRequestDetail() {
   };
 
   const calculateMatchScore = (player) => {
+    if (!request) return 0;
+    
     if (!request.matching_criteria || request.matching_criteria.length === 0) {
       // Fallback auf einfaches Matching
       let score = 0;
@@ -159,17 +162,6 @@ export default function ClubRequestDetail() {
     return totalWeight > 0 ? Math.round((achievedWeight / totalWeight) * 100) : 0;
   };
 
-  // Filter matching players based on criteria and score
-  const matchingPlayers = players
-    .map(player => ({
-      ...player,
-      matchScore: calculateMatchScore(player)
-    }))
-    .filter(player => player.matchScore > 0)
-    .sort((a, b) => b.matchScore - a.matchScore);
-
-  const shortlistPlayers = players.filter(p => request?.shortlist?.includes(p.id));
-
   if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center">
@@ -185,6 +177,17 @@ export default function ClubRequestDetail() {
       </div>
     );
   }
+
+  // Filter matching players based on criteria and score
+  const matchingPlayers = players
+    .map(player => ({
+      ...player,
+      matchScore: calculateMatchScore(player)
+    }))
+    .filter(player => player.matchScore > 0)
+    .sort((a, b) => b.matchScore - a.matchScore);
+
+  const shortlistPlayers = players.filter(p => request.shortlist?.includes(p.id));
 
   const currentRequestData = editMode ? editedRequest : request;
 
