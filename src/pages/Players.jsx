@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -101,13 +100,25 @@ export default function Players() {
 
   const handleCreatePlayer = () => {
     const playerData = {
-      ...newPlayer,
-      age: newPlayer.age ? parseInt(newPlayer.age) : undefined,
-      market_value: newPlayer.market_value ? parseFloat(newPlayer.market_value) : undefined,
-      height: newPlayer.height ? parseFloat(newPlayer.height) : undefined,
+      name: newPlayer.name,
+      position: newPlayer.position,
       secondary_positions: Array.isArray(newPlayer.secondary_positions) ? newPlayer.secondary_positions : [],
+      date_of_birth: newPlayer.date_of_birth || undefined,
+      age: newPlayer.age ? parseInt(newPlayer.age) : undefined,
+      nationality: newPlayer.nationality || undefined,
+      current_club: newPlayer.current_club || undefined,
+      market_value: newPlayer.market_value ? parseFloat(newPlayer.market_value) : undefined,
+      contract_until: newPlayer.contract_until || undefined,
+      transfermarkt_url: newPlayer.transfermarkt_url || undefined,
+      category: newPlayer.category,
+      potential_clubs: newPlayer.potential_clubs,
+      notes: newPlayer.notes || undefined,
+      status: newPlayer.status,
+      strengths: newPlayer.strengths || undefined,
+      foot: newPlayer.foot || undefined,
+      height: newPlayer.height ? parseFloat(newPlayer.height) : undefined,
     };
-    console.log("Creating player with data:", playerData);
+    
     createPlayerMutation.mutate(playerData);
   };
 
@@ -240,7 +251,7 @@ export default function Players() {
                         <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 font-semibold">
                           {player.position}
                         </Badge>
-                        {player.secondary_positions?.map((pos) => (
+                        {Array.isArray(player.secondary_positions) && player.secondary_positions.map((pos) => (
                           <Badge key={pos} variant="outline" className="border-slate-200 text-xs">
                             {pos}
                           </Badge>

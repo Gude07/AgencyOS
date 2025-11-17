@@ -67,12 +67,25 @@ export default function PlayerDetail() {
 
   const handleSavePlayer = () => {
     const playerData = {
-      ...editedPlayer,
+      name: editedPlayer.name,
+      position: editedPlayer.position,
+      secondary_positions: Array.isArray(editedPlayer.secondary_positions) ? editedPlayer.secondary_positions : [],
+      date_of_birth: editedPlayer.date_of_birth || undefined,
       age: editedPlayer.age ? parseInt(editedPlayer.age) : undefined,
+      nationality: editedPlayer.nationality || undefined,
+      current_club: editedPlayer.current_club || undefined,
       market_value: editedPlayer.market_value ? parseFloat(editedPlayer.market_value) : undefined,
+      contract_until: editedPlayer.contract_until || undefined,
+      transfermarkt_url: editedPlayer.transfermarkt_url || undefined,
+      category: editedPlayer.category,
+      potential_clubs: editedPlayer.potential_clubs || [],
+      notes: editedPlayer.notes || undefined,
+      status: editedPlayer.status,
+      strengths: editedPlayer.strengths || undefined,
+      foot: editedPlayer.foot || undefined,
       height: editedPlayer.height ? parseFloat(editedPlayer.height) : undefined,
-      secondary_positions: editedPlayer.secondary_positions || [],
     };
+    
     updatePlayerMutation.mutate({ id: playerId, data: playerData });
   };
 
@@ -87,7 +100,7 @@ export default function PlayerDetail() {
     setEditMode(true);
     setEditedPlayer({
       ...player,
-      secondary_positions: player.secondary_positions || []
+      secondary_positions: Array.isArray(player.secondary_positions) ? player.secondary_positions : []
     });
   };
 
@@ -96,7 +109,7 @@ export default function PlayerDetail() {
 
     // Position muss übereinstimmen - K.O. Kriterium
     const mainPositionMatch = player.position === request.position_needed;
-    const secondaryPositionMatch = player.secondary_positions?.includes(request.position_needed);
+    const secondaryPositionMatch = Array.isArray(player.secondary_positions) && player.secondary_positions.includes(request.position_needed);
     
     if (!mainPositionMatch && !secondaryPositionMatch) {
       return 0;
@@ -178,6 +191,7 @@ export default function PlayerDetail() {
     .sort((a, b) => b.matchScore - a.matchScore);
 
   const currentPlayerData = editMode ? editedPlayer : player;
+  const currentSecondaryPositions = Array.isArray(currentPlayerData.secondary_positions) ? currentPlayerData.secondary_positions : [];
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
@@ -289,7 +303,7 @@ export default function PlayerDetail() {
                           <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 font-semibold">
                             {currentPlayerData.position}
                           </Badge>
-                          {currentPlayerData.secondary_positions?.map((pos) => (
+                          {currentSecondaryPositions.map((pos) => (
                             <Badge key={pos} variant="outline" className="border-slate-200">
                               {pos}
                             </Badge>
@@ -324,7 +338,7 @@ export default function PlayerDetail() {
                             </div>
                             <SecondaryPositionsEditor
                               mainPosition={editedPlayer.position}
-                              secondaryPositions={editedPlayer.secondary_positions || []}
+                              secondaryPositions={editedPlayer.secondary_positions}
                               onChange={(positions) => setEditedPlayer({...editedPlayer, secondary_positions: positions})}
                             />
                           </div>

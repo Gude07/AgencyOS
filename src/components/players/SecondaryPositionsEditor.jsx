@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, X } from "lucide-react";
 
-const positions = [
+const ALL_POSITIONS = [
   "Torwart",
   "Innenverteidiger",
   "Außenverteidiger",
@@ -22,22 +22,27 @@ const positions = [
   "Stürmer"
 ];
 
-export default function SecondaryPositionsEditor({ mainPosition, secondaryPositions = [], onChange }) {
+export default function SecondaryPositionsEditor({ mainPosition, secondaryPositions, onChange }) {
   const [selectedPosition, setSelectedPosition] = useState("");
+  
+  // Ensure secondaryPositions is always an array
+  const currentPositions = Array.isArray(secondaryPositions) ? secondaryPositions : [];
 
-  const availablePositions = positions.filter(
-    pos => pos !== mainPosition && !secondaryPositions.includes(pos)
+  const availablePositions = ALL_POSITIONS.filter(
+    pos => pos !== mainPosition && !currentPositions.includes(pos)
   );
 
   const handleAdd = () => {
-    if (selectedPosition && !secondaryPositions.includes(selectedPosition)) {
-      onChange([...secondaryPositions, selectedPosition]);
+    if (selectedPosition && !currentPositions.includes(selectedPosition)) {
+      const updated = [...currentPositions, selectedPosition];
+      onChange(updated);
       setSelectedPosition("");
     }
   };
 
   const handleRemove = (position) => {
-    onChange(secondaryPositions.filter(p => p !== position));
+    const updated = currentPositions.filter(p => p !== position);
+    onChange(updated);
   };
 
   return (
@@ -49,11 +54,17 @@ export default function SecondaryPositionsEditor({ mainPosition, secondaryPositi
             <SelectValue placeholder="Nebenposition hinzufügen..." />
           </SelectTrigger>
           <SelectContent>
-            {availablePositions.map(pos => (
-              <SelectItem key={pos} value={pos}>
-                {pos}
+            {availablePositions.length > 0 ? (
+              availablePositions.map(pos => (
+                <SelectItem key={pos} value={pos}>
+                  {pos}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="none" disabled>
+                Keine weiteren Positionen verfügbar
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
         <Button
@@ -61,25 +72,27 @@ export default function SecondaryPositionsEditor({ mainPosition, secondaryPositi
           size="icon"
           variant="outline"
           onClick={handleAdd}
-          disabled={!selectedPosition}
+          disabled={!selectedPosition || availablePositions.length === 0}
         >
           <Plus className="w-4 h-4" />
         </Button>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {secondaryPositions.map((position) => (
-          <Badge key={position} variant="secondary" className="bg-slate-100 text-slate-800">
-            {position}
-            <button
-              type="button"
-              onClick={() => handleRemove(position)}
-              className="ml-2 hover:text-slate-900"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </Badge>
-        ))}
-      </div>
+      {currentPositions.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {currentPositions.map((position) => (
+            <Badge key={position} variant="secondary" className="bg-slate-100 text-slate-800 border border-slate-200">
+              {position}
+              <button
+                type="button"
+                onClick={() => handleRemove(position)}
+                className="ml-2 hover:text-slate-900 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
