@@ -9,6 +9,7 @@ import ClubRequests from './pages/ClubRequests';
 import ClubRequestDetail from './pages/ClubRequestDetail';
 import Coaches from './pages/Coaches';
 import CoachDetail from './pages/CoachDetail';
+import ClubRequestsDashboard from './pages/ClubRequestsDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -24,6 +25,7 @@ export const PAGES = {
     "ClubRequestDetail": ClubRequestDetail,
     "Coaches": Coaches,
     "CoachDetail": CoachDetail,
+    "ClubRequestsDashboard": ClubRequestsDashboard,
 }
 
 export const pagesConfig = {

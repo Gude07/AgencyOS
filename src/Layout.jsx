@@ -11,7 +11,8 @@ import {
   UserCog,
   Menu,
   X,
-  LogOut
+  LogOut,
+  Inbox
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import {
@@ -62,6 +63,11 @@ const transferItems = [
     title: "Trainer",
     url: createPageUrl("Coaches"),
     icon: UserCog,
+  },
+  {
+    title: "Anfragen Dashboard",
+    url: createPageUrl("ClubRequestsDashboard"),
+    icon: Inbox,
   },
   {
     title: "Vereinsanfragen",
