@@ -87,11 +87,15 @@ export default function Layout({ children, currentPageName }) {
         <Sidebar className="border-r border-slate-200 bg-white">
           <SidebarHeader className="border-b border-slate-100 p-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-900 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
-                <span className="text-white font-bold text-lg">S</span>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden bg-white">
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69175f86bfb516d23d496067/a03e36395_0a2a8123-bc63-4947-9283-2f5b930988cb.jpg" 
+                  alt="STS Sports Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
-                <h2 className="font-bold text-slate-900 text-lg">STS Sport</h2>
+                <h2 className="font-bold text-slate-900 text-lg">STS Sports</h2>
                 <p className="text-xs text-slate-500">Spieleragentur</p>
               </div>
             </div>
