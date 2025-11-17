@@ -27,6 +27,7 @@ import {
   SidebarFooter,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+import OnlineUsers from "@/components/OnlineUsers";
 
 const navigationItems = [
   {
@@ -161,6 +162,8 @@ export default function Layout({ children, currentPageName }) {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+
+            <OnlineUsers />
           </SidebarContent>
 
           <SidebarFooter className="border-t border-slate-100 p-4">
