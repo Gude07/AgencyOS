@@ -14,6 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Calendar, User, MessageSquare, Plus, Trash2, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +43,7 @@ export default function TaskDetail() {
   const [editedTask, setEditedTask] = useState(null);
   const [newComment, setNewComment] = useState("");
   const [newSubtask, setNewSubtask] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const { data: task, isLoading } = useQuery({
     queryKey: ['task', taskId],
@@ -68,6 +79,14 @@ export default function TaskDetail() {
     },
   });
 
+  const deleteTaskMutation = useMutation({
+    mutationFn: (id) => base44.entities.Task.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      navigate(createPageUrl("Tasks"));
+    },
+  });
+
   const createCommentMutation = useMutation({
     mutationFn: (commentData) => base44.entities.Comment.create(commentData),
     onSuccess: () => {
@@ -78,6 +97,10 @@ export default function TaskDetail() {
 
   const handleSaveTask = () => {
     updateTaskMutation.mutate({ id: taskId, data: editedTask });
+  };
+
+  const handleDeleteTask = () => {
+    deleteTaskMutation.mutate(taskId);
   };
 
   const handleAddComment = () => {
@@ -151,9 +174,19 @@ export default function TaskDetail() {
             <h1 className="text-2xl font-bold text-slate-900">Aufgabendetails</h1>
           </div>
           {!editMode ? (
-            <Button onClick={() => { setEditMode(true); setEditedTask(task); }} variant="outline">
-              Bearbeiten
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => { setEditMode(true); setEditedTask(task); }} variant="outline">
+                Bearbeiten
+              </Button>
+              <Button 
+                onClick={() => setShowDeleteDialog(true)} 
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Löschen
+              </Button>
+            </div>
           ) : (
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setEditMode(false)}>
@@ -447,6 +480,26 @@ export default function TaskDetail() {
             </Card>
           </div>
         </div>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Aufgabe löschen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Sind Sie sicher, dass Sie "{task.title}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteTask}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Löschen
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
