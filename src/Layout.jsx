@@ -8,6 +8,7 @@ import {
   BarChart3,
   Users,
   Building2,
+  UserCog,
   Menu,
   X,
   LogOut
@@ -55,6 +56,11 @@ const transferItems = [
     title: "Spieler",
     url: createPageUrl("Players"),
     icon: Users,
+  },
+  {
+    title: "Trainer",
+    url: createPageUrl("Coaches"),
+    icon: UserCog,
   },
   {
     title: "Vereinsanfragen",
