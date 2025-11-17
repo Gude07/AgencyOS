@@ -79,19 +79,19 @@ export default function TaskDetail() {
     },
   });
 
-  const deleteTaskMutation = useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      navigate(createPageUrl("Tasks"));
-    },
-  });
-
   const createCommentMutation = useMutation({
     mutationFn: (commentData) => base44.entities.Comment.create(commentData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', taskId] });
       setNewComment("");
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: (id) => base44.entities.Task.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      navigate(createPageUrl("Tasks"));
     },
   });
 
@@ -175,16 +175,12 @@ export default function TaskDetail() {
           </div>
           {!editMode ? (
             <div className="flex gap-2">
-              <Button onClick={() => { setEditMode(true); setEditedTask(task); }} variant="outline">
-                Bearbeiten
-              </Button>
-              <Button 
-                onClick={() => setShowDeleteDialog(true)} 
-                variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
+              <Button onClick={() => setShowDeleteDialog(true)} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Löschen
+              </Button>
+              <Button onClick={() => { setEditMode(true); setEditedTask(task); }} variant="outline">
+                Bearbeiten
               </Button>
             </div>
           ) : (
@@ -486,15 +482,12 @@ export default function TaskDetail() {
             <AlertDialogHeader>
               <AlertDialogTitle>Aufgabe löschen?</AlertDialogTitle>
               <AlertDialogDescription>
-                Sind Sie sicher, dass Sie "{task.title}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+                Sind Sie sicher, dass Sie "{task.title}" dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteTask}
-                className="bg-red-600 hover:bg-red-700"
-              >
+              <AlertDialogAction onClick={handleDeleteTask} className="bg-red-600 hover:bg-red-700">
                 Löschen
               </AlertDialogAction>
             </AlertDialogFooter>
