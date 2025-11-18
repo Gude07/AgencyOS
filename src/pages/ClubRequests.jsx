@@ -17,6 +17,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -349,21 +351,33 @@ export default function ClubRequests() {
                       <SelectValue placeholder="Wählen..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Torwart">Torwart</SelectItem>
-                      <SelectItem value="Innenverteidiger">Innenverteidiger</SelectItem>
-                      <SelectItem value="Außenverteidiger">Außenverteidiger (beide Seiten)</SelectItem>
-                      <SelectItem value="Linker Außenverteidiger">Linker Außenverteidiger</SelectItem>
-                      <SelectItem value="Rechter Außenverteidiger">Rechter Außenverteidiger</SelectItem>
-                      <SelectItem value="Defensives Mittelfeld">Defensives Mittelfeld</SelectItem>
-                      <SelectItem value="Mittelfeld">Mittelfeld (beide Seiten)</SelectItem>
-                      <SelectItem value="Linkes Mittelfeld">Linkes Mittelfeld</SelectItem>
-                      <SelectItem value="Zentrales Mittelfeld">Zentrales Mittelfeld</SelectItem>
-                      <SelectItem value="Rechtes Mittelfeld">Rechtes Mittelfeld</SelectItem>
-                      <SelectItem value="Offensives Mittelfeld">Offensives Mittelfeld</SelectItem>
-                      <SelectItem value="Flügelspieler">Flügelspieler (beide Seiten)</SelectItem>
-                      <SelectItem value="Linksaußen">Linksaußen</SelectItem>
-                      <SelectItem value="Rechtsaußen">Rechtsaußen</SelectItem>
-                      <SelectItem value="Stürmer">Stürmer</SelectItem>
+                      <SelectGroup>
+                        <SelectLabel>Torwart</SelectLabel>
+                        <SelectItem value="Torwart">Torwart</SelectItem>
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Verteidigung</SelectLabel>
+                        <SelectItem value="Innenverteidiger">Innenverteidiger</SelectItem>
+                        <SelectItem value="Außenverteidiger">Außenverteidiger (beide Seiten)</SelectItem>
+                        <SelectItem value="Linker Außenverteidiger">Linker Außenverteidiger</SelectItem>
+                        <SelectItem value="Rechter Außenverteidiger">Rechter Außenverteidiger</SelectItem>
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Mittelfeld</SelectLabel>
+                        <SelectItem value="Defensives Mittelfeld">Defensives Mittelfeld</SelectItem>
+                        <SelectItem value="Mittelfeld">Mittelfeld (beide Seiten)</SelectItem>
+                        <SelectItem value="Linkes Mittelfeld">Linkes Mittelfeld</SelectItem>
+                        <SelectItem value="Zentrales Mittelfeld">Zentrales Mittelfeld</SelectItem>
+                        <SelectItem value="Rechtes Mittelfeld">Rechtes Mittelfeld</SelectItem>
+                        <SelectItem value="Offensives Mittelfeld">Offensives Mittelfeld</SelectItem>
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Angriff</SelectLabel>
+                        <SelectItem value="Flügelspieler">Flügelspieler (beide Seiten)</SelectItem>
+                        <SelectItem value="Linksaußen">Linksaußen</SelectItem>
+                        <SelectItem value="Rechtsaußen">Rechtsaußen</SelectItem>
+                        <SelectItem value="Stürmer">Stürmer</SelectItem>
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>
