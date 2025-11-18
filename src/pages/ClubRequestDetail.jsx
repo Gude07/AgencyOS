@@ -103,6 +103,8 @@ export default function ClubRequestDetail() {
       ...editedRequest,
       budget_min: editedRequest.budget_min ? parseFloat(editedRequest.budget_min) : undefined,
       budget_max: editedRequest.budget_max ? parseFloat(editedRequest.budget_max) : undefined,
+      salary_min: editedRequest.salary_min ? parseFloat(editedRequest.salary_min) : undefined,
+      salary_max: editedRequest.salary_max ? parseFloat(editedRequest.salary_max) : undefined,
       age_min: editedRequest.age_min ? parseInt(editedRequest.age_min) : undefined,
       age_max: editedRequest.age_max ? parseInt(editedRequest.age_max) : undefined,
     };
@@ -570,6 +572,50 @@ export default function ClubRequestDetail() {
                         {currentRequestData.budget_min ? `${(currentRequestData.budget_min / 1000000).toFixed(1)}M` : '?'} - 
                         {currentRequestData.budget_max ? ` ${(currentRequestData.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
                       </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-sm text-slate-600 mb-1.5 block">Gehalt ({currentRequestData.salary_period || 'jährlich'})</Label>
+                    {editMode ? (
+                      <>
+                        <Select 
+                          value={editedRequest.salary_period || "jährlich"} 
+                          onValueChange={(value) => setEditedRequest({...editedRequest, salary_period: value})}
+                          className="mb-2"
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="monatlich">Monatlich</SelectItem>
+                            <SelectItem value="jährlich">Jährlich</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Min"
+                            value={editedRequest.salary_min || ""}
+                            onChange={(e) => setEditedRequest({...editedRequest, salary_min: e.target.value})}
+                          />
+                          <Input
+                            type="number"
+                            placeholder="Max"
+                            value={editedRequest.salary_max || ""}
+                            onChange={(e) => setEditedRequest({...editedRequest, salary_max: e.target.value})}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      currentRequestData.salary_min || currentRequestData.salary_max ? (
+                        <p className="font-semibold text-slate-900">
+                          {currentRequestData.salary_min ? `${(currentRequestData.salary_min / 1000).toFixed(0)}K` : '?'} - 
+                          {currentRequestData.salary_max ? ` ${(currentRequestData.salary_max / 1000).toFixed(0)}K €` : ' ?'}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-slate-400 italic">Keine Angabe</p>
+                      )
                     )}
                   </div>
 

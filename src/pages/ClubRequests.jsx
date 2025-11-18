@@ -59,6 +59,9 @@ export default function ClubRequests() {
     country: "",
     budget_min: "",
     budget_max: "",
+    salary_min: "",
+    salary_max: "",
+    salary_period: "jährlich",
     age_min: "",
     age_max: "",
     transfer_period: "",
@@ -87,6 +90,9 @@ export default function ClubRequests() {
         country: "",
         budget_min: "",
         budget_max: "",
+        salary_min: "",
+        salary_max: "",
+        salary_period: "jährlich",
         age_min: "",
         age_max: "",
         transfer_period: "",
@@ -102,6 +108,8 @@ export default function ClubRequests() {
       ...newRequest,
       budget_min: newRequest.budget_min ? parseFloat(newRequest.budget_min) : undefined,
       budget_max: newRequest.budget_max ? parseFloat(newRequest.budget_max) : undefined,
+      salary_min: newRequest.salary_min ? parseFloat(newRequest.salary_min) : undefined,
+      salary_max: newRequest.salary_max ? parseFloat(newRequest.salary_max) : undefined,
       age_min: newRequest.age_min ? parseInt(newRequest.age_min) : undefined,
       age_max: newRequest.age_max ? parseInt(newRequest.age_max) : undefined,
     };
@@ -402,6 +410,43 @@ export default function ClubRequests() {
                     value={newRequest.budget_max}
                     onChange={(e) => setNewRequest({...newRequest, budget_max: e.target.value})}
                     placeholder="2000000"
+                    className="mt-1.5"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <Label htmlFor="salary_period">Gehaltszeitraum</Label>
+                  <Select value={newRequest.salary_period} onValueChange={(value) => setNewRequest({...newRequest, salary_period: value})}>
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monatlich">Monatlich</SelectItem>
+                      <SelectItem value="jährlich">Jährlich</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="salary_min">Min. Gehalt (€)</Label>
+                  <Input
+                    id="salary_min"
+                    type="number"
+                    value={newRequest.salary_min}
+                    onChange={(e) => setNewRequest({...newRequest, salary_min: e.target.value})}
+                    placeholder="50000"
+                    className="mt-1.5"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="salary_max">Max. Gehalt (€)</Label>
+                  <Input
+                    id="salary_max"
+                    type="number"
+                    value={newRequest.salary_max}
+                    onChange={(e) => setNewRequest({...newRequest, salary_max: e.target.value})}
+                    placeholder="200000"
                     className="mt-1.5"
                   />
                 </div>
