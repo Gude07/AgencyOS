@@ -26,6 +26,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
+import LanguagesEditor from "../components/coaches/LanguagesEditor";
 
 const categoryColors = {
   "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-200",
@@ -477,6 +478,13 @@ export default function Coaches() {
                     onChange={(e) => setNewCoach({...newCoach, achievements: e.target.value})}
                     placeholder="Titel, Auszeichnungen..."
                     className="mt-1.5 h-20"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <LanguagesEditor
+                    languages={newCoach.languages}
+                    onChange={(languages) => setNewCoach({...newCoach, languages: languages})}
                   />
                 </div>
 

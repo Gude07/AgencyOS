@@ -24,10 +24,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Building2, Mail, Phone, Award, Trash2 } from "lucide-react";
+import { ArrowLeft, Building2, Mail, Phone, Award, Trash2, Languages as LanguagesIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
+import LanguagesEditor from "../components/coaches/LanguagesEditor";
 
 const categoryColors = {
   "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-200",
@@ -340,6 +341,29 @@ export default function CoachDetail() {
                     )}
                   </div>
                 )}
+
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">Sprachen</Label>
+                  {editMode ? (
+                    <LanguagesEditor
+                      languages={editedCoach?.languages || []}
+                      onChange={(languages) => setEditedCoach({...editedCoach, languages: languages})}
+                    />
+                  ) : (
+                    currentCoachData?.languages?.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {currentCoachData.languages.map((lang) => (
+                          <Badge key={lang} variant="secondary" className="bg-blue-50 text-blue-900 border-blue-200">
+                            <LanguagesIcon className="w-3 h-3 mr-1" />
+                            {lang}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Keine Sprachen angegeben</p>
+                    )
+                  )}
+                </div>
 
                 <div>
                   <Label className="text-sm font-semibold text-slate-700 mb-2 block">Notizen</Label>
