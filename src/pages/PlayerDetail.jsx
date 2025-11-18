@@ -536,7 +536,7 @@ export default function PlayerDetail() {
                         ) : (
                           <p className="font-semibold text-slate-900">
                             {currentPlayerData?.market_value 
-                              ? `${(currentPlayerData.market_value / 1000000).toFixed(1)}M €`
+                              ? `${(currentPlayerData.market_value / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €`
                               : '-'
                             }
                           </p>
@@ -797,8 +797,8 @@ export default function PlayerDetail() {
                             <div className="text-sm">
                               <span className="text-slate-600">Budget: </span>
                               <span className="font-semibold text-slate-900">
-                                {request.budget_min ? `${(request.budget_min / 1000000).toFixed(1)}M` : '?'} - 
-                                {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
+                                {request.budget_min ? `${(request.budget_min / 1000000).toFixed(2).replace(/\.?0+$/, '')}M` : '?'} - 
+                                {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : ' ?'}
                               </span>
                             </div>
                           </div>

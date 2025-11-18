@@ -273,7 +273,7 @@ export default function CoachDetail() {
                     ) : (
                       <p className="font-semibold text-slate-900">
                         {currentCoachData?.salary_expectation 
-                          ? `${(currentCoachData.salary_expectation / 1000).toFixed(0)}k €`
+                          ? `${Math.round(currentCoachData.salary_expectation / 1000)}k €`
                           : '-'
                         }
                       </p>
