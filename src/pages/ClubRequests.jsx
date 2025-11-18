@@ -20,9 +20,10 @@ import {
   SelectGroup,
   SelectLabel,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Building2, Mail, Phone, ChevronRight } from "lucide-react";
+import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -48,6 +49,7 @@ export default function ClubRequests() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("alle");
+  const [filterFavorites, setFilterFavorites] = useState("alle");
 
   const [newRequest, setNewRequest] = useState({
     club_name: "",
@@ -73,6 +75,24 @@ export default function ClubRequests() {
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['clubRequests'],
     queryFn: () => base44.entities.ClubRequest.list('-created_date'),
+  });
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async (requestId) => {
+      const favorites = currentUser?.favorite_club_requests || [];
+      const newFavorites = favorites.includes(requestId)
+        ? favorites.filter(id => id !== requestId)
+        : [...favorites, requestId];
+      await base44.auth.updateMe({ favorite_club_requests: newFavorites });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
   });
 
   const createRequestMutation = useMutation({
@@ -116,12 +136,16 @@ export default function ClubRequests() {
     createRequestMutation.mutate(requestData);
   };
 
+  const userFavorites = currentUser?.favorite_club_requests || [];
+
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.club_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.position_needed?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "alle" || request.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
+    const matchesFavorites = filterFavorites === "alle" || 
+                             (filterFavorites === "favoriten" && userFavorites.includes(request.id));
+
+    return matchesSearch && matchesStatus && matchesFavorites;
   });
 
   const stats = [
@@ -167,6 +191,16 @@ export default function ClubRequests() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+          <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
+            <TabsList className="bg-slate-100">
+              <TabsTrigger value="alle">Alle</TabsTrigger>
+              <TabsTrigger value="favoriten" className="flex items-center gap-2">
+                <Star className="w-4 h-4" />
+                Favoriten ({userFavorites.length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -177,7 +211,7 @@ export default function ClubRequests() {
                 className="pl-10 border-slate-200"
               />
             </div>
-            
+
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-full md:w-[200px] border-slate-200">
                 <SelectValue placeholder="Status" />
@@ -204,12 +238,23 @@ export default function ClubRequests() {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <Card 
-                  className="hover:shadow-md transition-all duration-200 cursor-pointer border border-slate-200 bg-white"
-                  onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
+                  className="hover:shadow-md transition-all duration-200 border border-slate-200 bg-white relative"
                 >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavoriteMutation.mutate(request.id);
+                    }}
+                    className="absolute top-3 right-3 z-10 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
+                    <Star 
+                      className={`w-5 h-5 ${userFavorites.includes(request.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`}
+                    />
+                  </button>
+                  <div onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)} className="cursor-pointer">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 pr-8">
                         <div className="flex items-center gap-2 mb-2">
                           <Building2 className="w-5 h-5 text-blue-900 flex-shrink-0" />
                           <h3 className="font-bold text-lg text-slate-900 truncate">{request.club_name}</h3>
@@ -224,10 +269,9 @@ export default function ClubRequests() {
                           </Badge>
                         </div>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0 space-y-3">
+                      </div>
+                      </CardHeader>
+                      <CardContent className="pt-0 space-y-3">
                     <div className="p-3 bg-slate-50 rounded-lg">
                       <p className="text-xs text-slate-600 mb-1">Gesuchte Position</p>
                       <p className="font-semibold text-slate-900">{request.position_needed}</p>
@@ -262,9 +306,10 @@ export default function ClubRequests() {
                           <p className="text-slate-500 text-xs mt-1 truncate">{request.contact_email}</p>
                         )}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      )}
+                      </CardContent>
+                      </div>
+                      </Card>
               </motion.div>
             ))}
           </AnimatePresence>
