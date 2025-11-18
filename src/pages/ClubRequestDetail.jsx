@@ -569,11 +569,11 @@ export default function ClubRequestDetail() {
                       </div>
                     ) : (
                       <p className="font-semibold text-slate-900">
-                        {currentRequestData.budget_min ? `${(currentRequestData.budget_min / 1000000).toFixed(1)}M` : '?'} - 
-                        {currentRequestData.budget_max ? ` ${(currentRequestData.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
+                        {currentRequestData.budget_min ? `${(currentRequestData.budget_min / 1000000).toFixed(2).replace(/\.?0+$/, '')}M` : '?'} - 
+                        {currentRequestData.budget_max ? ` ${(currentRequestData.budget_max / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : ' ?'}
                       </p>
                     )}
-                  </div>
+                    </div>
 
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Gehalt ({currentRequestData.salary_period || 'jährlich'})</Label>
@@ -610,14 +610,14 @@ export default function ClubRequestDetail() {
                     ) : (
                       currentRequestData.salary_min || currentRequestData.salary_max ? (
                         <p className="font-semibold text-slate-900">
-                          {currentRequestData.salary_min ? `${(currentRequestData.salary_min / 1000).toFixed(0)}K` : '?'} - 
-                          {currentRequestData.salary_max ? ` ${(currentRequestData.salary_max / 1000).toFixed(0)}K €` : ' ?'}
+                          {currentRequestData.salary_min ? `${Math.round(currentRequestData.salary_min / 1000)}K` : '?'} - 
+                          {currentRequestData.salary_max ? ` ${Math.round(currentRequestData.salary_max / 1000)}K €` : ' ?'}
                         </p>
                       ) : (
                         <p className="text-sm text-slate-400 italic">Keine Angabe</p>
                       )
                     )}
-                  </div>
+                    </div>
 
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Altersbereich</Label>

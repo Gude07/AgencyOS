@@ -281,8 +281,8 @@ export default function ClubRequests() {
                       <div>
                         <p className="text-slate-600">Budget</p>
                         <p className="font-semibold text-slate-900">
-                          {request.budget_min ? `${(request.budget_min / 1000000).toFixed(1)}M` : '?'} - 
-                          {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
+                          {request.budget_min ? `${(request.budget_min / 1000000).toFixed(2).replace(/\.?0+$/, '')}M` : '?'} - 
+                          {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : ' ?'}
                         </p>
                       </div>
                       <div>

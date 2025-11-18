@@ -293,7 +293,7 @@ export default function Players() {
                       <div>
                         <p className="text-slate-600">Marktwert</p>
                         <p className="font-semibold text-slate-900">
-                          {player.market_value ? `${(player.market_value / 1000000).toFixed(1)}M €` : '-'}
+                          {player.market_value ? `${(player.market_value / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : '-'}
                         </p>
                       </div>
                       <div>
