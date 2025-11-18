@@ -9,13 +9,24 @@ import { Save, Plus, X } from "lucide-react";
 
 export default function PlayerPreferences({ preferences = {}, onSave }) {
   const [editedPreferences, setEditedPreferences] = useState({
-    preferred_leagues: preferences.preferred_leagues || [],
-    preferred_countries: preferences.preferred_countries || [],
+    preferred_leagues: Array.isArray(preferences.preferred_leagues) ? preferences.preferred_leagues : [],
+    preferred_countries: Array.isArray(preferences.preferred_countries) ? preferences.preferred_countries : [],
     min_salary: preferences.min_salary || "",
     max_salary: preferences.max_salary || "",
-    excluded_clubs: preferences.excluded_clubs || [],
+    excluded_clubs: Array.isArray(preferences.excluded_clubs) ? preferences.excluded_clubs : [],
     career_goals: preferences.career_goals || "",
   });
+
+  React.useEffect(() => {
+    setEditedPreferences({
+      preferred_leagues: Array.isArray(preferences.preferred_leagues) ? preferences.preferred_leagues : [],
+      preferred_countries: Array.isArray(preferences.preferred_countries) ? preferences.preferred_countries : [],
+      min_salary: preferences.min_salary || "",
+      max_salary: preferences.max_salary || "",
+      excluded_clubs: Array.isArray(preferences.excluded_clubs) ? preferences.excluded_clubs : [],
+      career_goals: preferences.career_goals || "",
+    });
+  }, [preferences]);
 
   const [newLeague, setNewLeague] = useState("");
   const [newCountry, setNewCountry] = useState("");
