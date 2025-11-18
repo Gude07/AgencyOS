@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -371,17 +370,41 @@ export default function ClubRequestDetail() {
                     )}
                   </div>
                   {editMode ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        value={editedRequest.league || ""}
-                        onChange={(e) => setEditedRequest({...editedRequest, league: e.target.value})}
-                        placeholder="Liga"
-                      />
-                      <Input
-                        value={editedRequest.country || ""}
-                        onChange={(e) => setEditedRequest({...editedRequest, country: e.target.value})}
-                        placeholder="Land"
-                      />
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          value={editedRequest.league || ""}
+                          onChange={(e) => setEditedRequest({...editedRequest, league: e.target.value})}
+                          placeholder="Liga"
+                        />
+                        <Input
+                          value={editedRequest.country || ""}
+                          onChange={(e) => setEditedRequest({...editedRequest, country: e.target.value})}
+                          placeholder="Land"
+                        />
+                      </div>
+                      <Select 
+                        value={editedRequest.position_needed} 
+                        onValueChange={(value) => setEditedRequest({...editedRequest, position_needed: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Position" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Torwart">Torwart</SelectItem>
+                          <SelectItem value="Innenverteidiger">Innenverteidiger</SelectItem>
+                          <SelectItem value="Linker Außenverteidiger">Linker Außenverteidiger</SelectItem>
+                          <SelectItem value="Rechter Außenverteidiger">Rechter Außenverteidiger</SelectItem>
+                          <SelectItem value="Defensives Mittelfeld">Defensives Mittelfeld</SelectItem>
+                          <SelectItem value="Linkes Mittelfeld">Linkes Mittelfeld</SelectItem>
+                          <SelectItem value="Zentrales Mittelfeld">Zentrales Mittelfeld</SelectItem>
+                          <SelectItem value="Rechtes Mittelfeld">Rechtes Mittelfeld</SelectItem>
+                          <SelectItem value="Offensives Mittelfeld">Offensives Mittelfeld</SelectItem>
+                          <SelectItem value="Linksaußen">Linksaußen</SelectItem>
+                          <SelectItem value="Rechtsaußen">Rechtsaußen</SelectItem>
+                          <SelectItem value="Stürmer">Stürmer</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   ) : (
                     <p className="text-slate-600">{currentRequestData.league} • {currentRequestData.country}</p>
@@ -435,67 +458,154 @@ export default function ClubRequestDetail() {
               <CardContent className="p-6 space-y-6">
                 <div>
                   <Label className="text-sm font-semibold text-slate-700 mb-3 block">Kontaktinformationen</Label>
-                  <div className="space-y-3 p-4 bg-slate-50 rounded-lg">
-                    {currentRequestData.contact_person && (
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-slate-500" />
-                        <span className="text-slate-700">{currentRequestData.contact_person}</span>
-                      </div>
-                    )}
-                    {currentRequestData.contact_email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-slate-500" />
-                        <a href={`mailto:${currentRequestData.contact_email}`} className="text-blue-900 hover:underline text-sm">
-                          {currentRequestData.contact_email}
-                        </a>
-                      </div>
-                    )}
-                    {currentRequestData.contact_phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-slate-500" />
-                        <a href={`tel:${currentRequestData.contact_phone}`} className="text-blue-900 hover:underline">
-                          {currentRequestData.contact_phone}
-                        </a>
-                      </div>
-                    )}
-                  </div>
+                  {editMode ? (
+                    <div className="space-y-3">
+                      <Input
+                        placeholder="Ansprechpartner"
+                        value={editedRequest.contact_person || ""}
+                        onChange={(e) => setEditedRequest({...editedRequest, contact_person: e.target.value})}
+                      />
+                      <Input
+                        type="email"
+                        placeholder="E-Mail"
+                        value={editedRequest.contact_email || ""}
+                        onChange={(e) => setEditedRequest({...editedRequest, contact_email: e.target.value})}
+                      />
+                      <Input
+                        placeholder="Telefon"
+                        value={editedRequest.contact_phone || ""}
+                        onChange={(e) => setEditedRequest({...editedRequest, contact_phone: e.target.value})}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-3 p-4 bg-slate-50 rounded-lg">
+                      {currentRequestData.contact_person && (
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-slate-500" />
+                          <span className="text-slate-700">{currentRequestData.contact_person}</span>
+                        </div>
+                      )}
+                      {currentRequestData.contact_email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-slate-500" />
+                          <a href={`mailto:${currentRequestData.contact_email}`} className="text-blue-900 hover:underline text-sm">
+                            {currentRequestData.contact_email}
+                          </a>
+                        </div>
+                      )}
+                      {currentRequestData.contact_phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-slate-500" />
+                          <a href={`tel:${currentRequestData.contact_phone}`} className="text-blue-900 hover:underline">
+                            {currentRequestData.contact_phone}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Gesuchte Position</Label>
-                    <p className="font-semibold text-slate-900">{currentRequestData.position_needed}</p>
+                    {editMode ? (
+                      <p className="text-sm text-slate-500 italic">Position oben ändern</p>
+                    ) : (
+                      <p className="font-semibold text-slate-900">{currentRequestData.position_needed}</p>
+                    )}
                   </div>
 
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Budget</Label>
-                    <p className="font-semibold text-slate-900">
-                      {currentRequestData.budget_min ? `${(currentRequestData.budget_min / 1000000).toFixed(1)}M` : '?'} - 
-                      {currentRequestData.budget_max ? ` ${(currentRequestData.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
-                    </p>
+                    {editMode ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Min"
+                          value={editedRequest.budget_min || ""}
+                          onChange={(e) => setEditedRequest({...editedRequest, budget_min: e.target.value})}
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Max"
+                          value={editedRequest.budget_max || ""}
+                          onChange={(e) => setEditedRequest({...editedRequest, budget_max: e.target.value})}
+                        />
+                      </div>
+                    ) : (
+                      <p className="font-semibold text-slate-900">
+                        {currentRequestData.budget_min ? `${(currentRequestData.budget_min / 1000000).toFixed(1)}M` : '?'} - 
+                        {currentRequestData.budget_max ? ` ${(currentRequestData.budget_max / 1000000).toFixed(1)}M €` : ' ?'}
+                      </p>
+                    )}
                   </div>
 
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Altersbereich</Label>
-                    <p className="font-semibold text-slate-900">
-                      {currentRequestData.age_min || '?'} - {currentRequestData.age_max || '?'} Jahre
-                    </p>
+                    {editMode ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          type="number"
+                          placeholder="Min"
+                          value={editedRequest.age_min || ""}
+                          onChange={(e) => setEditedRequest({...editedRequest, age_min: e.target.value})}
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Max"
+                          value={editedRequest.age_max || ""}
+                          onChange={(e) => setEditedRequest({...editedRequest, age_max: e.target.value})}
+                        />
+                      </div>
+                    ) : (
+                      <p className="font-semibold text-slate-900">
+                        {currentRequestData.age_min || '?'} - {currentRequestData.age_max || '?'} Jahre
+                      </p>
+                    )}
                   </div>
 
-                  {currentRequestData.transfer_period && (
-                    <div>
-                      <Label className="text-sm text-slate-600 mb-1.5 block">Transferperiode</Label>
-                      <p className="font-semibold text-slate-900">{currentRequestData.transfer_period}</p>
-                    </div>
-                  )}
+                  <div>
+                    <Label className="text-sm text-slate-600 mb-1.5 block">Transferperiode</Label>
+                    {editMode ? (
+                      <Select 
+                        value={editedRequest.transfer_period || ""} 
+                        onValueChange={(value) => setEditedRequest({...editedRequest, transfer_period: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Wählen..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Winter 2024/25">Winter 2024/25</SelectItem>
+                          <SelectItem value="Sommer 2025">Sommer 2025</SelectItem>
+                          <SelectItem value="Winter 2025/26">Winter 2025/26</SelectItem>
+                          <SelectItem value="Sommer 2026">Sommer 2026</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      currentRequestData.transfer_period && (
+                        <p className="font-semibold text-slate-900">{currentRequestData.transfer_period}</p>
+                      )
+                    )}
+                  </div>
                 </div>
 
-                {currentRequestData.requirements && (
-                  <div>
-                    <Label className="text-sm font-semibold text-slate-700 mb-2 block">Anforderungen</Label>
-                    <p className="text-sm text-slate-600">{currentRequestData.requirements}</p>
-                  </div>
-                )}
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">Anforderungen</Label>
+                  {editMode ? (
+                    <Textarea
+                      value={editedRequest.requirements || ""}
+                      onChange={(e) => setEditedRequest({...editedRequest, requirements: e.target.value})}
+                      placeholder="Weitere Anforderungen..."
+                      className="h-24"
+                    />
+                  ) : (
+                    currentRequestData.requirements ? (
+                      <p className="text-sm text-slate-600">{currentRequestData.requirements}</p>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">Keine Anforderungen angegeben</p>
+                    )
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
