@@ -134,9 +134,25 @@ export default function ClubRequestDetail() {
   const calculateMatchScore = (player) => {
     if (!request) return 0;
 
-    const mainPositionMatch = player.position === request.position_needed;
-    const secondaryPositionMatch = player.secondary_positions?.includes(request.position_needed);
-    
+    const checkPositionMatch = (playerPos, requestedPos) => {
+      if (playerPos === requestedPos) return 'main';
+
+      // Oberkategorie-Matching
+      if (requestedPos === "Außenverteidiger" && 
+          (playerPos === "Linker Außenverteidiger" || playerPos === "Rechter Außenverteidiger")) return 'main';
+      if (requestedPos === "Mittelfeld" && 
+          (playerPos === "Linkes Mittelfeld" || playerPos === "Rechtes Mittelfeld")) return 'main';
+      if (requestedPos === "Flügelspieler" && 
+          (playerPos === "Linksaußen" || playerPos === "Rechtsaußen")) return 'main';
+
+      return null;
+    };
+
+    const mainPositionMatch = checkPositionMatch(player.position, request.position_needed);
+    const secondaryPositionMatch = player.secondary_positions?.some(pos => 
+      checkPositionMatch(pos, request.position_needed)
+    );
+
     if (!mainPositionMatch && !secondaryPositionMatch) {
       return 0;
     }
@@ -393,13 +409,16 @@ export default function ClubRequestDetail() {
                         <SelectContent>
                           <SelectItem value="Torwart">Torwart</SelectItem>
                           <SelectItem value="Innenverteidiger">Innenverteidiger</SelectItem>
+                          <SelectItem value="Außenverteidiger">Außenverteidiger (beide Seiten)</SelectItem>
                           <SelectItem value="Linker Außenverteidiger">Linker Außenverteidiger</SelectItem>
                           <SelectItem value="Rechter Außenverteidiger">Rechter Außenverteidiger</SelectItem>
                           <SelectItem value="Defensives Mittelfeld">Defensives Mittelfeld</SelectItem>
+                          <SelectItem value="Mittelfeld">Mittelfeld (beide Seiten)</SelectItem>
                           <SelectItem value="Linkes Mittelfeld">Linkes Mittelfeld</SelectItem>
                           <SelectItem value="Zentrales Mittelfeld">Zentrales Mittelfeld</SelectItem>
                           <SelectItem value="Rechtes Mittelfeld">Rechtes Mittelfeld</SelectItem>
                           <SelectItem value="Offensives Mittelfeld">Offensives Mittelfeld</SelectItem>
+                          <SelectItem value="Flügelspieler">Flügelspieler (beide Seiten)</SelectItem>
                           <SelectItem value="Linksaußen">Linksaußen</SelectItem>
                           <SelectItem value="Rechtsaußen">Rechtsaußen</SelectItem>
                           <SelectItem value="Stürmer">Stürmer</SelectItem>
