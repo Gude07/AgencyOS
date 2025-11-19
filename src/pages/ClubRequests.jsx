@@ -23,7 +23,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star } from "lucide-react";
+import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -50,6 +50,12 @@ export default function ClubRequests() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("alle");
   const [filterFavorites, setFilterFavorites] = useState("alle");
+  const [filterCountry, setFilterCountry] = useState("alle");
+  const [filterBudgetMin, setFilterBudgetMin] = useState("");
+  const [filterBudgetMax, setFilterBudgetMax] = useState("");
+  const [filterSalaryMin, setFilterSalaryMin] = useState("");
+  const [filterSalaryMax, setFilterSalaryMax] = useState("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const [newRequest, setNewRequest] = useState({
     club_name: "",
@@ -140,12 +146,20 @@ export default function ClubRequests() {
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.club_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.position_needed?.toLowerCase().includes(searchTerm.toLowerCase());
+                         request.position_needed?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         request.league?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "alle" || request.status === filterStatus;
     const matchesFavorites = filterFavorites === "alle" || 
                              (filterFavorites === "favoriten" && userFavorites.includes(request.id));
+    const matchesCountry = filterCountry === "alle" || request.country === filterCountry;
+    
+    const matchesBudget = (!filterBudgetMin || (request.budget_min && request.budget_min >= parseFloat(filterBudgetMin))) &&
+                          (!filterBudgetMax || (request.budget_max && request.budget_max <= parseFloat(filterBudgetMax)));
+    
+    const matchesSalary = (!filterSalaryMin || (request.salary_min && request.salary_min >= parseFloat(filterSalaryMin))) &&
+                          (!filterSalaryMax || (request.salary_max && request.salary_max <= parseFloat(filterSalaryMax)));
 
-    return matchesSearch && matchesStatus && matchesFavorites;
+    return matchesSearch && matchesStatus && matchesFavorites && matchesCountry && matchesBudget && matchesSalary;
   });
 
   const stats = [
@@ -154,6 +168,28 @@ export default function ClubRequests() {
     { label: "In Bearbeitung", value: requests.filter(r => r.status === "in_bearbeitung").length },
     { label: "Abgeschlossen", value: requests.filter(r => r.status === "abgeschlossen").length },
   ];
+
+  const uniqueCountries = [...new Set(requests.map(r => r.country).filter(Boolean))].sort();
+  
+  const getContinent = (country) => {
+    const continents = {
+      'Deutschland': 'Europa', 'Frankreich': 'Europa', 'England': 'Europa', 'Spanien': 'Europa', 
+      'Italien': 'Europa', 'Niederlande': 'Europa', 'Belgien': 'Europa', 'Portugal': 'Europa',
+      'Österreich': 'Europa', 'Schweiz': 'Europa', 'Polen': 'Europa', 'Türkei': 'Europa',
+      'USA': 'Nordamerika', 'Kanada': 'Nordamerika', 'Mexiko': 'Nordamerika',
+      'Brasilien': 'Südamerika', 'Argentinien': 'Südamerika', 'Uruguay': 'Südamerika', 'Chile': 'Südamerika',
+      'Japan': 'Asien', 'China': 'Asien', 'Südkorea': 'Asien', 'Saudi-Arabien': 'Asien',
+      'Australien': 'Ozeanien', 'Neuseeland': 'Ozeanien',
+    };
+    return continents[country] || 'Sonstige';
+  };
+
+  const countriesByContinent = uniqueCountries.reduce((acc, country) => {
+    const continent = getContinent(country);
+    if (!acc[continent]) acc[continent] = [];
+    acc[continent].push(country);
+    return acc;
+  }, {});
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
@@ -191,21 +227,33 @@ export default function ClubRequests() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
-          <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
-            <TabsList className="bg-slate-100">
-              <TabsTrigger value="alle">Alle</TabsTrigger>
-              <TabsTrigger value="favoriten" className="flex items-center gap-2">
-                <Star className="w-4 h-4" />
-                Favoriten ({userFavorites.length})
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center justify-between">
+            <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
+              <TabsList className="bg-slate-100">
+                <TabsTrigger value="alle">Alle</TabsTrigger>
+                <TabsTrigger value="favoriten" className="flex items-center gap-2">
+                  <Star className="w-4 h-4" />
+                  Favoriten ({userFavorites.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className="gap-2"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Erweiterte Filter
+              {showAdvancedFilters && <X className="w-3 h-3" />}
+            </Button>
+          </div>
 
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <Input
-                placeholder="Verein oder Position suchen..."
+                placeholder="Verein, Position oder Liga suchen..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 border-slate-200"
@@ -225,7 +273,92 @@ export default function ClubRequests() {
                 <SelectItem value="abgelehnt">Abgelehnt</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={filterCountry} onValueChange={setFilterCountry}>
+              <SelectTrigger className="w-full md:w-[200px] border-slate-200">
+                <SelectValue placeholder="Land" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alle">Alle Länder</SelectItem>
+                {Object.entries(countriesByContinent).map(([continent, countries]) => (
+                  <SelectGroup key={continent}>
+                    <SelectLabel>{continent}</SelectLabel>
+                    {countries.map(country => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
+          {showAdvancedFilters && (
+            <div className="pt-4 border-t border-slate-200 space-y-4">
+              <div>
+                <Label className="text-sm font-semibold text-slate-700 mb-3 block">Finanzielle Kriterien</Label>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-slate-600 mb-1.5 block">Transferbudget (Mio. €)</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min"
+                        value={filterBudgetMin}
+                        onChange={(e) => setFilterBudgetMin(e.target.value)}
+                        className="border-slate-200"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={filterBudgetMax}
+                        onChange={(e) => setFilterBudgetMax(e.target.value)}
+                        className="border-slate-200"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-slate-600 mb-1.5 block">Gehaltsbudget (Tsd. €)</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min"
+                        value={filterSalaryMin}
+                        onChange={(e) => setFilterSalaryMin(e.target.value)}
+                        className="border-slate-200"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={filterSalaryMax}
+                        onChange={(e) => setFilterSalaryMax(e.target.value)}
+                        className="border-slate-200"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {(filterBudgetMin || filterBudgetMax || filterSalaryMin || filterSalaryMax || filterCountry !== "alle") && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setFilterBudgetMin("");
+                      setFilterBudgetMax("");
+                      setFilterSalaryMin("");
+                      setFilterSalaryMax("");
+                      setFilterCountry("alle");
+                    }}
+                    className="text-slate-600 hover:text-slate-900"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Filter zurücksetzen
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
