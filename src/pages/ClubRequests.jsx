@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,6 @@ import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star } from "lucide
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import AIRequirementsGenerator from "../components/clubRequests/AIRequirementsGenerator";
-import AIMatchProbability from "../components/clubRequests/AIMatchProbability";
 
 const priorityColors = {
   niedrig: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -52,36 +50,6 @@ export default function ClubRequests() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("alle");
   const [filterFavorites, setFilterFavorites] = useState("alle");
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const prefillData = urlParams.get('prefill');
-    if (prefillData) {
-      try {
-        const parsed = JSON.parse(decodeURIComponent(prefillData));
-        setNewRequest(prev => ({ ...prev, ...parsed }));
-        setShowCreateDialog(true);
-        window.history.replaceState({}, '', window.location.pathname);
-      } catch (e) {
-        console.error('Error parsing prefill data:', e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const prefillData = urlParams.get('prefill');
-    if (prefillData) {
-      try {
-        const parsed = JSON.parse(decodeURIComponent(prefillData));
-        setNewRequest(prev => ({ ...prev, ...parsed }));
-        setShowCreateDialog(true);
-        window.history.replaceState({}, '', window.location.pathname);
-      } catch (e) {
-        console.error('Error parsing prefill data:', e);
-      }
-    }
-  }, []);
 
   const [newRequest, setNewRequest] = useState({
     club_name: "",
@@ -359,9 +327,7 @@ export default function ClubRequests() {
             <DialogHeader>
               <DialogTitle className="text-xl font-bold">Neue Vereinsanfrage</DialogTitle>
             </DialogHeader>
-
-            <AIMatchProbability requestData={newRequest} />
-
+            
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
@@ -585,13 +551,7 @@ export default function ClubRequests() {
                 </div>
 
                 <div className="col-span-2">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <Label htmlFor="requirements">Weitere Anforderungen</Label>
-                    <AIRequirementsGenerator 
-                      requestData={newRequest}
-                      onGenerated={(text) => setNewRequest({...newRequest, requirements: text})}
-                    />
-                  </div>
+                  <Label htmlFor="requirements">Weitere Anforderungen</Label>
                   <Textarea
                     id="requirements"
                     value={newRequest.requirements}

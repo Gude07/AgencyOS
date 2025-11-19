@@ -34,7 +34,6 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import PlayerPreferences from "../components/players/PlayerPreferences";
 import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
-import AIClubSuggestions from "../components/players/AIClubSuggestions";
 
 const categoryColors = {
   "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-200",
@@ -609,8 +608,6 @@ export default function PlayerDetail() {
               </div>
 
               <div className="space-y-6">
-                <AIClubSuggestions player={player} />
-
                 <Card className="border-slate-200 bg-white">
                   <CardHeader className="border-b border-slate-100">
                     <div className="flex items-center gap-2">
