@@ -47,6 +47,7 @@ export default function Players() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("alle");
   const [filterPosition, setFilterPosition] = useState("alle");
+  const [filterFavorites, setFilterFavorites] = useState("alle");
 
   const [newPlayer, setNewPlayer] = useState({
     name: "",
@@ -149,8 +150,10 @@ export default function Players() {
                          player.current_club?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === "alle" || player.category === filterCategory;
     const matchesPosition = filterPosition === "alle" || player.position === filterPosition;
+    const matchesFavorites = filterFavorites === "alle" || 
+                            (filterFavorites === "favoriten" && userFavorites.includes(player.id));
     
-    return matchesSearch && matchesCategory && matchesPosition;
+    return matchesSearch && matchesCategory && matchesPosition && matchesFavorites;
   });
 
   const stats = [
@@ -196,6 +199,16 @@ export default function Players() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+          <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
+            <TabsList className="bg-slate-100">
+              <TabsTrigger value="alle">Alle</TabsTrigger>
+              <TabsTrigger value="favoriten" className="flex items-center gap-2">
+                <Star className="w-4 h-4" />
+                Favoriten ({userFavorites.length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
             <Input
