@@ -23,7 +23,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon } from "lucide-react";
+import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -71,6 +71,24 @@ export default function Players() {
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
     queryFn: () => base44.entities.Player.list('-created_date'),
+  });
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async (playerId) => {
+      const favorites = currentUser?.favorite_players || [];
+      const newFavorites = favorites.includes(playerId)
+        ? favorites.filter(id => id !== playerId)
+        : [...favorites, playerId];
+      await base44.auth.updateMe({ favorite_players: newFavorites });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
   });
 
   const createPlayerMutation = useMutation({
@@ -123,6 +141,8 @@ export default function Players() {
     
     createPlayerMutation.mutate(playerData);
   };
+
+  const userFavorites = currentUser?.favorite_players || [];
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -243,12 +263,23 @@ export default function Players() {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <Card 
-                  className="hover:shadow-md transition-all duration-200 cursor-pointer border border-slate-200 bg-white"
-                  onClick={() => navigate(createPageUrl("PlayerDetail") + "?id=" + player.id)}
+                  className="hover:shadow-md transition-all duration-200 border border-slate-200 bg-white relative"
                 >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavoriteMutation.mutate(player.id);
+                    }}
+                    className="absolute top-3 right-3 z-10 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
+                    <Star 
+                      className={`w-5 h-5 ${userFavorites.includes(player.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`}
+                    />
+                  </button>
+                  <div onClick={() => navigate(createPageUrl("PlayerDetail") + "?id=" + player.id)} className="cursor-pointer">
                   <CardHeader className="pb-3">
                     <div className="space-y-3">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between gap-3">
                         <div>
                           <h3 className="font-bold text-lg text-slate-900">{player.name}</h3>
                           <p className="text-sm text-slate-600">{player.current_club}</p>
@@ -278,9 +309,9 @@ export default function Players() {
                           </Badge>
                         ))}
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0 space-y-2">
+                      </div>
+                      </CardHeader>
+                      <CardContent className="pt-0 space-y-2">
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
                         <p className="text-slate-600">Alter</p>
@@ -303,9 +334,10 @@ export default function Players() {
                         </p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                      </CardContent>
+                      </div>
+                      </Card>
+                    </motion.div>
             ))}
           </AnimatePresence>
         </div>
