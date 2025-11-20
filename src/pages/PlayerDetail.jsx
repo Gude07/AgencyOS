@@ -301,6 +301,8 @@ export default function PlayerDetail() {
 
   const uniqueCountries = [...new Set(matchingRequests.map(r => r.country).filter(Boolean))];
 
+  const isFavorite = currentUser?.favorite_players?.includes(playerId);
+
   const currentPlayerData = editMode ? editedPlayer : player;
   const currentSecondaryPositions = Array.isArray(currentPlayerData?.secondary_positions) ? currentPlayerData.secondary_positions : [];
 
