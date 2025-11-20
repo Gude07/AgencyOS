@@ -81,6 +81,11 @@ export default function ClubRequestDetail() {
     queryFn: () => base44.entities.Player.list(),
   });
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
   const updateRequestMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ClubRequest.update(id, data),
     onSuccess: () => {
@@ -134,6 +139,21 @@ export default function ClubRequestDetail() {
       data: { matching_criteria: criteria }
     });
   };
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async () => {
+      const favorites = currentUser?.favorite_club_requests || [];
+      const newFavorites = favorites.includes(requestId)
+        ? favorites.filter(id => id !== requestId)
+        : [...favorites, requestId];
+      await base44.auth.updateMe({ favorite_club_requests: newFavorites });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+
+  const isFavorite = currentUser?.favorite_club_requests?.includes(requestId);
 
   const calculateMatchScore = (player) => {
     if (!request) return 0;
@@ -352,6 +372,14 @@ export default function ClubRequestDetail() {
           </div>
           {!editMode ? (
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => toggleFavoriteMutation.mutate()}
+                className={isFavorite ? 'text-yellow-500 hover:text-yellow-600' : 'text-slate-400 hover:text-slate-600'}
+              >
+                <Star className={`w-5 h-5 ${isFavorite ? 'fill-yellow-400' : ''}`} />
+              </Button>
               <Button onClick={() => setShowDeleteDialog(true)} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Löschen
