@@ -43,11 +43,13 @@ const categoryColors = {
 export default function Players() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const urlParams = new URLSearchParams(window.location.search);
+  
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("alle");
-  const [filterPosition, setFilterPosition] = useState("alle");
-  const [filterFavorites, setFilterFavorites] = useState("alle");
+  const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
+  const [filterCategory, setFilterCategory] = useState(urlParams.get('category') || "alle");
+  const [filterPosition, setFilterPosition] = useState(urlParams.get('position') || "alle");
+  const [filterFavorites, setFilterFavorites] = useState(urlParams.get('favorites') || "alle");
 
   const [newPlayer, setNewPlayer] = useState({
     name: "",
@@ -144,6 +146,21 @@ export default function Players() {
   };
 
   const userFavorites = currentUser?.favorite_players || [];
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('search', searchTerm);
+    if (filterCategory !== 'alle') params.set('category', filterCategory);
+    if (filterPosition !== 'alle') params.set('position', filterPosition);
+    if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+    
+    const newSearch = params.toString();
+    const currentSearch = window.location.search.slice(1);
+    
+    if (newSearch !== currentSearch) {
+      window.history.replaceState(null, '', `?${newSearch}`);
+    }
+  }, [searchTerm, filterCategory, filterPosition, filterFavorites]);
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

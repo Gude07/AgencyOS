@@ -46,15 +46,17 @@ const statusColors = {
 export default function ClubRequests() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const urlParams = new URLSearchParams(window.location.search);
+  
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("alle");
-  const [filterFavorites, setFilterFavorites] = useState("alle");
-  const [filterCountry, setFilterCountry] = useState("alle");
-  const [filterBudgetMin, setFilterBudgetMin] = useState("");
-  const [filterBudgetMax, setFilterBudgetMax] = useState("");
-  const [filterSalaryMin, setFilterSalaryMin] = useState("");
-  const [filterSalaryMax, setFilterSalaryMax] = useState("");
+  const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
+  const [filterStatus, setFilterStatus] = useState(urlParams.get('status') || "alle");
+  const [filterFavorites, setFilterFavorites] = useState(urlParams.get('favorites') || "alle");
+  const [filterCountry, setFilterCountry] = useState(urlParams.get('country') || "alle");
+  const [filterBudgetMin, setFilterBudgetMin] = useState(urlParams.get('budgetMin') || "");
+  const [filterBudgetMax, setFilterBudgetMax] = useState(urlParams.get('budgetMax') || "");
+  const [filterSalaryMin, setFilterSalaryMin] = useState(urlParams.get('salaryMin') || "");
+  const [filterSalaryMax, setFilterSalaryMax] = useState(urlParams.get('salaryMax') || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const [newRequest, setNewRequest] = useState({
@@ -143,6 +145,25 @@ export default function ClubRequests() {
   };
 
   const userFavorites = currentUser?.favorite_club_requests || [];
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('search', searchTerm);
+    if (filterStatus !== 'alle') params.set('status', filterStatus);
+    if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+    if (filterCountry !== 'alle') params.set('country', filterCountry);
+    if (filterBudgetMin) params.set('budgetMin', filterBudgetMin);
+    if (filterBudgetMax) params.set('budgetMax', filterBudgetMax);
+    if (filterSalaryMin) params.set('salaryMin', filterSalaryMin);
+    if (filterSalaryMax) params.set('salaryMax', filterSalaryMax);
+    
+    const newSearch = params.toString();
+    const currentSearch = window.location.search.slice(1);
+    
+    if (newSearch !== currentSearch) {
+      window.history.replaceState(null, '', `?${newSearch}`);
+    }
+  }, [searchTerm, filterStatus, filterFavorites, filterCountry, filterBudgetMin, filterBudgetMax, filterSalaryMin, filterSalaryMax]);
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.club_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
