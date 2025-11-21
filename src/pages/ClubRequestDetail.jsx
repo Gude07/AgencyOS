@@ -57,7 +57,7 @@ export default function ClubRequestDetail() {
 
   const [editMode, setEditMode] = useState(false);
   const [editedRequest, setEditedRequest] = useState(null);
-  const [activeTab, setActiveTab] = useState("matched");
+  const [activeTab, setActiveTab] = useState(urlParams.get('tab') || "matched");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const [matchFilters, setMatchFilters] = useState({
@@ -306,7 +306,13 @@ export default function ClubRequestDetail() {
       <div className="flex items-start justify-between gap-3 mb-3">
         <div 
           className="flex-1 cursor-pointer"
-          onClick={() => navigate(createPageUrl("PlayerDetail") + "?id=" + player.id)}
+          onClick={() => {
+            const params = new URLSearchParams();
+            params.set('id', requestId);
+            params.set('tab', activeTab);
+            if (backUrl) params.set('back', backUrl);
+            navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+          }}
         >
           <h4 className="font-semibold text-slate-900">{player.name}</h4>
           <p className="text-sm text-slate-600 mt-1">{player.current_club}</p>

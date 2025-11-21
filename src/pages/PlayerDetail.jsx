@@ -53,7 +53,7 @@ export default function PlayerDetail() {
 
   const [editMode, setEditMode] = useState(false);
   const [editedPlayer, setEditedPlayer] = useState(null);
-  const [activeTab, setActiveTab] = useState("info");
+  const [activeTab, setActiveTab] = useState(urlParams.get('tab') || "info");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const [matchFilters, setMatchFilters] = useState({
