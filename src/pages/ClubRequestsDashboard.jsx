@@ -33,13 +33,15 @@ const statusColors = {
 
 export default function ClubRequestsDashboard() {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("alle");
-  const [filterPriority, setFilterPriority] = useState("alle");
-  const [filterCountry, setFilterCountry] = useState("alle");
-  const [filterPosition, setFilterPosition] = useState("alle");
-  const [filterShortlist, setFilterShortlist] = useState("alle");
-  const [sortBy, setSortBy] = useState("-created_date");
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
+  const [filterStatus, setFilterStatus] = useState(urlParams.get('status') || "alle");
+  const [filterPriority, setFilterPriority] = useState(urlParams.get('priority') || "alle");
+  const [filterCountry, setFilterCountry] = useState(urlParams.get('country') || "alle");
+  const [filterPosition, setFilterPosition] = useState(urlParams.get('position') || "alle");
+  const [filterShortlist, setFilterShortlist] = useState(urlParams.get('shortlist') || "alle");
+  const [sortBy, setSortBy] = useState(urlParams.get('sortBy') || "-created_date");
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['clubRequests'],
@@ -141,6 +143,24 @@ export default function ClubRequestsDashboard() {
 
   const uniqueCountries = [...new Set(requests.map(r => r.country).filter(Boolean))];
   const uniquePositions = [...new Set(requests.map(r => r.position_needed).filter(Boolean))];
+
+  React.useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('search', searchTerm);
+    if (filterStatus !== 'alle') params.set('status', filterStatus);
+    if (filterPriority !== 'alle') params.set('priority', filterPriority);
+    if (filterCountry !== 'alle') params.set('country', filterCountry);
+    if (filterPosition !== 'alle') params.set('position', filterPosition);
+    if (filterShortlist !== 'alle') params.set('shortlist', filterShortlist);
+    if (sortBy !== '-created_date') params.set('sortBy', sortBy);
+    
+    const newSearch = params.toString();
+    const currentSearch = window.location.search.slice(1);
+    
+    if (newSearch !== currentSearch) {
+      window.history.replaceState(null, '', `?${newSearch}`);
+    }
+  }, [searchTerm, filterStatus, filterPriority, filterCountry, filterPosition, filterShortlist, sortBy]);
 
   const stats = useMemo(() => {
     return {
@@ -356,7 +376,17 @@ export default function ClubRequestsDashboard() {
                 className={`border-slate-200 bg-white hover:shadow-lg transition-all cursor-pointer ${
                   request.matchCount > 5 ? 'ring-2 ring-blue-500 ring-opacity-50' : ''
                 }`}
-                onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  if (searchTerm) params.set('search', searchTerm);
+                  if (filterStatus !== 'alle') params.set('status', filterStatus);
+                  if (filterPriority !== 'alle') params.set('priority', filterPriority);
+                  if (filterCountry !== 'alle') params.set('country', filterCountry);
+                  if (filterPosition !== 'alle') params.set('position', filterPosition);
+                  if (filterShortlist !== 'alle') params.set('shortlist', filterShortlist);
+                  if (sortBy !== '-created_date') params.set('sortBy', sortBy);
+                  navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                }}
               >
                 <CardContent className="p-5">
                   <div className="space-y-4">
@@ -423,7 +453,15 @@ export default function ClubRequestsDashboard() {
                         className="flex-1"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id);
+                          const params = new URLSearchParams();
+                          if (searchTerm) params.set('search', searchTerm);
+                          if (filterStatus !== 'alle') params.set('status', filterStatus);
+                          if (filterPriority !== 'alle') params.set('priority', filterPriority);
+                          if (filterCountry !== 'alle') params.set('country', filterCountry);
+                          if (filterPosition !== 'alle') params.set('position', filterPosition);
+                          if (filterShortlist !== 'alle') params.set('shortlist', filterShortlist);
+                          if (sortBy !== '-created_date') params.set('sortBy', sortBy);
+                          navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                         }}
                       >
                         <Eye className="w-4 h-4 mr-2" />
@@ -434,7 +472,15 @@ export default function ClubRequestsDashboard() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id);
+                          const params = new URLSearchParams();
+                          if (searchTerm) params.set('search', searchTerm);
+                          if (filterStatus !== 'alle') params.set('status', filterStatus);
+                          if (filterPriority !== 'alle') params.set('priority', filterPriority);
+                          if (filterCountry !== 'alle') params.set('country', filterCountry);
+                          if (filterPosition !== 'alle') params.set('position', filterPosition);
+                          if (filterShortlist !== 'alle') params.set('shortlist', filterShortlist);
+                          if (sortBy !== '-created_date') params.set('sortBy', sortBy);
+                          navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                         }}
                       >
                         <Pencil className="w-4 h-4" />
