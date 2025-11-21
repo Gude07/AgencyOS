@@ -423,6 +423,7 @@ export default function ClubRequests() {
                   <div onClick={() => {
                     const params = new URLSearchParams();
                     if (searchTerm) params.set('search', searchTerm);
+                    if (searchRequirements) params.set('searchRequirements', searchRequirements);
                     if (filterStatus !== 'alle') params.set('status', filterStatus);
                     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
                     if (filterCountry !== 'alle') params.set('country', filterCountry);
