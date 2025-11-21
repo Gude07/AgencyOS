@@ -197,17 +197,30 @@ export default function PlayerDetail() {
     });
   };
 
-  const handleToggleFavorite = (requestId) => {
+  const handleToggleFavorite = async (requestId) => {
     if (!player) return;
     const favorites = player.favorite_matches || [];
     const newFavorites = favorites.includes(requestId)
       ? favorites.filter(id => id !== requestId)
       : [...favorites, requestId];
     
-    updatePlayerMutation.mutate({ 
+    // Update player favorites
+    await updatePlayerMutation.mutateAsync({ 
       id: playerId, 
       data: { favorite_matches: newFavorites }
     });
+    
+    // Update club request shortlist
+    const request = clubRequests.find(r => r.id === requestId);
+    if (request) {
+      const shortlist = request.shortlist || [];
+      const newShortlist = newFavorites.includes(requestId)
+        ? [...new Set([...shortlist, playerId])]
+        : shortlist.filter(id => id !== playerId);
+      
+      await base44.entities.ClubRequest.update(requestId, { shortlist: newShortlist });
+      queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
+    }
   };
 
   const calculateBidirectionalMatchScore = (request) => {

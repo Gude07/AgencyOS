@@ -121,17 +121,31 @@ export default function ClubRequestDetail() {
     deleteRequestMutation.mutate(requestId);
   };
 
-  const handleToggleShortlist = (playerId) => {
+  const handleToggleShortlist = async (playerId) => {
     if (!request) return;
     const shortlist = request.shortlist || [];
     const newShortlist = shortlist.includes(playerId)
       ? shortlist.filter(id => id !== playerId)
       : [...shortlist, playerId];
     
-    updateRequestMutation.mutate({ 
+    // Update club request shortlist
+    await updateRequestMutation.mutateAsync({ 
       id: requestId, 
       data: { shortlist: newShortlist }
     });
+    
+    // Update player favorites
+    const player = players.find(p => p.id === playerId);
+    if (player) {
+      const favorites = player.favorite_matches || [];
+      const newFavorites = newShortlist.includes(playerId)
+        ? [...new Set([...favorites, requestId])]
+        : favorites.filter(id => id !== requestId);
+      
+      await base44.entities.Player.update(playerId, { favorite_matches: newFavorites });
+      queryClient.invalidateQueries({ queryKey: ['players'] });
+      queryClient.invalidateQueries({ queryKey: ['player', playerId] });
+    }
   };
 
   const handleSaveMatchingCriteria = (criteria) => {
