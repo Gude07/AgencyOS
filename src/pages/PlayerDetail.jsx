@@ -650,7 +650,13 @@ export default function PlayerDetail() {
                         {favoriteMatches.map((request) => (
                           <div 
                             key={request.id}
-                            onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
+                            onClick={() => {
+                              const params = new URLSearchParams();
+                              params.set('id', playerId);
+                              params.set('tab', activeTab);
+                              if (backUrl) params.set('back', backUrl);
+                              navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                            }}
                             className="flex items-start justify-between gap-2 p-2 rounded hover:bg-slate-50 cursor-pointer transition-colors"
                           >
                             <div className="flex-1 min-w-0">
@@ -792,7 +798,13 @@ export default function PlayerDetail() {
                         className={`border-slate-200 bg-white hover:shadow-md transition-all cursor-pointer ${
                           isFavorite ? 'ring-2 ring-yellow-400' : ''
                         }`}
-                        onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          params.set('id', playerId);
+                          params.set('tab', activeTab);
+                          if (backUrl) params.set('back', backUrl);
+                          navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                        }}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between gap-3 mb-3">
