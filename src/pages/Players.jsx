@@ -49,6 +49,7 @@ export default function Players() {
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [filterCategory, setFilterCategory] = useState(urlParams.get('category') || "alle");
   const [filterPosition, setFilterPosition] = useState(urlParams.get('position') || "alle");
+  const [filterStatus, setFilterStatus] = useState(urlParams.get('status') || "alle");
   const [filterFavorites, setFilterFavorites] = useState(urlParams.get('favorites') || "alle");
 
   const [newPlayer, setNewPlayer] = useState({
@@ -152,6 +153,7 @@ export default function Players() {
     if (searchTerm) params.set('search', searchTerm);
     if (filterCategory !== 'alle') params.set('category', filterCategory);
     if (filterPosition !== 'alle') params.set('position', filterPosition);
+    if (filterStatus !== 'alle') params.set('status', filterStatus);
     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
     
     const newSearch = params.toString();
@@ -160,17 +162,18 @@ export default function Players() {
     if (newSearch !== currentSearch) {
       window.history.replaceState(null, '', `?${newSearch}`);
     }
-  }, [searchTerm, filterCategory, filterPosition, filterFavorites]);
+  }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites]);
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          player.current_club?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === "alle" || player.category === filterCategory;
     const matchesPosition = filterPosition === "alle" || player.position === filterPosition;
+    const matchesStatus = filterStatus === "alle" || player.status === filterStatus;
     const matchesFavorites = filterFavorites === "alle" || 
                             (filterFavorites === "favoriten" && userFavorites.includes(player.id));
     
-    return matchesSearch && matchesCategory && matchesPosition && matchesFavorites;
+    return matchesSearch && matchesCategory && matchesPosition && matchesStatus && matchesFavorites;
   });
 
   const stats = [
@@ -281,6 +284,19 @@ export default function Players() {
               </SelectGroup>
             </SelectContent>
           </Select>
+
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[200px] border-slate-200">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle Status</SelectItem>
+              <SelectItem value="noch_offen">Noch offen</SelectItem>
+              <SelectItem value="in_bearbeitung">In Bearbeitung</SelectItem>
+              <SelectItem value="bei_verein_angeboten">Bei Verein angeboten</SelectItem>
+              <SelectItem value="abgeschlossen">Abgeschlossen</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -311,6 +327,7 @@ export default function Players() {
                     if (searchTerm) params.set('search', searchTerm);
                     if (filterCategory !== 'alle') params.set('category', filterCategory);
                     if (filterPosition !== 'alle') params.set('position', filterPosition);
+                    if (filterStatus !== 'alle') params.set('status', filterStatus);
                     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
                     navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                   }} className="cursor-pointer">
@@ -345,6 +362,9 @@ export default function Players() {
                             {pos}
                           </Badge>
                         ))}
+                        <Badge variant="outline" className="border-slate-200 text-xs">
+                          {player.status?.replace(/_/g, ' ') || 'noch offen'}
+                        </Badge>
                       </div>
                       </div>
                       </CardHeader>
