@@ -25,12 +25,14 @@ import MultiUserSelect from "../components/tasks/MultiUserSelect";
 
 export default function Tasks() {
   const queryClient = useQueryClient();
+  const urlParams = new URLSearchParams(window.location.search);
+  
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterPriority, setFilterPriority] = useState("alle");
-  const [filterStatus, setFilterStatus] = useState("alle");
-  const [filterCategory, setFilterCategory] = useState("alle");
-  const [sortBy, setSortBy] = useState("-created_date");
+  const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
+  const [filterPriority, setFilterPriority] = useState(urlParams.get('priority') || "alle");
+  const [filterStatus, setFilterStatus] = useState(urlParams.get('status') || "alle");
+  const [filterCategory, setFilterCategory] = useState(urlParams.get('category') || "alle");
+  const [sortBy, setSortBy] = useState(urlParams.get('sortBy') || "-created_date");
 
   const [newTask, setNewTask] = useState({
     title: "",
@@ -74,6 +76,22 @@ export default function Tasks() {
   const handleCreateTask = () => {
     createTaskMutation.mutate(newTask);
   };
+
+  React.useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('search', searchTerm);
+    if (filterPriority !== 'alle') params.set('priority', filterPriority);
+    if (filterStatus !== 'alle') params.set('status', filterStatus);
+    if (filterCategory !== 'alle') params.set('category', filterCategory);
+    if (sortBy !== '-created_date') params.set('sortBy', sortBy);
+    
+    const newSearch = params.toString();
+    const currentSearch = window.location.search.slice(1);
+    
+    if (newSearch !== currentSearch) {
+      window.history.replaceState(null, '', `?${newSearch}`);
+    }
+  }, [searchTerm, filterPriority, filterStatus, filterCategory, sortBy]);
 
   const filteredAndSortedTasks = React.useMemo(() => {
     let filtered = tasks.filter(task => {

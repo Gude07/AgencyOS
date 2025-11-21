@@ -40,10 +40,12 @@ const categoryColors = {
 export default function Coaches() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const urlParams = new URLSearchParams(window.location.search);
+  
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("alle");
-  const [filterSpecialization, setFilterSpecialization] = useState("alle");
+  const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
+  const [filterCategory, setFilterCategory] = useState(urlParams.get('category') || "alle");
+  const [filterSpecialization, setFilterSpecialization] = useState(urlParams.get('specialization') || "alle");
 
   const [newCoach, setNewCoach] = useState({
     name: "",
@@ -129,6 +131,20 @@ export default function Coaches() {
     
     createCoachMutation.mutate(coachData);
   };
+
+  React.useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('search', searchTerm);
+    if (filterCategory !== 'alle') params.set('category', filterCategory);
+    if (filterSpecialization !== 'alle') params.set('specialization', filterSpecialization);
+    
+    const newSearch = params.toString();
+    const currentSearch = window.location.search.slice(1);
+    
+    if (newSearch !== currentSearch) {
+      window.history.replaceState(null, '', `?${newSearch}`);
+    }
+  }, [searchTerm, filterCategory, filterSpecialization]);
 
   const filteredCoaches = coaches.filter(coach => {
     const matchesSearch = coach.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -230,7 +246,13 @@ export default function Coaches() {
               >
                 <Card 
                   className="hover:shadow-md transition-all duration-200 cursor-pointer border border-slate-200 bg-white"
-                  onClick={() => navigate(createPageUrl("CoachDetail") + "?id=" + coach.id)}
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    if (searchTerm) params.set('search', searchTerm);
+                    if (filterCategory !== 'alle') params.set('category', filterCategory);
+                    if (filterSpecialization !== 'alle') params.set('specialization', filterSpecialization);
+                    navigate(createPageUrl("CoachDetail") + "?id=" + coach.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                  }}
                 >
                   <CardHeader className="pb-3">
                     <div className="space-y-3">
