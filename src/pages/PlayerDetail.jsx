@@ -34,6 +34,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import PlayerPreferences from "../components/players/PlayerPreferences";
 import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
+import PlayerComments from "../components/players/PlayerComments";
 
 const categoryColors = {
   "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-200",
@@ -353,7 +354,7 @@ export default function PlayerDetail() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="info">Spielerinfo</TabsTrigger>
             <TabsTrigger value="preferences" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
@@ -362,6 +363,9 @@ export default function PlayerDetail() {
             <TabsTrigger value="matches" className="flex items-center gap-2">
               <Star className="w-4 h-4" />
               Matches ({filteredMatchingRequests.length})
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="flex items-center gap-2">
+              Kommentare
             </TabsTrigger>
           </TabsList>
 
@@ -850,6 +854,10 @@ export default function PlayerDetail() {
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="comments">
+            <PlayerComments playerId={playerId} />
           </TabsContent>
         </Tabs>
 
