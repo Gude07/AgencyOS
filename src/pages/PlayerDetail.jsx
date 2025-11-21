@@ -476,9 +476,26 @@ export default function PlayerDetail() {
                               {pos}
                             </Badge>
                           ))}
-                          <Badge variant="outline" className="border-slate-200">
-                            {currentPlayerData?.status}
-                          </Badge>
+                          {editMode ? (
+                            <Select 
+                              value={editedPlayer?.status || "noch_offen"} 
+                              onValueChange={(value) => setEditedPlayer({...editedPlayer, status: value})}
+                            >
+                              <SelectTrigger className="w-48">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="noch_offen">Noch offen</SelectItem>
+                                <SelectItem value="in_bearbeitung">In Bearbeitung</SelectItem>
+                                <SelectItem value="bei_verein_angeboten">Bei Verein angeboten</SelectItem>
+                                <SelectItem value="abgeschlossen">Abgeschlossen</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge variant="outline" className="border-slate-200">
+                              {currentPlayerData?.status?.replace(/_/g, ' ') || 'noch offen'}
+                            </Badge>
+                          )}
                         </div>
 
                         {editMode && editedPlayer && (
