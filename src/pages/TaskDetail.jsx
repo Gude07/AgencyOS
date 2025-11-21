@@ -40,6 +40,7 @@ export default function TaskDetail() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const taskId = urlParams.get('id');
+  const backUrl = urlParams.get('back');
 
   const [editMode, setEditMode] = useState(false);
   const [editedTask, setEditedTask] = useState(null);
@@ -119,7 +120,7 @@ export default function TaskDetail() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(createPageUrl("Tasks"))}
+            onClick={() => navigate(backUrl ? decodeURIComponent(backUrl) : createPageUrl("Tasks"))}
             className="hover:bg-slate-200"
           >
             <ArrowLeft className="w-5 h-5" />

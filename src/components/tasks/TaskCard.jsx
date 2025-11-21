@@ -33,7 +33,10 @@ export default function TaskCard({ task }) {
     >
       <Card 
         className="hover:shadow-lg transition-all duration-200 cursor-pointer border border-slate-200 bg-white"
-        onClick={() => navigate(createPageUrl("TaskDetail") + "?id=" + task.id)}
+        onClick={() => {
+          const params = new URLSearchParams(window.location.search);
+          navigate(createPageUrl("TaskDetail") + "?id=" + task.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+        }}
       >
         <CardHeader className="pb-3">
           <CardTitle className="text-lg line-clamp-2">{task.title}</CardTitle>

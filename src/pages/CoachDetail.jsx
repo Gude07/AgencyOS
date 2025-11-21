@@ -44,6 +44,7 @@ export default function CoachDetail() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const coachId = urlParams.get('id');
+  const backUrl = urlParams.get('back');
 
   const [editMode, setEditMode] = useState(false);
   const [editedCoach, setEditedCoach] = useState(null);
@@ -116,7 +117,7 @@ export default function CoachDetail() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(createPageUrl("Coaches"))}
+            onClick={() => navigate(backUrl ? decodeURIComponent(backUrl) : createPageUrl("Coaches"))}
             className="hover:bg-slate-200"
           >
             <ArrowLeft className="w-5 h-5" />
