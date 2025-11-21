@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, SlidersHorizontal, Building2, Users, Star, Eye, Pencil, TrendingUp, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Search, SlidersHorizontal, Building2, Users, Star, Eye, Pencil, TrendingUp, Clock, CheckCircle2, AlertCircle, ListChecks } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -38,6 +38,7 @@ export default function ClubRequestsDashboard() {
   const [filterPriority, setFilterPriority] = useState("alle");
   const [filterCountry, setFilterCountry] = useState("alle");
   const [filterPosition, setFilterPosition] = useState("alle");
+  const [filterShortlist, setFilterShortlist] = useState("alle");
   const [sortBy, setSortBy] = useState("-created_date");
 
   const { data: requests = [], isLoading } = useQuery({
@@ -105,7 +106,14 @@ export default function ClubRequestsDashboard() {
       const matchesCountry = filterCountry === "alle" || request.country === filterCountry;
       const matchesPosition = filterPosition === "alle" || request.position_needed === filterPosition;
       
-      return matchesSearch && matchesStatus && matchesPriority && matchesCountry && matchesPosition;
+      const shortlistCount = request.shortlist?.length || 0;
+      const matchesShortlist = filterShortlist === "alle" || 
+                               (filterShortlist === "leer" && shortlistCount === 0) ||
+                               (filterShortlist === "1-3" && shortlistCount >= 1 && shortlistCount <= 3) ||
+                               (filterShortlist === "4-10" && shortlistCount >= 4 && shortlistCount <= 10) ||
+                               (filterShortlist === "10+" && shortlistCount > 10);
+      
+      return matchesSearch && matchesStatus && matchesPriority && matchesCountry && matchesPosition && matchesShortlist;
     });
 
     filtered.sort((a, b) => {
@@ -129,7 +137,7 @@ export default function ClubRequestsDashboard() {
     });
 
     return filtered;
-  }, [requestsWithMatches, searchTerm, filterStatus, filterPriority, filterCountry, filterPosition, sortBy]);
+  }, [requestsWithMatches, searchTerm, filterStatus, filterPriority, filterCountry, filterPosition, filterShortlist, sortBy]);
 
   const uniqueCountries = [...new Set(requests.map(r => r.country).filter(Boolean))];
   const uniquePositions = [...new Set(requests.map(r => r.position_needed).filter(Boolean))];
@@ -238,7 +246,7 @@ export default function ClubRequestsDashboard() {
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-3 mb-3">
-              <div className="relative lg:col-span-2">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <Input
                   placeholder="Suchen nach Verein, Liga, Person..."
@@ -296,6 +304,19 @@ export default function ClubRequestsDashboard() {
                   {uniquePositions.map(position => (
                     <SelectItem key={position} value={position}>{position}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterShortlist} onValueChange={setFilterShortlist}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Shortlist" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alle">Alle Shortlists</SelectItem>
+                  <SelectItem value="leer">Leer (0)</SelectItem>
+                  <SelectItem value="1-3">1-3 Spieler</SelectItem>
+                  <SelectItem value="4-10">4-10 Spieler</SelectItem>
+                  <SelectItem value="10+">10+ Spieler</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -378,6 +399,13 @@ export default function ClubRequestsDashboard() {
                         <span className="text-slate-600">Alter:</span>
                         <span className="font-semibold text-slate-900">
                           {request.age_min || '?'} - {request.age_max || '?'} Jahre
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Shortlist:</span>
+                        <span className="font-semibold text-slate-900 flex items-center gap-1">
+                          <ListChecks className="w-3 h-3" />
+                          {request.shortlist?.length || 0}
                         </span>
                       </div>
                       {request.transfer_period && (
