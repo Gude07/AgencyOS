@@ -50,6 +50,7 @@ export default function ClubRequests() {
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
+  const [searchRequirements, setSearchRequirements] = useState(urlParams.get('searchRequirements') || "");
   const [filterStatus, setFilterStatus] = useState(urlParams.get('status') || "alle");
   const [filterFavorites, setFilterFavorites] = useState(urlParams.get('favorites') || "alle");
   const [filterCountry, setFilterCountry] = useState(urlParams.get('country') || "alle");
@@ -149,6 +150,7 @@ export default function ClubRequests() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchTerm) params.set('search', searchTerm);
+    if (searchRequirements) params.set('searchRequirements', searchRequirements);
     if (filterStatus !== 'alle') params.set('status', filterStatus);
     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
     if (filterCountry !== 'alle') params.set('country', filterCountry);
@@ -163,12 +165,14 @@ export default function ClubRequests() {
     if (newSearch !== currentSearch) {
       window.history.replaceState(null, '', `?${newSearch}`);
     }
-  }, [searchTerm, filterStatus, filterFavorites, filterCountry, filterBudgetMin, filterBudgetMax, filterSalaryMin, filterSalaryMax]);
+  }, [searchTerm, searchRequirements, filterStatus, filterFavorites, filterCountry, filterBudgetMin, filterBudgetMax, filterSalaryMin, filterSalaryMax]);
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.club_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.position_needed?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.league?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRequirements = searchRequirements === "" || 
+                                request.requirements?.toLowerCase().includes(searchRequirements.toLowerCase());
     const matchesStatus = filterStatus === "alle" || request.status === filterStatus;
     const matchesFavorites = filterFavorites === "alle" || 
                              (filterFavorites === "favoriten" && userFavorites.includes(request.id));
@@ -180,7 +184,7 @@ export default function ClubRequests() {
     const matchesSalary = (!filterSalaryMin || (request.salary_min && request.salary_min >= parseFloat(filterSalaryMin))) &&
                           (!filterSalaryMax || (request.salary_max && request.salary_max <= parseFloat(filterSalaryMax)));
 
-    return matchesSearch && matchesStatus && matchesFavorites && matchesCountry && matchesBudget && matchesSalary;
+    return matchesSearch && matchesRequirements && matchesStatus && matchesFavorites && matchesCountry && matchesBudget && matchesSalary;
   });
 
   const stats = [
@@ -270,18 +274,19 @@ export default function ClubRequests() {
             </Button>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <Input
-                placeholder="Verein, Position oder Liga suchen..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 border-slate-200"
-              />
-            </div>
+          <div className="space-y-3">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <Input
+                  placeholder="Verein, Position oder Liga suchen..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 border-slate-200"
+                />
+              </div>
 
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-full md:w-[200px] border-slate-200">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -310,10 +315,21 @@ export default function ClubRequests() {
                   </SelectGroup>
                 ))}
               </SelectContent>
-            </Select>
-          </div>
+              </Select>
+              </div>
 
-          {showAdvancedFilters && (
+              <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Input
+                placeholder="In 'Weitere Anforderungen' suchen (z.B. Leihe)..."
+                value={searchRequirements}
+                onChange={(e) => setSearchRequirements(e.target.value)}
+                className="pl-9 border-slate-200 bg-slate-50"
+              />
+              </div>
+              </div>
+
+              {showAdvancedFilters && (
             <div className="pt-4 border-t border-slate-200 space-y-4">
               <div>
                 <Label className="text-sm font-semibold text-slate-700 mb-3 block">Finanzielle Kriterien</Label>
@@ -359,7 +375,7 @@ export default function ClubRequests() {
                 </div>
               </div>
 
-              {(filterBudgetMin || filterBudgetMax || filterSalaryMin || filterSalaryMax || filterCountry !== "alle") && (
+              {(filterBudgetMin || filterBudgetMax || filterSalaryMin || filterSalaryMax || filterCountry !== "alle" || searchRequirements) && (
                 <div className="flex justify-end">
                   <Button
                     variant="ghost"
@@ -370,6 +386,7 @@ export default function ClubRequests() {
                       setFilterSalaryMin("");
                       setFilterSalaryMax("");
                       setFilterCountry("alle");
+                      setSearchRequirements("");
                     }}
                     className="text-slate-600 hover:text-slate-900"
                   >
