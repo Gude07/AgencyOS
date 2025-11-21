@@ -405,7 +405,18 @@ export default function ClubRequests() {
                       className={`w-5 h-5 ${userFavorites.includes(request.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`}
                     />
                   </button>
-                  <div onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)} className="cursor-pointer">
+                  <div onClick={() => {
+                    const params = new URLSearchParams();
+                    if (searchTerm) params.set('search', searchTerm);
+                    if (filterStatus !== 'alle') params.set('status', filterStatus);
+                    if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+                    if (filterCountry !== 'alle') params.set('country', filterCountry);
+                    if (filterBudgetMin) params.set('budgetMin', filterBudgetMin);
+                    if (filterBudgetMax) params.set('budgetMax', filterBudgetMax);
+                    if (filterSalaryMin) params.set('salaryMin', filterSalaryMin);
+                    if (filterSalaryMax) params.set('salaryMax', filterSalaryMax);
+                    navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                  }} className="cursor-pointer">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0 pr-8">

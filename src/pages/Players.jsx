@@ -306,7 +306,14 @@ export default function Players() {
                       className={`w-5 h-5 ${userFavorites.includes(player.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`}
                     />
                   </button>
-                  <div onClick={() => navigate(createPageUrl("PlayerDetail") + "?id=" + player.id)} className="cursor-pointer">
+                  <div onClick={() => {
+                    const params = new URLSearchParams();
+                    if (searchTerm) params.set('search', searchTerm);
+                    if (filterCategory !== 'alle') params.set('category', filterCategory);
+                    if (filterPosition !== 'alle') params.set('position', filterPosition);
+                    if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+                    navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                  }} className="cursor-pointer">
                   <CardHeader className="pb-3">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">

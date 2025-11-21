@@ -53,6 +53,7 @@ export default function ClubRequestDetail() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const requestId = urlParams.get('id');
+  const backUrl = urlParams.get('back');
 
   const [editMode, setEditMode] = useState(false);
   const [editedRequest, setEditedRequest] = useState(null);
@@ -362,7 +363,7 @@ export default function ClubRequestDetail() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(createPageUrl("ClubRequests"))}
+            onClick={() => navigate(backUrl ? decodeURIComponent(backUrl) : createPageUrl("ClubRequests"))}
             className="hover:bg-slate-200"
           >
             <ArrowLeft className="w-5 h-5" />
