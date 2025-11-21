@@ -113,7 +113,7 @@ export default function Players() {
         category: "Beobachtungsliste",
         potential_clubs: [],
         notes: "",
-        status: "aktiv",
+        status: "noch_offen",
         strengths: "",
         foot: "",
         height: "",

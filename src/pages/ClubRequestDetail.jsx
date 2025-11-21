@@ -799,9 +799,10 @@ export default function ClubRequestDetail() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="alle">Alle Status</SelectItem>
-                          <SelectItem value="aktiv">Aktiv</SelectItem>
-                          <SelectItem value="in_verhandlung">In Verhandlung</SelectItem>
-                          <SelectItem value="transferiert">Transferiert</SelectItem>
+                          <SelectItem value="noch_offen">Noch offen</SelectItem>
+                          <SelectItem value="in_bearbeitung">In Bearbeitung</SelectItem>
+                          <SelectItem value="bei_verein_angeboten">Bei Verein angeboten</SelectItem>
+                          <SelectItem value="abgeschlossen">Abgeschlossen</SelectItem>
                         </SelectContent>
                       </Select>
                       <Select 
