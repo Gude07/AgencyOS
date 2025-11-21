@@ -274,19 +274,18 @@ export default function ClubRequests() {
             </Button>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <Input
-                  placeholder="Verein, Position oder Liga suchen..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 border-slate-200"
-                />
-              </div>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <Input
+                placeholder="Verein, Position oder Liga suchen..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 border-slate-200"
+              />
+            </div>
 
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-full md:w-[200px] border-slate-200">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -315,19 +314,18 @@ export default function ClubRequests() {
                   </SelectGroup>
                 ))}
               </SelectContent>
-              </Select>
-              </div>
+            </Select>
+          </div>
 
-              <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-              <Input
-                placeholder="In 'Weitere Anforderungen' suchen (z.B. Leihe)..."
-                value={searchRequirements}
-                onChange={(e) => setSearchRequirements(e.target.value)}
-                className="pl-9 border-slate-200 bg-slate-50"
-              />
-              </div>
-              </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Input
+              placeholder="In 'Weitere Anforderungen' suchen (z.B. Leihe)..."
+              value={searchRequirements}
+              onChange={(e) => setSearchRequirements(e.target.value)}
+              className="pl-9 border-slate-200 bg-slate-50"
+            />
+          </div>
 
               {showAdvancedFilters && (
             <div className="pt-4 border-t border-slate-200 space-y-4">
