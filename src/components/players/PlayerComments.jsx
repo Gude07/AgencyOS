@@ -11,6 +11,7 @@ import { de } from "date-fns/locale";
 export default function PlayerComments({ playerId }) {
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
+  const [replyTo, setReplyTo] = useState(null);
 
   const { data: comments = [] } = useQuery({
     queryKey: ['playerComments', playerId],
@@ -47,17 +48,42 @@ export default function PlayerComments({ playerId }) {
     
     createCommentMutation.mutate({
       player_id: playerId,
-      content: newComment.trim()
+      content: newComment.trim(),
+      parent_id: replyTo?.id
     });
   };
+
+  const handleCancelReply = () => {
+    setReplyTo(null);
+    setNewComment("");
+  };
+
+  const topLevelComments = comments.filter(c => !c.parent_id);
+  const getReplies = (commentId) => comments.filter(c => c.parent_id === commentId);
 
   return (
     <div className="space-y-4">
       <Card className="border-slate-200 bg-white">
         <CardContent className="p-4">
           <form onSubmit={handleSubmit} className="space-y-3">
+            {replyTo && (
+              <div className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-sm text-slate-700">
+                  Antwort auf <span className="font-semibold">{replyTo.created_by}</span>
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancelReply}
+                  className="h-6 px-2"
+                >
+                  Abbrechen
+                </Button>
+              </div>
+            )}
             <Textarea
-              placeholder="Kommentar hinzufügen..."
+              placeholder={replyTo ? "Antwort schreiben..." : "Kommentar hinzufügen..."}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               className="min-h-[100px]"
@@ -69,7 +95,7 @@ export default function PlayerComments({ playerId }) {
                 className="bg-blue-900 hover:bg-blue-800"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {createCommentMutation.isPending ? "Wird gesendet..." : "Kommentar senden"}
+                {createCommentMutation.isPending ? "Wird gesendet..." : replyTo ? "Antwort senden" : "Kommentar senden"}
               </Button>
             </div>
           </form>
@@ -86,38 +112,88 @@ export default function PlayerComments({ playerId }) {
         </Card>
       ) : (
         <div className="space-y-3">
-          {comments.map(comment => (
-            <Card key={comment.id} className="border-slate-200 bg-white">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-                      <span className="text-slate-700 font-semibold text-xs">
-                        {comment.created_by?.[0]?.toUpperCase() || 'U'}
-                      </span>
+          {topLevelComments.map(comment => {
+            const replies = getReplies(comment.id);
+            return (
+              <Card key={comment.id} className="border-slate-200 bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                        <span className="text-slate-700 font-semibold text-xs">
+                          {comment.created_by?.[0]?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{comment.created_by}</p>
+                        <p className="text-xs text-slate-500">
+                          {format(new Date(comment.created_date), "dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de })}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{comment.created_by}</p>
-                      <p className="text-xs text-slate-500">
-                        {format(new Date(comment.created_date), "dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de })}
-                      </p>
-                    </div>
+                    {currentUser?.email === comment.created_by && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteCommentMutation.mutate(comment.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
-                  {currentUser?.email === comment.created_by && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteCommentMutation.mutate(comment.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  <p className="text-slate-700 whitespace-pre-wrap mb-3">{comment.content}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setReplyTo(comment);
+                      setNewComment("");
+                    }}
+                    className="text-blue-900 hover:text-blue-800 hover:bg-blue-50 h-8 px-3"
+                  >
+                    <MessageSquare className="w-3 h-3 mr-1" />
+                    Antworten
+                  </Button>
+
+                  {replies.length > 0 && (
+                    <div className="mt-4 ml-8 space-y-3 border-l-2 border-slate-200 pl-4">
+                      {replies.map(reply => (
+                        <div key={reply.id} className="bg-slate-50 rounded-lg p-3">
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-slate-200 rounded-full flex items-center justify-center">
+                                <span className="text-slate-700 font-semibold text-xs">
+                                  {reply.created_by?.[0]?.toUpperCase() || 'U'}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold text-slate-900">{reply.created_by}</p>
+                                <p className="text-xs text-slate-500">
+                                  {format(new Date(reply.created_date), "dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de })}
+                                </p>
+                              </div>
+                            </div>
+                            {currentUser?.email === reply.created_by && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => deleteCommentMutation.mutate(reply.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap">{reply.content}</p>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </div>
-                <p className="text-slate-700 whitespace-pre-wrap">{comment.content}</p>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

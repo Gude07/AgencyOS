@@ -78,6 +78,15 @@ export default function PlayerDetail() {
     queryFn: () => base44.entities.ClubRequest.list(),
   });
 
+  const { data: allComments = [] } = useQuery({
+    queryKey: ['playerComments', playerId],
+    queryFn: async () => {
+      const comments = await base44.entities.PlayerComment.list('-created_date');
+      return comments.filter(c => c.player_id === playerId);
+    },
+    enabled: !!playerId,
+  });
+
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -95,6 +104,23 @@ export default function PlayerDetail() {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
+
+  const markCommentsAsViewedMutation = useMutation({
+    mutationFn: async () => {
+      const viewedComments = currentUser?.viewed_player_comments || {};
+      viewedComments[playerId] = new Date().toISOString();
+      await base44.auth.updateMe({ viewed_player_comments: viewedComments });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+
+  useEffect(() => {
+    if (activeTab === 'comments' && playerId) {
+      markCommentsAsViewedMutation.mutate();
+    }
+  }, [activeTab, playerId]);
 
   const updatePlayerMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Player.update(id, data),
@@ -308,6 +334,11 @@ export default function PlayerDetail() {
   const currentPlayerData = editMode ? editedPlayer : player;
   const currentSecondaryPositions = Array.isArray(currentPlayerData?.secondary_positions) ? currentPlayerData.secondary_positions : [];
 
+  const lastViewedComments = currentUser?.viewed_player_comments?.[playerId];
+  const newCommentsCount = lastViewedComments 
+    ? allComments.filter(c => new Date(c.created_date) > new Date(lastViewedComments)).length 
+    : allComments.length;
+
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -366,6 +397,11 @@ export default function PlayerDetail() {
             </TabsTrigger>
             <TabsTrigger value="comments" className="flex items-center gap-2">
               Kommentare
+              {newCommentsCount > 0 && (
+                <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                  {newCommentsCount}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
 
