@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Bell, Mail, Smartphone, Save } from "lucide-react";
+import { Bell, Mail, Smartphone, Save, MessageCircle, ExternalLink, Bot } from "lucide-react";
 
 const notificationTypes = [
   {
@@ -47,12 +47,12 @@ const notificationTypes = [
 ];
 
 const defaultSettings = {
-  neue_anfrage: { in_app: true, email: true },
-  neue_antwort: { in_app: true, email: false },
-  termin_erinnerung: { in_app: true, email: true },
-  deadline_erinnerung: { in_app: true, email: true },
-  spieler_update: { in_app: true, email: false },
-  match_vorschlag: { in_app: true, email: true },
+  neue_anfrage: { in_app: true, email: true, whatsapp: false },
+  neue_antwort: { in_app: true, email: false, whatsapp: false },
+  termin_erinnerung: { in_app: true, email: true, whatsapp: true },
+  deadline_erinnerung: { in_app: true, email: true, whatsapp: true },
+  spieler_update: { in_app: true, email: false, whatsapp: false },
+  match_vorschlag: { in_app: true, email: true, whatsapp: true },
 };
 
 export default function NotificationSettings() {
@@ -120,7 +120,7 @@ export default function NotificationSettings() {
                     </div>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 gap-4 ml-11">
+                  <div className="grid md:grid-cols-3 gap-4 ml-11">
                     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Smartphone className="w-5 h-5 text-slate-500" />
@@ -148,9 +148,90 @@ export default function NotificationSettings() {
                         onCheckedChange={() => handleToggle(type.key, 'email')}
                       />
                     </div>
+
+                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <MessageCircle className="w-5 h-5 text-green-600" />
+                        <Label htmlFor={`${type.key}-whatsapp`} className="cursor-pointer">
+                          WhatsApp
+                        </Label>
+                      </div>
+                      <Switch
+                        id={`${type.key}-whatsapp`}
+                        checked={settings[type.key]?.whatsapp ?? false}
+                        onCheckedChange={() => handleToggle(type.key, 'whatsapp')}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200 bg-white">
+          <CardHeader className="border-b border-slate-100">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Bot className="w-5 h-5 text-blue-900" />
+              KI-Benachrichtigungs-Agent
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <Bot className="w-6 h-6 text-blue-900" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-slate-900 mb-2">Intelligente Benachrichtigungen</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    Unser KI-Agent analysiert kontinuierlich Ihre Daten und sendet automatisch intelligente Benachrichtigungen:
+                  </p>
+                  <ul className="text-sm text-slate-600 space-y-2 mb-4">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>Match-Vorschläge zwischen Spielern und Vereinsanfragen</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>Wichtige Updates zu Spielerprofilen und Vertragsenden</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>Deadline- und Termin-Erinnerungen</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-0.5">✓</span>
+                      <span>Tägliche/wöchentliche Zusammenfassungen</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5 text-green-600" />
+                  WhatsApp-Benachrichtigungen
+                </h4>
+                <p className="text-sm text-slate-600 mb-4">
+                  Verbinden Sie Ihr WhatsApp-Konto, um Benachrichtigungen direkt über WhatsApp zu erhalten. 
+                  Der KI-Agent kann Ihnen auch interaktiv auf Fragen antworten!
+                </p>
+                <a
+                  href={base44.agents.getWhatsAppConnectURL('notification_manager')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button className="bg-green-600 hover:bg-green-700 text-white">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Mit WhatsApp verbinden
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </Button>
+                </a>
+                <p className="text-xs text-slate-500 mt-3">
+                  Nach der Verbindung können Sie in den obigen Einstellungen wählen, welche Benachrichtigungen Sie per WhatsApp erhalten möchten.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
