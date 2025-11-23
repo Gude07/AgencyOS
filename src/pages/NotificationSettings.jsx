@@ -9,6 +9,12 @@ import { Bell, Mail, Smartphone, Save, MessageCircle, ExternalLink, Bot } from "
 
 const notificationTypes = [
   {
+    key: "neue_aufgabe",
+    label: "Neue Aufgaben",
+    description: "Benachrichtigung wenn Ihnen eine neue Aufgabe zugewiesen wird",
+    icon: "✅"
+  },
+  {
     key: "neue_anfrage",
     label: "Neue Anfragen",
     description: "Benachrichtigung bei neuen Vereinsanfragen",
@@ -47,6 +53,7 @@ const notificationTypes = [
 ];
 
 const defaultSettings = {
+  neue_aufgabe: { in_app: true, email: true, whatsapp: true },
   neue_anfrage: { in_app: true, email: true, whatsapp: false },
   neue_antwort: { in_app: true, email: false, whatsapp: false },
   termin_erinnerung: { in_app: true, email: true, whatsapp: true },

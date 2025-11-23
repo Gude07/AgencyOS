@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 
 const notificationIcons = {
+  neue_aufgabe: "✅",
   neue_anfrage: "📋",
   neue_antwort: "💬",
   termin_erinnerung: "📅",
@@ -24,6 +25,7 @@ const notificationIcons = {
 };
 
 const notificationColors = {
+  neue_aufgabe: "bg-emerald-50 border-emerald-200",
   neue_anfrage: "bg-blue-50 border-blue-200",
   neue_antwort: "bg-purple-50 border-purple-200",
   termin_erinnerung: "bg-orange-50 border-orange-200",
