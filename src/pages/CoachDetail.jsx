@@ -83,12 +83,11 @@ export default function CoachDetail() {
 
   const handleSaveCoach = () => {
     const coachData = {
-      ...coach,
       ...editedCoach,
-      languages: Array.isArray(editedCoach.languages) ? editedCoach.languages : (coach.languages || []),
-      age: editedCoach.age ? parseInt(editedCoach.age) : coach.age,
-      salary_expectation: editedCoach.salary_expectation ? parseFloat(editedCoach.salary_expectation) : coach.salary_expectation,
-      experience_years: editedCoach.experience_years ? parseInt(editedCoach.experience_years) : coach.experience_years,
+      languages: Array.isArray(editedCoach.languages) ? editedCoach.languages : [],
+      age: editedCoach.age ? parseInt(editedCoach.age) : undefined,
+      salary_expectation: editedCoach.salary_expectation ? parseFloat(editedCoach.salary_expectation) : undefined,
+      experience_years: editedCoach.experience_years ? parseInt(editedCoach.experience_years) : undefined,
     };
     
     updateCoachMutation.mutate({ id: coachId, data: coachData });
@@ -137,7 +136,13 @@ export default function CoachDetail() {
                 <Trash2 className="w-4 h-4 mr-2" />
                 Löschen
               </Button>
-              <Button onClick={() => { setEditMode(true); setEditedCoach(coach); }} variant="outline">
+              <Button onClick={() => { 
+                setEditMode(true); 
+                setEditedCoach({
+                  ...coach,
+                  languages: Array.isArray(coach.languages) ? coach.languages : []
+                }); 
+              }} variant="outline">
                 Bearbeiten
               </Button>
             </div>
@@ -324,49 +329,46 @@ export default function CoachDetail() {
                   </div>
                 </div>
 
-                {currentCoachData?.preferred_formation && (
-                  <div>
-                    <Label className="text-sm font-semibold text-slate-700 mb-2 block">Bevorzugte Formation</Label>
-                    {editMode ? (
-                      <Input
-                        value={editedCoach?.preferred_formation || ""}
-                        onChange={(e) => setEditedCoach({...editedCoach, preferred_formation: e.target.value})}
-                      />
-                    ) : (
-                      <p className="text-slate-600">{currentCoachData.preferred_formation}</p>
-                    )}
-                  </div>
-                )}
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">Bevorzugte Formation</Label>
+                  {editMode ? (
+                    <Input
+                      value={editedCoach?.preferred_formation || ""}
+                      onChange={(e) => setEditedCoach({...editedCoach, preferred_formation: e.target.value})}
+                      placeholder="z.B. 4-3-3, 4-2-3-1"
+                    />
+                  ) : (
+                    <p className="text-slate-600">{currentCoachData?.preferred_formation || "Keine Angabe"}</p>
+                  )}
+                </div>
 
-                {currentCoachData?.coaching_philosophy && (
-                  <div>
-                    <Label className="text-sm font-semibold text-slate-700 mb-2 block">Trainerphilosophie</Label>
-                    {editMode ? (
-                      <Textarea
-                        value={editedCoach?.coaching_philosophy || ""}
-                        onChange={(e) => setEditedCoach({...editedCoach, coaching_philosophy: e.target.value})}
-                        className="h-24"
-                      />
-                    ) : (
-                      <p className="text-slate-600">{currentCoachData.coaching_philosophy}</p>
-                    )}
-                  </div>
-                )}
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">Trainerphilosophie</Label>
+                  {editMode ? (
+                    <Textarea
+                      value={editedCoach?.coaching_philosophy || ""}
+                      onChange={(e) => setEditedCoach({...editedCoach, coaching_philosophy: e.target.value})}
+                      className="h-24"
+                      placeholder="Spielstil, Philosophie..."
+                    />
+                  ) : (
+                    <p className="text-slate-600">{currentCoachData?.coaching_philosophy || "Keine Angabe"}</p>
+                  )}
+                </div>
 
-                {currentCoachData?.achievements && (
-                  <div>
-                    <Label className="text-sm font-semibold text-slate-700 mb-2 block">Erfolge</Label>
-                    {editMode ? (
-                      <Textarea
-                        value={editedCoach?.achievements || ""}
-                        onChange={(e) => setEditedCoach({...editedCoach, achievements: e.target.value})}
-                        className="h-24"
-                      />
-                    ) : (
-                      <p className="text-slate-600">{currentCoachData.achievements}</p>
-                    )}
-                  </div>
-                )}
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">Erfolge</Label>
+                  {editMode ? (
+                    <Textarea
+                      value={editedCoach?.achievements || ""}
+                      onChange={(e) => setEditedCoach({...editedCoach, achievements: e.target.value})}
+                      className="h-24"
+                      placeholder="Titel, Auszeichnungen..."
+                    />
+                  ) : (
+                    <p className="text-slate-600">{currentCoachData?.achievements || "Keine Angabe"}</p>
+                  )}
+                </div>
 
                 <div>
                   <Label className="text-sm font-semibold text-slate-700 mb-2 block">Sprachen</Label>
@@ -434,32 +436,56 @@ export default function CoachDetail() {
 
           <div className="space-y-6">
             <Card className="border-slate-200 bg-white">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-lg">Kontakt</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-3">
-                {currentCoachData?.contact_email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-slate-500" />
-                    <a href={`mailto:${currentCoachData.contact_email}`} className="text-blue-900 hover:underline text-sm">
-                      {currentCoachData.contact_email}
-                    </a>
-                  </div>
-                )}
-                {currentCoachData?.contact_phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-slate-500" />
-                    <a href={`tel:${currentCoachData.contact_phone}`} className="text-blue-900 hover:underline text-sm">
-                      {currentCoachData.contact_phone}
-                    </a>
-                  </div>
-                )}
-                {!currentCoachData?.contact_email && !currentCoachData?.contact_phone && (
-                  <p className="text-sm text-slate-500 text-center py-4">
-                    Keine Kontaktdaten hinterlegt
-                  </p>
-                )}
-              </CardContent>
+             <CardHeader className="border-b border-slate-100">
+               <CardTitle className="text-lg">Kontakt</CardTitle>
+             </CardHeader>
+             <CardContent className="p-4 space-y-3">
+               {editMode ? (
+                 <>
+                   <div>
+                     <Label className="text-xs text-slate-600 mb-1 block">E-Mail</Label>
+                     <Input
+                       type="email"
+                       value={editedCoach?.contact_email || ""}
+                       onChange={(e) => setEditedCoach({...editedCoach, contact_email: e.target.value})}
+                       placeholder="trainer@example.com"
+                     />
+                   </div>
+                   <div>
+                     <Label className="text-xs text-slate-600 mb-1 block">Telefon</Label>
+                     <Input
+                       value={editedCoach?.contact_phone || ""}
+                       onChange={(e) => setEditedCoach({...editedCoach, contact_phone: e.target.value})}
+                       placeholder="+49 123 456789"
+                     />
+                   </div>
+                 </>
+               ) : (
+                 <>
+                   {currentCoachData?.contact_email && (
+                     <div className="flex items-center gap-2">
+                       <Mail className="w-4 h-4 text-slate-500" />
+                       <a href={`mailto:${currentCoachData.contact_email}`} className="text-blue-900 hover:underline text-sm">
+                         {currentCoachData.contact_email}
+                       </a>
+                     </div>
+                   )}
+                   {currentCoachData?.contact_phone && (
+                     <div className="flex items-center gap-2">
+                       <Phone className="w-4 h-4 text-slate-500" />
+                       <a href={`tel:${currentCoachData.contact_phone}`} className="text-blue-900 hover:underline text-sm">
+                         {currentCoachData.contact_phone}
+                       </a>
+                     </div>
+                   )}
+                   {!currentCoachData?.contact_email && !currentCoachData?.contact_phone && (
+                     <p className="text-sm text-slate-500 text-center py-4">
+                       Keine Kontaktdaten hinterlegt
+                     </p>
+                   )}
+                 </>
+               )}
+             </CardContent>
             </Card>
 
             <Card className="border-slate-200 bg-white">
