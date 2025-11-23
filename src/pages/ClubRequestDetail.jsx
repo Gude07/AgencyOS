@@ -703,10 +703,9 @@ export default function ClubRequestDetail() {
                           <SelectValue placeholder="Wählen..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Winter 2024/25">Winter 2024/25</SelectItem>
-                          <SelectItem value="Sommer 2025">Sommer 2025</SelectItem>
                           <SelectItem value="Winter 2025/26">Winter 2025/26</SelectItem>
                           <SelectItem value="Sommer 2026">Sommer 2026</SelectItem>
+                          <SelectItem value="Winter 2026/27">Winter 2026/27</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (
