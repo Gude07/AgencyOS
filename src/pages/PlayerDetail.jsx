@@ -30,11 +30,16 @@ import {
 import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { format } from "date-fns";
+import { format, differenceInYears } from "date-fns";
 import { de } from "date-fns/locale";
 import PlayerPreferences from "../components/players/PlayerPreferences";
 import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
 import PlayerComments from "../components/players/PlayerComments";
+
+const calculateAge = (dateOfBirth) => {
+  if (!dateOfBirth) return null;
+  return differenceInYears(new Date(), new Date(dateOfBirth));
+};
 
 const categoryColors = {
   "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-200",
@@ -226,6 +231,8 @@ export default function PlayerDetail() {
   const calculateBidirectionalMatchScore = (request) => {
     if (!player || !request) return 0;
 
+    const playerAge = calculateAge(player.date_of_birth);
+
     const checkPositionMatch = (playerPos, requestedPos) => {
       if (playerPos === requestedPos) return true;
 
@@ -258,7 +265,7 @@ export default function PlayerDetail() {
       achievedWeight += 1.5;
     }
 
-    if (request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max) {
+    if (playerAge && request.age_min && request.age_max && playerAge >= request.age_min && playerAge <= request.age_max) {
       totalWeight += 2;
       achievedWeight += 2;
     } else if (request.age_min || request.age_max) {
@@ -567,15 +574,7 @@ export default function PlayerDetail() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                       <div>
                         <Label className="text-sm text-slate-600 mb-1.5 block">Alter</Label>
-                        {editMode ? (
-                          <Input
-                            type="number"
-                            value={editedPlayer?.age || ""}
-                            onChange={(e) => setEditedPlayer({...editedPlayer, age: e.target.value})}
-                          />
-                        ) : (
-                          <p className="font-semibold text-slate-900">{currentPlayerData?.age || '-'}</p>
-                        )}
+                        <p className="font-semibold text-slate-900">{calculateAge(currentPlayerData?.date_of_birth) || '-'}</p>
                       </div>
                       <div>
                         <Label className="text-sm text-slate-600 mb-1.5 block">Nationalität</Label>

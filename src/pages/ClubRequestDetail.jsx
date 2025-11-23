@@ -173,6 +173,10 @@ export default function ClubRequestDetail() {
   const calculateMatchScore = (player) => {
     if (!request) return 0;
 
+    const playerAge = player.date_of_birth ? 
+      Math.floor((new Date() - new Date(player.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000)) : 
+      null;
+
     const checkPositionMatch = (playerPos, requestedPos) => {
       if (playerPos === requestedPos) return 'main';
 
@@ -223,16 +227,16 @@ export default function ClubRequestDetail() {
         } else if (secondaryPositionMatch) {
           achievedWeight += criterion.weight * 0.5;
           totalWeight -= criterion.weight * 0.5; 
-        }
-        continue;
-      }
+          }
+          continue;
+          }
 
-      totalWeight += criterion.weight;
+          totalWeight += criterion.weight;
 
-      let matches = false;
-      switch (criterion.criterion) {
-        case "age":
-          matches = request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max;
+          let matches = false;
+          switch (criterion.criterion) {
+          case "age":
+          matches = playerAge && request.age_min && request.age_max && playerAge >= request.age_min && playerAge <= request.age_max;
           break;
         case "market_value":
           matches = request.budget_max && player.market_value && player.market_value <= request.budget_max;
@@ -350,10 +354,12 @@ export default function ClubRequestDetail() {
       </div>
       
       <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-        <div>
-          <p className="text-slate-600">Alter</p>
-          <p className="font-semibold text-slate-900">{player.age || '-'}</p>
-        </div>
+      <div>
+        <p className="text-slate-600">Alter</p>
+        <p className="font-semibold text-slate-900">
+          {player.date_of_birth ? Math.floor((new Date() - new Date(player.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000)) : '-'}
+        </p>
+      </div>
         <div>
           <p className="text-slate-600">Marktwert</p>
           <p className="font-semibold text-slate-900">
