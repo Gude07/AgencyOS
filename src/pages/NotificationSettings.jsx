@@ -53,13 +53,13 @@ const notificationTypes = [
 ];
 
 const defaultSettings = {
-  neue_aufgabe: { in_app: true, email: true, whatsapp: true },
-  neue_anfrage: { in_app: true, email: true, whatsapp: false },
-  neue_antwort: { in_app: true, email: false, whatsapp: false },
-  termin_erinnerung: { in_app: true, email: true, whatsapp: true },
-  deadline_erinnerung: { in_app: true, email: true, whatsapp: true },
-  spieler_update: { in_app: true, email: false, whatsapp: false },
-  match_vorschlag: { in_app: true, email: true, whatsapp: true },
+  neue_aufgabe: { in_app: true, email: true },
+  neue_anfrage: { in_app: true, email: true },
+  neue_antwort: { in_app: true, email: false },
+  termin_erinnerung: { in_app: true, email: true },
+  deadline_erinnerung: { in_app: true, email: true },
+  spieler_update: { in_app: true, email: false },
+  match_vorschlag: { in_app: true, email: true },
 };
 
 export default function NotificationSettings() {
@@ -96,6 +96,8 @@ export default function NotificationSettings() {
     setHasChanges(true);
   };
 
+  const whatsappUrl = base44.agents.getWhatsAppConnectURL('notification_manager');
+
   const handleSave = () => {
     updateSettingsMutation.mutate(settings);
   };
@@ -127,7 +129,7 @@ export default function NotificationSettings() {
                     </div>
                   </div>
                   
-                  <div className="grid md:grid-cols-3 gap-4 ml-11">
+                  <div className="grid md:grid-cols-2 gap-4 ml-11">
                     <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Smartphone className="w-5 h-5 text-slate-500" />
@@ -155,20 +157,6 @@ export default function NotificationSettings() {
                         onCheckedChange={() => handleToggle(type.key, 'email')}
                       />
                     </div>
-
-                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <MessageCircle className="w-5 h-5 text-green-600" />
-                        <Label htmlFor={`${type.key}-whatsapp`} className="cursor-pointer">
-                          WhatsApp
-                        </Label>
-                      </div>
-                      <Switch
-                        id={`${type.key}-whatsapp`}
-                        checked={settings[type.key]?.whatsapp ?? false}
-                        onCheckedChange={() => handleToggle(type.key, 'whatsapp')}
-                      />
-                    </div>
                   </div>
                 </div>
               ))}
@@ -176,70 +164,47 @@ export default function NotificationSettings() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 bg-white">
+        <Card className="border-slate-200 bg-gradient-to-br from-green-50 to-white">
           <CardHeader className="border-b border-slate-100">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Bot className="w-5 h-5 text-blue-900" />
-              KI-Benachrichtigungs-Agent
-            </CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <MessageCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">WhatsApp App-Assistent</CardTitle>
+                <p className="text-sm text-slate-600">Ihr persönlicher Helfer für die Spieleragentur</p>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-4 md:p-6">
-            <div className="space-y-4">
+          <CardContent className="p-6 space-y-4">
+            <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <Bot className="w-6 h-6 text-blue-900" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-slate-900 mb-2">Intelligente Benachrichtigungen</h3>
-                  <p className="text-sm text-slate-600 mb-4">
-                    Unser KI-Agent analysiert kontinuierlich Ihre Daten und sendet automatisch intelligente Benachrichtigungen:
+                <Bot className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold text-slate-900">Was kann der WhatsApp-Assistent?</p>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Verwalten Sie Ihre Spieleragentur direkt über WhatsApp:
                   </p>
-                  <ul className="text-sm text-slate-600 space-y-2 mb-4">
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-600 mt-0.5">✓</span>
-                      <span>Match-Vorschläge zwischen Spielern und Vereinsanfragen</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-600 mt-0.5">✓</span>
-                      <span>Wichtige Updates zu Spielerprofilen und Vertragsenden</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-600 mt-0.5">✓</span>
-                      <span>Deadline- und Termin-Erinnerungen</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-green-600 mt-0.5">✓</span>
-                      <span>Tägliche/wöchentliche Zusammenfassungen</span>
-                    </li>
+                  <ul className="text-sm text-slate-600 mt-2 space-y-1 ml-4">
+                    <li>📋 Aufgaben verwalten und erstellen</li>
+                    <li>⚽ Spieler und Trainer finden</li>
+                    <li>🏢 Vereinsanfragen und Matches anzeigen</li>
+                    <li>📅 Kalender und Termine prüfen</li>
+                    <li>🔔 Benachrichtigungen und Updates erhalten</li>
+                    <li>💬 Tägliche Briefings anfordern</li>
                   </ul>
                 </div>
               </div>
-
-              <div className="border-t border-slate-100 pt-4">
-                <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-green-600" />
-                  WhatsApp-Benachrichtigungen
-                </h4>
-                <p className="text-sm text-slate-600 mb-4">
-                  Verbinden Sie Ihr WhatsApp-Konto, um Benachrichtigungen direkt über WhatsApp zu erhalten. 
-                  Der KI-Agent kann Ihnen auch interaktiv auf Fragen antworten!
-                </p>
-                <a
-                  href={base44.agents.getWhatsAppConnectURL('notification_manager')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button className="bg-green-600 hover:bg-green-700 text-white">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Mit WhatsApp verbinden
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                </a>
-                <p className="text-xs text-slate-500 mt-3">
-                  Nach der Verbindung können Sie in den obigen Einstellungen wählen, welche Benachrichtigungen Sie per WhatsApp erhalten möchten.
-                </p>
-              </div>
             </div>
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="block">
+              <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                WhatsApp-Assistenten verbinden
+              </Button>
+            </a>
+            <p className="text-xs text-slate-500 text-center">
+              Sie werden zu WhatsApp weitergeleitet und können direkt mit dem Assistenten chatten. Fragen Sie einfach nach dem, was Sie brauchen!
+            </p>
           </CardContent>
         </Card>
 
