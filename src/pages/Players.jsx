@@ -442,18 +442,6 @@ export default function Players() {
                 </div>
 
                 <div>
-                  <Label htmlFor="age">Alter</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    value={newPlayer.age}
-                    onChange={(e) => setNewPlayer({...newPlayer, age: e.target.value})}
-                    placeholder="25"
-                    className="mt-1.5"
-                  />
-                </div>
-
-                <div>
                   <Label htmlFor="nationality">Nationalität</Label>
                   <Input
                     id="nationality"
