@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Building2, Mail, Phone, Award, Trash2, Languages as LanguagesIcon } from "lucide-react";
+import { ArrowLeft, Building2, Mail, Phone, Award, Trash2, Languages as LanguagesIcon, ExternalLink, Link as LinkIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, differenceInYears } from "date-fns";
@@ -85,6 +85,7 @@ export default function CoachDetail() {
     const coachData = {
       ...coach,
       ...editedCoach,
+      languages: Array.isArray(editedCoach.languages) ? editedCoach.languages : (coach.languages || []),
       age: editedCoach.age ? parseInt(editedCoach.age) : coach.age,
       salary_expectation: editedCoach.salary_expectation ? parseFloat(editedCoach.salary_expectation) : coach.salary_expectation,
       experience_years: editedCoach.experience_years ? parseInt(editedCoach.experience_years) : coach.experience_years,
@@ -178,8 +179,18 @@ export default function CoachDetail() {
                       ) : (
                         <p className="text-slate-600 mt-1">{currentCoachData?.current_club || "Vereinslos"}</p>
                       )}
-                    </div>
-                    {currentCoachData?.experience_years && (
+                      </div>
+                      {currentCoachData?.transfermarkt_url && (
+                      <a
+                        href={currentCoachData.transfermarkt_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                      >
+                        <ExternalLink className="w-5 h-5 text-blue-900" />
+                      </a>
+                      )}
+                      {currentCoachData?.experience_years && (
                       <div className="flex items-center gap-2 text-slate-600 bg-slate-100 px-3 py-2 rounded-lg">
                         <Award className="w-5 h-5" />
                         <span className="font-semibold">{currentCoachData.experience_years} Jahre</span>
