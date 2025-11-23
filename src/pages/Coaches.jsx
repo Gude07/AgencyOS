@@ -414,17 +414,6 @@ export default function Coaches() {
                   />
                 </div>
 
-                <div className="col-span-2">
-                  <Label htmlFor="transfermarkt_url">Transfermarkt.de Link</Label>
-                  <Input
-                    id="transfermarkt_url"
-                    value={newCoach.transfermarkt_url}
-                    onChange={(e) => setNewCoach({...newCoach, transfermarkt_url: e.target.value})}
-                    placeholder="https://www.transfermarkt.de/..."
-                    className="mt-1.5"
-                  />
-                </div>
-
                 <div>
                   <Label htmlFor="salary_expectation">Gehaltsvorstellung (€/Jahr)</Label>
                   <Input
