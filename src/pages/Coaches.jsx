@@ -93,6 +93,7 @@ export default function Coaches() {
         nationality: "",
         specialization: "",
         current_club: "",
+        transfermarkt_url: "",
         salary_expectation: "",
         contract_until: "",
         experience_years: "",
@@ -119,6 +120,7 @@ export default function Coaches() {
       age: newCoach.age ? parseInt(newCoach.age) : undefined,
       nationality: newCoach.nationality || undefined,
       current_club: newCoach.current_club || undefined,
+      transfermarkt_url: newCoach.transfermarkt_url || undefined,
       salary_expectation: newCoach.salary_expectation ? parseFloat(newCoach.salary_expectation) : undefined,
       contract_until: newCoach.contract_until || undefined,
       experience_years: newCoach.experience_years ? parseInt(newCoach.experience_years) : undefined,
@@ -408,6 +410,17 @@ export default function Coaches() {
                     value={newCoach.licenses}
                     onChange={(e) => setNewCoach({...newCoach, licenses: e.target.value})}
                     placeholder="z.B. UEFA Pro"
+                    className="mt-1.5"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <Label htmlFor="transfermarkt_url">Transfermarkt.de Link</Label>
+                  <Input
+                    id="transfermarkt_url"
+                    value={newCoach.transfermarkt_url}
+                    onChange={(e) => setNewCoach({...newCoach, transfermarkt_url: e.target.value})}
+                    placeholder="https://www.transfermarkt.de/..."
                     className="mt-1.5"
                   />
                 </div>
