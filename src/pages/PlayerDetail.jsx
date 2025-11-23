@@ -160,7 +160,7 @@ export default function PlayerDetail() {
       ...player,
       ...editedPlayer,
       secondary_positions: Array.isArray(editedPlayer.secondary_positions) ? editedPlayer.secondary_positions : [],
-      age: editedPlayer.age ? parseInt(editedPlayer.age) : player.age,
+      age: editedPlayer.date_of_birth ? calculateAge(editedPlayer.date_of_birth) : undefined,
       market_value: editedPlayer.market_value ? parseFloat(editedPlayer.market_value) : player.market_value,
       height: editedPlayer.height ? parseFloat(editedPlayer.height) : player.height,
     };
@@ -572,6 +572,23 @@ export default function PlayerDetail() {
                   </CardHeader>
                   <CardContent className="p-6 space-y-6">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                      <div>
+                        <Label className="text-sm text-slate-600 mb-1.5 block">Geburtsdatum</Label>
+                        {editMode ? (
+                          <Input
+                            type="date"
+                            value={editedPlayer?.date_of_birth || ""}
+                            onChange={(e) => setEditedPlayer({...editedPlayer, date_of_birth: e.target.value})}
+                          />
+                        ) : (
+                          <p className="font-semibold text-slate-900">
+                            {currentPlayerData?.date_of_birth 
+                              ? format(new Date(currentPlayerData.date_of_birth), "dd.MM.yyyy")
+                              : '-'
+                            }
+                          </p>
+                        )}
+                      </div>
                       <div>
                         <Label className="text-sm text-slate-600 mb-1.5 block">Alter</Label>
                         <p className="font-semibold text-slate-900">{calculateAge(currentPlayerData?.date_of_birth) || '-'}</p>
