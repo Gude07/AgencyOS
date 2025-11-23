@@ -59,6 +59,7 @@ export default function Coaches() {
     nationality: "",
     specialization: "",
     current_club: "",
+    transfermarkt_url: "",
     salary_expectation: "",
     contract_until: "",
     experience_years: "",
@@ -356,13 +357,12 @@ export default function Coaches() {
                 </div>
 
                 <div>
-                  <Label htmlFor="age">Alter</Label>
+                  <Label htmlFor="date_of_birth">Geburtsdatum</Label>
                   <Input
-                    id="age"
-                    type="number"
-                    value={newCoach.age}
-                    onChange={(e) => setNewCoach({...newCoach, age: e.target.value})}
-                    placeholder="45"
+                    id="date_of_birth"
+                    type="date"
+                    value={newCoach.date_of_birth}
+                    onChange={(e) => setNewCoach({...newCoach, date_of_birth: e.target.value})}
                     className="mt-1.5"
                   />
                 </div>

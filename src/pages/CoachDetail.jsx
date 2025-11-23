@@ -221,6 +221,23 @@ export default function CoachDetail() {
               <CardContent className="p-6 space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                   <div>
+                    <Label className="text-sm text-slate-600 mb-1.5 block">Geburtsdatum</Label>
+                    {editMode ? (
+                      <Input
+                        type="date"
+                        value={editedCoach?.date_of_birth || ""}
+                        onChange={(e) => setEditedCoach({...editedCoach, date_of_birth: e.target.value})}
+                      />
+                    ) : (
+                      <p className="font-semibold text-slate-900">
+                        {currentCoachData?.date_of_birth 
+                          ? format(new Date(currentCoachData.date_of_birth), "dd.MM.yyyy")
+                          : '-'
+                        }
+                      </p>
+                    )}
+                  </div>
+                  <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Alter</Label>
                     <p className="font-semibold text-slate-900">{calculateAge(currentCoachData?.date_of_birth) || '-'}</p>
                   </div>
@@ -359,6 +376,31 @@ export default function CoachDetail() {
                       </div>
                     ) : (
                       <p className="text-sm text-slate-400 italic">Keine Sprachen angegeben</p>
+                    )
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold text-slate-700 mb-2 block">Transfermarkt.de Link</Label>
+                  {editMode ? (
+                    <Input
+                      value={editedCoach?.transfermarkt_url || ""}
+                      onChange={(e) => setEditedCoach({...editedCoach, transfermarkt_url: e.target.value})}
+                      placeholder="https://www.transfermarkt.de/..."
+                    />
+                  ) : (
+                    currentCoachData?.transfermarkt_url ? (
+                      <a
+                        href={currentCoachData.transfermarkt_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-900 hover:underline break-all flex items-center gap-2"
+                      >
+                        <LinkIcon className="w-4 h-4 flex-shrink-0" />
+                        {currentCoachData.transfermarkt_url}
+                      </a>
+                    ) : (
+                      <p className="text-slate-600">Kein Link hinterlegt</p>
                     )
                   )}
                 </div>
