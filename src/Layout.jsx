@@ -5,7 +5,6 @@ import {
   LayoutDashboard, 
   CheckSquare, 
   Calendar, 
-  BarChart3,
   Users,
   Building2,
   UserCog,
@@ -35,11 +34,6 @@ const navigationItems = [
     title: "Kalender",
     url: createPageUrl("Calendar"),
     icon: Calendar,
-  },
-  {
-    title: "Reports",
-    url: createPageUrl("Reports"),
-    icon: BarChart3,
   },
 ];
 

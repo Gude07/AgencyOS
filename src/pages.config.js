@@ -2,7 +2,6 @@ import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import TaskDetail from './pages/TaskDetail';
 import Calendar from './pages/Calendar';
-import Reports from './pages/Reports';
 import Players from './pages/Players';
 import PlayerDetail from './pages/PlayerDetail';
 import ClubRequests from './pages/ClubRequests';
@@ -20,7 +19,6 @@ export const PAGES = {
     "Tasks": Tasks,
     "TaskDetail": TaskDetail,
     "Calendar": Calendar,
-    "Reports": Reports,
     "Players": Players,
     "PlayerDetail": PlayerDetail,
     "ClubRequests": ClubRequests,
