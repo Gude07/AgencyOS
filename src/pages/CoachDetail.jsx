@@ -88,6 +88,7 @@ export default function CoachDetail() {
       age: editedCoach.date_of_birth ? calculateAge(editedCoach.date_of_birth) : undefined,
       salary_expectation: editedCoach.salary_expectation ? parseFloat(editedCoach.salary_expectation) : undefined,
       experience_years: editedCoach.experience_years ? parseInt(editedCoach.experience_years) : undefined,
+      transfermarkt_url: editedCoach.transfermarkt_url || undefined,
     };
     
     updateCoachMutation.mutate({ id: coachId, data: coachData });
