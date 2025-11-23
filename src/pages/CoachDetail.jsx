@@ -85,7 +85,7 @@ export default function CoachDetail() {
     const coachData = {
       ...editedCoach,
       languages: Array.isArray(editedCoach.languages) ? editedCoach.languages : [],
-      age: editedCoach.age ? parseInt(editedCoach.age) : undefined,
+      age: editedCoach.date_of_birth ? calculateAge(editedCoach.date_of_birth) : undefined,
       salary_expectation: editedCoach.salary_expectation ? parseFloat(editedCoach.salary_expectation) : undefined,
       experience_years: editedCoach.experience_years ? parseInt(editedCoach.experience_years) : undefined,
     };
@@ -225,12 +225,50 @@ export default function CoachDetail() {
                         {currentCoachData?.category}
                       </Badge>
                     )}
-                    <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 font-semibold">
-                      {currentCoachData?.specialization}
-                    </Badge>
-                    <Badge variant="outline" className="border-slate-200">
-                      {currentCoachData?.status}
-                    </Badge>
+                    {editMode ? (
+                      <>
+                        <Select 
+                          value={editedCoach?.specialization || ""} 
+                          onValueChange={(value) => setEditedCoach({...editedCoach, specialization: value})}
+                        >
+                          <SelectTrigger className="w-48">
+                            <SelectValue placeholder="Spezialisierung" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Cheftrainer">Cheftrainer</SelectItem>
+                            <SelectItem value="Co-Trainer">Co-Trainer</SelectItem>
+                            <SelectItem value="Torwarttrainer">Torwarttrainer</SelectItem>
+                            <SelectItem value="Athletiktrainer">Athletiktrainer</SelectItem>
+                            <SelectItem value="Individualtrainer">Individualtrainer</SelectItem>
+                            <SelectItem value="Jugendtrainer">Jugendtrainer</SelectItem>
+                            <SelectItem value="Technischer Direktor">Technischer Direktor</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Select 
+                          value={editedCoach?.status || "aktiv"} 
+                          onValueChange={(value) => setEditedCoach({...editedCoach, status: value})}
+                        >
+                          <SelectTrigger className="w-48">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="aktiv">Aktiv</SelectItem>
+                            <SelectItem value="in_verhandlung">In Verhandlung</SelectItem>
+                            <SelectItem value="unter_vertrag">Unter Vertrag</SelectItem>
+                            <SelectItem value="archiviert">Archiviert</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </>
+                    ) : (
+                      <>
+                        <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 font-semibold">
+                          {currentCoachData?.specialization}
+                        </Badge>
+                        <Badge variant="outline" className="border-slate-200">
+                          {currentCoachData?.status}
+                        </Badge>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardHeader>
