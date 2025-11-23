@@ -117,7 +117,7 @@ export default function Coaches() {
       name: newCoach.name,
       specialization: newCoach.specialization,
       date_of_birth: newCoach.date_of_birth || undefined,
-      age: newCoach.age ? parseInt(newCoach.age) : undefined,
+      age: newCoach.date_of_birth ? calculateAge(newCoach.date_of_birth) : undefined,
       nationality: newCoach.nationality || undefined,
       current_club: newCoach.current_club || undefined,
       transfermarkt_url: newCoach.transfermarkt_url || undefined,

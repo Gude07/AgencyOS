@@ -133,7 +133,7 @@ export default function Players() {
       position: newPlayer.position,
       secondary_positions: Array.isArray(newPlayer.secondary_positions) ? newPlayer.secondary_positions : [],
       date_of_birth: newPlayer.date_of_birth || undefined,
-      age: newPlayer.age ? parseInt(newPlayer.age) : undefined,
+      age: newPlayer.date_of_birth ? calculateAge(newPlayer.date_of_birth) : undefined,
       nationality: newPlayer.nationality || undefined,
       current_club: newPlayer.current_club || undefined,
       market_value: newPlayer.market_value ? parseFloat(newPlayer.market_value) : undefined,
