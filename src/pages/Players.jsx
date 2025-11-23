@@ -56,6 +56,7 @@ export default function Players() {
   const [filterPosition, setFilterPosition] = useState(urlParams.get('position') || "alle");
   const [filterStatus, setFilterStatus] = useState(urlParams.get('status') || "alle");
   const [filterFavorites, setFilterFavorites] = useState(urlParams.get('favorites') || "alle");
+  const [filterHasMatches, setFilterHasMatches] = useState(urlParams.get('hasMatches') || "alle");
 
   const [newPlayer, setNewPlayer] = useState({
     name: "",
@@ -160,14 +161,15 @@ export default function Players() {
     if (filterPosition !== 'alle') params.set('position', filterPosition);
     if (filterStatus !== 'alle') params.set('status', filterStatus);
     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
-    
+    if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
+
     const newSearch = params.toString();
     const currentSearch = window.location.search.slice(1);
-    
+
     if (newSearch !== currentSearch) {
       window.history.replaceState(null, '', `?${newSearch}`);
     }
-  }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites]);
+  }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches]);
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -177,8 +179,11 @@ export default function Players() {
     const matchesStatus = filterStatus === "alle" || player.status === filterStatus;
     const matchesFavorites = filterFavorites === "alle" || 
                             (filterFavorites === "favoriten" && userFavorites.includes(player.id));
-    
-    return matchesSearch && matchesCategory && matchesPosition && matchesStatus && matchesFavorites;
+    const matchesHasMatches = filterHasMatches === "alle" || 
+                             (filterHasMatches === "mit_matches" && Array.isArray(player.favorite_matches) && player.favorite_matches.length > 0) ||
+                             (filterHasMatches === "ohne_matches" && (!Array.isArray(player.favorite_matches) || player.favorite_matches.length === 0));
+
+    return matchesSearch && matchesCategory && matchesPosition && matchesStatus && matchesFavorites && matchesHasMatches;
   });
 
   const stats = [
@@ -302,7 +307,18 @@ export default function Players() {
               <SelectItem value="abgeschlossen">Abgeschlossen</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+
+          <Select value={filterHasMatches} onValueChange={setFilterHasMatches}>
+            <SelectTrigger className="w-[200px] border-slate-200">
+              <SelectValue placeholder="Favorisierte Matches" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alle">Alle Spieler</SelectItem>
+              <SelectItem value="mit_matches">Mit favorisierten Matches</SelectItem>
+              <SelectItem value="ohne_matches">Ohne favorisierte Matches</SelectItem>
+            </SelectContent>
+          </Select>
+          </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence>
@@ -334,6 +350,7 @@ export default function Players() {
                     if (filterPosition !== 'alle') params.set('position', filterPosition);
                     if (filterStatus !== 'alle') params.set('status', filterStatus);
                     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+                    if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
                     navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                   }} className="cursor-pointer">
                   <CardHeader className="pb-3">
