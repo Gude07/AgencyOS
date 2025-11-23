@@ -25,8 +25,13 @@ import { Plus, Search, Users as UsersIcon, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { format } from "date-fns";
+import { format, differenceInYears } from "date-fns";
 import LanguagesEditor from "../components/coaches/LanguagesEditor";
+
+const calculateAge = (dateOfBirth) => {
+  if (!dateOfBirth) return null;
+  return differenceInYears(new Date(), new Date(dateOfBirth));
+};
 
 const categoryColors = {
   "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-200",
@@ -282,7 +287,7 @@ export default function Coaches() {
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
                         <p className="text-slate-600">Alter</p>
-                        <p className="font-semibold text-slate-900">{coach.age || '-'}</p>
+                        <p className="font-semibold text-slate-900">{calculateAge(coach.date_of_birth) || '-'}</p>
                       </div>
                       <div>
                         <p className="text-slate-600">Nationalität</p>

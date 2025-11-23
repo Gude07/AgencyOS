@@ -27,8 +27,13 @@ import {
 import { ArrowLeft, Building2, Mail, Phone, Award, Trash2, Languages as LanguagesIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { format } from "date-fns";
+import { format, differenceInYears } from "date-fns";
 import LanguagesEditor from "../components/coaches/LanguagesEditor";
+
+const calculateAge = (dateOfBirth) => {
+  if (!dateOfBirth) return null;
+  return differenceInYears(new Date(), new Date(dateOfBirth));
+};
 
 const categoryColors = {
   "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-200",
@@ -217,15 +222,7 @@ export default function CoachDetail() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Alter</Label>
-                    {editMode ? (
-                      <Input
-                        type="number"
-                        value={editedCoach?.age || ""}
-                        onChange={(e) => setEditedCoach({...editedCoach, age: e.target.value})}
-                      />
-                    ) : (
-                      <p className="font-semibold text-slate-900">{currentCoachData?.age || '-'}</p>
-                    )}
+                    <p className="font-semibold text-slate-900">{calculateAge(currentCoachData?.date_of_birth) || '-'}</p>
                   </div>
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Nationalität</Label>
