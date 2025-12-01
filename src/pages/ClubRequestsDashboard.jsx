@@ -15,6 +15,7 @@ import {
 import { Search, SlidersHorizontal, Building2, Users, Star, Eye, Pencil, TrendingUp, Clock, CheckCircle2, AlertCircle, ListChecks } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import AssignmentOverview from "../components/clubRequests/AssignmentOverview";
 
 const priorityColors = {
   niedrig: "bg-emerald-100 text-emerald-800 border-emerald-200",
