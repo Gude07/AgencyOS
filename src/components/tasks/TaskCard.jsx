@@ -35,6 +35,7 @@ export default function TaskCard({ task }) {
         className="hover:shadow-lg transition-all duration-200 cursor-pointer border border-slate-200 bg-white"
         onClick={() => {
           const params = new URLSearchParams(window.location.search);
+          params.set('scrollY', window.scrollY.toString());
           navigate(createPageUrl("TaskDetail") + "?id=" + task.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
         }}
       >
