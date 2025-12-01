@@ -90,7 +90,7 @@ export default function AssignmentOverview() {
                     {userRequests.map(request => (
                       <div 
                         key={request.id}
-                        onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
+                        onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + window.location.search + (window.location.search ? '&' : '?') + "scrollY=" + window.scrollY))}
                         className="p-2 bg-white rounded border border-slate-200 hover:border-blue-300 cursor-pointer transition-colors"
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -122,7 +122,7 @@ export default function AssignmentOverview() {
                   {unassignedRequests.map(request => (
                     <div 
                       key={request.id}
-                      onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id)}
+                      onClick={() => navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + window.location.search + (window.location.search ? '&' : '?') + "scrollY=" + window.scrollY))}
                       className="p-2 bg-white rounded border border-amber-200 hover:border-amber-400 cursor-pointer transition-colors"
                     >
                       <div className="flex items-center justify-between gap-2">

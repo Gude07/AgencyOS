@@ -44,6 +44,14 @@ export default function ClubRequestsDashboard() {
   const [filterShortlist, setFilterShortlist] = useState(urlParams.get('shortlist') || "alle");
   const [sortBy, setSortBy] = useState(urlParams.get('sortBy') || "-created_date");
 
+  // Restore scroll position on mount
+  React.useEffect(() => {
+    const scrollY = urlParams.get('scrollY');
+    if (scrollY) {
+      setTimeout(() => window.scrollTo(0, parseInt(scrollY)), 100);
+    }
+  }, []);
+
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['clubRequests'],
     queryFn: () => base44.entities.ClubRequest.list(),
@@ -389,6 +397,7 @@ export default function ClubRequestsDashboard() {
                   if (filterPosition !== 'alle') params.set('position', filterPosition);
                   if (filterShortlist !== 'alle') params.set('shortlist', filterShortlist);
                   if (sortBy !== '-created_date') params.set('sortBy', sortBy);
+                  params.set('scrollY', window.scrollY.toString());
                   navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                 }}
               >
@@ -465,6 +474,7 @@ export default function ClubRequestsDashboard() {
                           if (filterPosition !== 'alle') params.set('position', filterPosition);
                           if (filterShortlist !== 'alle') params.set('shortlist', filterShortlist);
                           if (sortBy !== '-created_date') params.set('sortBy', sortBy);
+                          params.set('scrollY', window.scrollY.toString());
                           navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                         }}
                       >
@@ -484,6 +494,7 @@ export default function ClubRequestsDashboard() {
                           if (filterPosition !== 'alle') params.set('position', filterPosition);
                           if (filterShortlist !== 'alle') params.set('shortlist', filterShortlist);
                           if (sortBy !== '-created_date') params.set('sortBy', sortBy);
+                          params.set('scrollY', window.scrollY.toString());
                           navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                         }}
                       >
