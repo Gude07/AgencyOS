@@ -23,7 +23,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X } from "lucide-react";
+import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -97,6 +97,11 @@ export default function ClubRequests() {
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list(),
   });
 
   const toggleFavoriteMutation = useMutation({
@@ -487,6 +492,30 @@ export default function ClubRequests() {
                       <Badge variant="outline" className="w-full justify-center border-slate-200">
                         {request.transfer_period}
                       </Badge>
+                    )}
+
+                    {/* Zuständige Personen anzeigen */}
+                    {(request.status === 'in_bearbeitung' || request.status === 'angebote_gesendet') && 
+                     request.assigned_to && request.assigned_to.length > 0 && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="w-4 h-4 text-blue-600" />
+                          <span className="text-slate-600">Zuständig:</span>
+                          <div className="flex flex-wrap gap-1">
+                            {request.assigned_to.slice(0, 2).map(email => {
+                              const user = users.find(u => u.email === email);
+                              return (
+                                <span key={email} className="font-medium text-slate-900">
+                                  {user ? user.full_name : email.split('@')[0]}
+                                </span>
+                              );
+                            })}
+                            {request.assigned_to.length > 2 && (
+                              <span className="text-slate-500">+{request.assigned_to.length - 2}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     )}
 
                     {request.contact_person && (

@@ -27,7 +27,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus } from "lucide-react";
+import MultiUserSelect from "../components/tasks/MultiUserSelect";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import MatchingCriteriaEditor from "../components/clubRequests/MatchingCriteriaEditor";
@@ -85,6 +86,11 @@ export default function ClubRequestDetail() {
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list(),
   });
 
   const updateRequestMutation = useMutation({
@@ -739,6 +745,50 @@ export default function ClubRequestDetail() {
                     )
                   )}
                 </div>
+
+                {/* Zuständige Personen - nur bei in_bearbeitung oder angebote_gesendet */}
+                {(currentRequestData.status === 'in_bearbeitung' || currentRequestData.status === 'angebote_gesendet') && (
+                  <div>
+                    <Label className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                      <UserPlus className="w-4 h-4" />
+                      Zuständige Personen
+                    </Label>
+                    {editMode ? (
+                      <MultiUserSelect
+                        selectedUsers={editedRequest.assigned_to || []}
+                        users={users}
+                        onChange={(selected) => setEditedRequest({...editedRequest, assigned_to: selected})}
+                      />
+                    ) : (
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        {currentRequestData.assigned_to && currentRequestData.assigned_to.length > 0 ? (
+                          <div className="space-y-2">
+                            {currentRequestData.assigned_to.map(email => {
+                              const user = users.find(u => u.email === email);
+                              return (
+                                <div key={email} className="flex items-center gap-2">
+                                  <div className="w-8 h-8 bg-blue-200 rounded-full flex items-center justify-center">
+                                    <span className="text-blue-800 font-semibold text-sm">
+                                      {user?.full_name?.[0]?.toUpperCase() || email[0].toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-slate-900">{user?.full_name || email}</p>
+                                    <p className="text-xs text-slate-500">{email}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-blue-700 italic">
+                            Noch niemand zugewiesen - Bearbeiten klicken um Personen hinzuzufügen
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
