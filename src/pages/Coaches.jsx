@@ -52,6 +52,14 @@ export default function Coaches() {
   const [filterCategory, setFilterCategory] = useState(urlParams.get('category') || "alle");
   const [filterSpecialization, setFilterSpecialization] = useState(urlParams.get('specialization') || "alle");
 
+  // Restore scroll position on mount
+  React.useEffect(() => {
+    const scrollY = urlParams.get('scrollY');
+    if (scrollY) {
+      setTimeout(() => window.scrollTo(0, parseInt(scrollY)), 100);
+    }
+  }, []);
+
   const [newCoach, setNewCoach] = useState({
     name: "",
     date_of_birth: "",
@@ -259,6 +267,7 @@ export default function Coaches() {
                     if (searchTerm) params.set('search', searchTerm);
                     if (filterCategory !== 'alle') params.set('category', filterCategory);
                     if (filterSpecialization !== 'alle') params.set('specialization', filterSpecialization);
+                    params.set('scrollY', window.scrollY.toString());
                     navigate(createPageUrl("CoachDetail") + "?id=" + coach.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                   }}
                 >

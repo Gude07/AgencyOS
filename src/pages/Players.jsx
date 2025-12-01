@@ -58,6 +58,14 @@ export default function Players() {
   const [filterFavorites, setFilterFavorites] = useState(urlParams.get('favorites') || "alle");
   const [filterHasMatches, setFilterHasMatches] = useState(urlParams.get('hasMatches') || "alle");
 
+  // Restore scroll position on mount
+  React.useEffect(() => {
+    const scrollY = urlParams.get('scrollY');
+    if (scrollY) {
+      setTimeout(() => window.scrollTo(0, parseInt(scrollY)), 100);
+    }
+  }, []);
+
   const [newPlayer, setNewPlayer] = useState({
     name: "",
     date_of_birth: "",
@@ -351,6 +359,7 @@ export default function Players() {
                     if (filterStatus !== 'alle') params.set('status', filterStatus);
                     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
                     if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
+                    params.set('scrollY', window.scrollY.toString());
                     navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                   }} className="cursor-pointer">
                   <CardHeader className="pb-3">
