@@ -34,6 +34,14 @@ export default function Tasks() {
   const [filterCategory, setFilterCategory] = useState(urlParams.get('category') || "alle");
   const [sortBy, setSortBy] = useState(urlParams.get('sortBy') || "-created_date");
 
+  // Restore scroll position on mount
+  React.useEffect(() => {
+    const scrollY = urlParams.get('scrollY');
+    if (scrollY) {
+      setTimeout(() => window.scrollTo(0, parseInt(scrollY)), 100);
+    }
+  }, []);
+
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",

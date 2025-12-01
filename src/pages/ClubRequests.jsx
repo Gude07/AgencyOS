@@ -60,6 +60,14 @@ export default function ClubRequests() {
   const [filterSalaryMax, setFilterSalaryMax] = useState(urlParams.get('salaryMax') || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
+  // Restore scroll position on mount
+  useEffect(() => {
+    const scrollY = urlParams.get('scrollY');
+    if (scrollY) {
+      setTimeout(() => window.scrollTo(0, parseInt(scrollY)), 100);
+    }
+  }, []);
+
   const [newRequest, setNewRequest] = useState({
     club_name: "",
     contact_person: "",
@@ -431,6 +439,7 @@ export default function ClubRequests() {
                     if (filterBudgetMax) params.set('budgetMax', filterBudgetMax);
                     if (filterSalaryMin) params.set('salaryMin', filterSalaryMin);
                     if (filterSalaryMax) params.set('salaryMax', filterSalaryMax);
+                    params.set('scrollY', window.scrollY.toString());
                     navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                   }} className="cursor-pointer">
                   <CardHeader className="pb-3">
