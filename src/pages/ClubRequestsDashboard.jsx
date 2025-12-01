@@ -360,6 +360,9 @@ export default function ClubRequestsDashboard() {
           </CardContent>
         </Card>
 
+        {/* Zuständigkeiten Übersicht */}
+        <AssignmentOverview />
+
         {filteredRequests.length === 0 ? (
           <Card className="border-slate-200 bg-white">
             <CardContent className="p-8 text-center">
