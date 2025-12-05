@@ -11,6 +11,7 @@ import CoachDetail from './pages/CoachDetail';
 import ClubRequestsDashboard from './pages/ClubRequestsDashboard';
 import NotificationSettings from './pages/NotificationSettings';
 import Notifications from './pages/Notifications';
+import ClubsOverview from './pages/ClubsOverview';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +29,7 @@ export const PAGES = {
     "ClubRequestsDashboard": ClubRequestsDashboard,
     "NotificationSettings": NotificationSettings,
     "Notifications": Notifications,
+    "ClubsOverview": ClubsOverview,
 }
 
 export const pagesConfig = {

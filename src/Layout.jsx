@@ -54,6 +54,11 @@ const transferItems = [
     icon: Inbox,
   },
   {
+    title: "Vereine",
+    url: createPageUrl("ClubsOverview"),
+    icon: Building2,
+  },
+  {
     title: "Vereinsanfragen",
     url: createPageUrl("ClubRequests"),
     icon: Building2,
