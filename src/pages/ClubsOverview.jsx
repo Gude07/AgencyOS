@@ -17,7 +17,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Search, Building2, ChevronDown, ChevronRight, Users, FileText, MapPin } from "lucide-react";
+import { Search, Building2, ChevronDown, ChevronRight, Users, FileText, MapPin, UserCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -57,6 +57,16 @@ export default function ClubsOverview() {
     queryKey: ['clubRequests'],
     queryFn: () => base44.entities.ClubRequest.list('-created_date'),
   });
+
+  const { data: players = [] } = useQuery({
+    queryKey: ['players'],
+    queryFn: () => base44.entities.Player.list(),
+  });
+
+  // Spieler die "bei Verein angeboten" sind
+  const offeredPlayers = useMemo(() => {
+    return players.filter(p => p.status === 'bei_verein_angeboten');
+  }, [players]);
 
   // Gruppiere Anfragen nach Vereinsname
   const clubsGrouped = useMemo(() => {
@@ -314,13 +324,59 @@ export default function ClubsOverview() {
                                 )}
                               </div>
                             </div>
-                            {request.shortlist?.length > 0 && (
-                              <Badge variant="outline" className="flex items-center gap-1">
-                                <Users className="w-3 h-3" />
-                                {request.shortlist.length}
-                              </Badge>
-                            )}
+    {(() => {
+                              const placedPlayers = offeredPlayers.filter(p => 
+                                request.shortlist?.includes(p.id)
+                              );
+                              return placedPlayers.length > 0 ? (
+                                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 flex items-center gap-1">
+                                  <UserCheck className="w-3 h-3" />
+                                  {placedPlayers.length} angeboten
+                                </Badge>
+                              ) : request.shortlist?.length > 0 ? (
+                                <Badge variant="outline" className="flex items-center gap-1">
+                                  <Users className="w-3 h-3" />
+                                  {request.shortlist.length}
+                                </Badge>
+                              ) : null;
+                            })()}
                           </div>
+                          
+                          {/* Platzierte Spieler unter der Anfrage */}
+                          {(() => {
+                            const placedPlayers = offeredPlayers.filter(p => 
+                              request.shortlist?.includes(p.id)
+                            );
+                            if (placedPlayers.length === 0) return null;
+                            return (
+                              <div className="mt-3 pt-3 border-t border-slate-100">
+                                <p className="text-xs font-semibold text-green-700 mb-2 flex items-center gap-1">
+                                  <UserCheck className="w-3 h-3" />
+                                  Bei Verein angeboten:
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {placedPlayers.map(player => (
+                                    <div 
+                                      key={player.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const params = new URLSearchParams();
+                                        if (searchTerm) params.set('search', searchTerm);
+                                        if (filterCountry !== 'alle') params.set('country', filterCountry);
+                                        if (filterHasActive !== 'alle') params.set('hasActive', filterHasActive);
+                                        params.set('scrollY', window.scrollY.toString());
+                                        navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                                      }}
+                                      className="flex items-center gap-2 px-2 py-1 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 cursor-pointer transition-colors"
+                                    >
+                                      <span className="text-sm font-medium text-green-900">{player.name}</span>
+                                      <span className="text-xs text-green-600">{player.position}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       ))}
                     </div>
