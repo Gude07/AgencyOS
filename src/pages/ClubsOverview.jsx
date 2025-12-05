@@ -63,10 +63,13 @@ export default function ClubsOverview() {
     queryFn: () => base44.entities.Player.list(),
   });
 
-  // Spieler die "bei Verein angeboten" sind
-  const offeredPlayers = useMemo(() => {
-    return players.filter(p => p.status === 'bei_verein_angeboten');
-  }, [players]);
+  // Spieler die bei einer bestimmten Anfrage angeboten wurden
+  const getOfferedPlayersForRequest = (requestId) => {
+    return players.filter(p => 
+      p.status === 'bei_verein_angeboten' && 
+      p.offered_to_requests?.includes(requestId)
+    );
+  };
 
   // Gruppiere Anfragen nach Vereinsname
   const clubsGrouped = useMemo(() => {
@@ -325,9 +328,7 @@ export default function ClubsOverview() {
                               </div>
                             </div>
     {(() => {
-                              const placedPlayers = offeredPlayers.filter(p => 
-                                request.shortlist?.includes(p.id)
-                              );
+                              const placedPlayers = getOfferedPlayersForRequest(request.id);
                               return placedPlayers.length > 0 ? (
                                 <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 flex items-center gap-1">
                                   <UserCheck className="w-3 h-3" />
@@ -344,9 +345,7 @@ export default function ClubsOverview() {
                           
                           {/* Platzierte Spieler unter der Anfrage */}
                           {(() => {
-                            const placedPlayers = offeredPlayers.filter(p => 
-                              request.shortlist?.includes(p.id)
-                            );
+                            const placedPlayers = getOfferedPlayersForRequest(request.id);
                             if (placedPlayers.length === 0) return null;
                             return (
                               <div className="mt-3 pt-3 border-t border-slate-100">

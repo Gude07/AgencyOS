@@ -35,6 +35,7 @@ import { de } from "date-fns/locale";
 import PlayerPreferences from "../components/players/PlayerPreferences";
 import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
 import PlayerComments from "../components/players/PlayerComments";
+import PlayerMatchesDragDrop from "../components/players/PlayerMatchesDragDrop";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -723,6 +724,48 @@ export default function PlayerDetail() {
               </div>
 
               <div className="space-y-6">
+                <Card className="border-green-200 bg-green-50/50">
+                  <CardHeader className="border-b border-green-200">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-green-700" />
+                      <CardTitle className="text-lg text-green-900">Angeboten bei Vereinen</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {(currentPlayerData?.offered_to_requests?.length > 0) ? (
+                      <div className="space-y-2">
+                        {currentPlayerData.offered_to_requests.map((requestId) => {
+                          const request = clubRequests.find(r => r.id === requestId);
+                          if (!request) return null;
+                          return (
+                            <div 
+                              key={requestId}
+                              onClick={() => {
+                                const params = new URLSearchParams();
+                                params.set('id', playerId);
+                                params.set('tab', activeTab);
+                                if (backUrl) params.set('back', backUrl);
+                                navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                              }}
+                              className="flex items-start justify-between gap-2 p-2 rounded hover:bg-green-100 cursor-pointer transition-colors"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-green-900 text-sm truncate">{request.club_name}</p>
+                                <p className="text-xs text-green-700 truncate">{request.position_needed} • {request.league}</p>
+                              </div>
+                              <Building2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-green-700 text-center py-4">
+                        Noch keine Vereine - Im "Matches" Tab per Drag & Drop hinzufügen
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <Card className="border-slate-200 bg-white">
                   <CardHeader className="border-b border-slate-100">
                     <div className="flex items-center gap-2">
@@ -760,28 +803,6 @@ export default function PlayerDetail() {
                     )}
                   </CardContent>
                 </Card>
-
-                <Card className="border-slate-200 bg-white">
-                  <CardHeader className="border-b border-slate-100">
-                    <CardTitle className="text-lg">Potentielle Vereine</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    {currentPlayerData?.potential_clubs?.length > 0 ? (
-                      <div className="space-y-2">
-                        {currentPlayerData.potential_clubs.map((club, index) => (
-                          <div key={index} className="flex items-center gap-2 text-sm">
-                            <Building2 className="w-4 h-4 text-slate-400" />
-                            <span className="text-slate-700">{club}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-500 text-center py-4">
-                        Keine Vereine hinterlegt
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
               </div>
             </div>
           </TabsContent>
@@ -794,12 +815,33 @@ export default function PlayerDetail() {
           </TabsContent>
 
           <TabsContent value="matches">
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Drag and Drop Bereich */}
+              <PlayerMatchesDragDrop
+                favoriteMatches={player.favorite_matches || []}
+                offeredRequests={player.offered_to_requests || []}
+                clubRequests={clubRequests}
+                onUpdateOffered={(newOffered) => {
+                  updatePlayerMutation.mutate({
+                    id: playerId,
+                    data: { offered_to_requests: newOffered }
+                  });
+                }}
+                onNavigateToRequest={(requestId) => {
+                  const params = new URLSearchParams();
+                  params.set('id', playerId);
+                  params.set('tab', activeTab);
+                  if (backUrl) params.set('back', backUrl);
+                  navigate(createPageUrl("ClubRequestDetail") + "?id=" + requestId + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                }}
+              />
+
+              {/* Alle Matches mit Filter */}
               <Card className="border-slate-200 bg-white">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <SlidersHorizontal className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm font-semibold text-slate-700">Filter</span>
+                    <span className="text-sm font-semibold text-slate-700">Alle Matches filtern</span>
                   </div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div className="relative">
