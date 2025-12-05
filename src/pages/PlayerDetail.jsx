@@ -821,11 +821,25 @@ export default function PlayerDetail() {
                 favoriteMatches={player.favorite_matches || []}
                 offeredRequests={player.offered_to_requests || []}
                 clubRequests={clubRequests}
-                onUpdateOffered={(newOffered) => {
-                  updatePlayerMutation.mutate({
+                onUpdateOffered={async (newOffered) => {
+                  // Finde neu hinzugefügte Anfragen
+                  const previousOffered = player.offered_to_requests || [];
+                  const newlyAdded = newOffered.filter(id => !previousOffered.includes(id));
+                  
+                  // Update Spieler
+                  await updatePlayerMutation.mutateAsync({
                     id: playerId,
                     data: { offered_to_requests: newOffered }
                   });
+                  
+                  // Setze Status der neuen Anfragen auf "angebote_gesendet"
+                  for (const requestId of newlyAdded) {
+                    const request = clubRequests.find(r => r.id === requestId);
+                    if (request && request.status !== 'angebote_gesendet' && request.status !== 'abgeschlossen') {
+                      await base44.entities.ClubRequest.update(requestId, { status: 'angebote_gesendet' });
+                    }
+                  }
+                  queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
                 }}
                 onNavigateToRequest={(requestId) => {
                   const params = new URLSearchParams();
