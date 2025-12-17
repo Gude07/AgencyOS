@@ -28,10 +28,56 @@ export default function PlayerComments({ playerId }) {
   });
 
   const createCommentMutation = useMutation({
-    mutationFn: (commentData) => base44.entities.PlayerComment.create(commentData),
+    mutationFn: async (commentData) => {
+      const comment = await base44.entities.PlayerComment.create(commentData);
+      
+      // Benachrichtigungen an relevante Benutzer senden
+      const players = await base44.entities.Player.list();
+      const player = players.find(p => p.id === playerId);
+      
+      if (player && currentUser) {
+        const notifyUsers = new Set();
+        
+        // Alle bisherigen Kommentatoren benachrichtigen
+        comments.forEach(c => {
+          if (c.created_by !== currentUser.email) {
+            notifyUsers.add(c.created_by);
+          }
+        });
+        
+        // Ersteller benachrichtigen
+        if (player.created_by && player.created_by !== currentUser.email) {
+          notifyUsers.add(player.created_by);
+        }
+        
+        // Bei Antwort: Original-Kommentator benachrichtigen
+        if (commentData.parent_id) {
+          const parentComment = comments.find(c => c.id === commentData.parent_id);
+          if (parentComment && parentComment.created_by !== currentUser.email) {
+            notifyUsers.add(parentComment.created_by);
+          }
+        }
+        
+        // Benachrichtigungen erstellen
+        for (const userEmail of notifyUsers) {
+          await base44.entities.Notification.create({
+            user_email: userEmail,
+            type: 'neue_antwort',
+            title: commentData.parent_id ? 'Neue Antwort' : 'Neuer Kommentar',
+            message: `${currentUser.full_name} hat ${commentData.parent_id ? 'geantwortet' : 'kommentiert'} bei Spieler ${player.name}`,
+            link: `PlayerDetail?id=${playerId}`,
+            entity_id: playerId,
+            entity_type: 'Player'
+          });
+        }
+      }
+      
+      return comment;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['playerComments', playerId] });
       setNewComment("");
+      setReplyTo(null);
     },
   });
 
