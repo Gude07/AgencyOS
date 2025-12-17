@@ -19,7 +19,55 @@ export default function TaskComments({ taskId }) {
   });
 
   const createCommentMutation = useMutation({
-    mutationFn: (commentData) => base44.entities.Comment.create(commentData),
+    mutationFn: async (commentData) => {
+      const comment = await base44.entities.Comment.create(commentData);
+      
+      // Benachrichtigungen an relevante Benutzer senden
+      const currentUser = await base44.auth.me();
+      const tasks = await base44.entities.Task.list();
+      const task = tasks.find(t => t.id === taskId);
+      
+      if (task) {
+        const notifyUsers = new Set();
+        
+        // Alle zugewiesenen Benutzer benachrichtigen
+        if (task.assigned_to && Array.isArray(task.assigned_to)) {
+          task.assigned_to.forEach(email => {
+            if (email !== currentUser.email) {
+              notifyUsers.add(email);
+            }
+          });
+        }
+        
+        // Ersteller benachrichtigen
+        if (task.created_by && task.created_by !== currentUser.email) {
+          notifyUsers.add(task.created_by);
+        }
+        
+        // Alle bisherigen Kommentatoren benachrichtigen
+        const allComments = await base44.entities.Comment.filter({ task_id: taskId });
+        allComments.forEach(c => {
+          if (c.created_by !== currentUser.email) {
+            notifyUsers.add(c.created_by);
+          }
+        });
+        
+        // Benachrichtigungen erstellen
+        for (const userEmail of notifyUsers) {
+          await base44.entities.Notification.create({
+            user_email: userEmail,
+            type: 'neue_antwort',
+            title: 'Neuer Kommentar zur Aufgabe',
+            message: `${currentUser.full_name} hat die Aufgabe "${task.title}" kommentiert`,
+            link: `TaskDetail?id=${taskId}`,
+            entity_id: taskId,
+            entity_type: 'Task'
+          });
+        }
+      }
+      
+      return comment;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', taskId] });
       setNewComment("");
