@@ -277,6 +277,29 @@ export default function ClubRequests() {
     { label: "Archiviert", value: requests.filter(r => !!r.archive_id).length },
   ];
 
+  const uniqueCountries = [...new Set(requests.map(r => r.country).filter(Boolean))].sort();
+  const uniquePositions = [...new Set(requests.map(r => r.position_needed).filter(Boolean))];
+  
+  const getContinent = (country) => {
+    const continents = {
+      'Deutschland': 'Europa', 'Frankreich': 'Europa', 'England': 'Europa', 'Spanien': 'Europa', 
+      'Italien': 'Europa', 'Niederlande': 'Europa', 'Belgien': 'Europa', 'Portugal': 'Europa',
+      'Österreich': 'Europa', 'Schweiz': 'Europa', 'Polen': 'Europa', 'Türkei': 'Europa',
+      'USA': 'Nordamerika', 'Kanada': 'Nordamerika', 'Mexiko': 'Nordamerika',
+      'Brasilien': 'Südamerika', 'Argentinien': 'Südamerika', 'Uruguay': 'Südamerika', 'Chile': 'Südamerika',
+      'Japan': 'Asien', 'China': 'Asien', 'Südkorea': 'Asien', 'Saudi-Arabien': 'Asien',
+      'Australien': 'Ozeanien', 'Neuseeland': 'Ozeanien',
+    };
+    return continents[country] || 'Sonstige';
+  };
+
+  const countriesByContinent = uniqueCountries.reduce((acc, country) => {
+    const continent = getContinent(country);
+    if (!acc[continent]) acc[continent] = [];
+    acc[continent].push(country);
+    return acc;
+  }, {});
+
   const handleArchiveSelected = async (archiveId) => {
     if (archiveId === 'new') {
       setArchiveAction('create');
@@ -315,29 +338,6 @@ export default function ClubRequests() {
     }
     setSelectedRequests(newSelection);
   };
-
-  const uniqueCountries = [...new Set(requests.map(r => r.country).filter(Boolean))].sort();
-  const uniquePositions = [...new Set(requests.map(r => r.position_needed).filter(Boolean))];
-  
-  const getContinent = (country) => {
-    const continents = {
-      'Deutschland': 'Europa', 'Frankreich': 'Europa', 'England': 'Europa', 'Spanien': 'Europa', 
-      'Italien': 'Europa', 'Niederlande': 'Europa', 'Belgien': 'Europa', 'Portugal': 'Europa',
-      'Österreich': 'Europa', 'Schweiz': 'Europa', 'Polen': 'Europa', 'Türkei': 'Europa',
-      'USA': 'Nordamerika', 'Kanada': 'Nordamerika', 'Mexiko': 'Nordamerika',
-      'Brasilien': 'Südamerika', 'Argentinien': 'Südamerika', 'Uruguay': 'Südamerika', 'Chile': 'Südamerika',
-      'Japan': 'Asien', 'China': 'Asien', 'Südkorea': 'Asien', 'Saudi-Arabien': 'Asien',
-      'Australien': 'Ozeanien', 'Neuseeland': 'Ozeanien',
-    };
-    return continents[country] || 'Sonstige';
-  };
-
-  const countriesByContinent = uniqueCountries.reduce((acc, country) => {
-    const continent = getContinent(country);
-    if (!acc[continent]) acc[continent] = [];
-    acc[continent].push(country);
-    return acc;
-  }, {});
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
@@ -1029,11 +1029,10 @@ export default function ClubRequests() {
                 {createRequestMutation.isPending ? "Wird erstellt..." : "Anfrage erstellen"}
               </Button>
             </div>
-          </DialogContent>
-          </Dialog>
+            </DialogContent>
+            </Dialog>
 
-          {/* Archive Dialog */}
-          <Dialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+            <Dialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Neues Archiv erstellen</DialogTitle>
