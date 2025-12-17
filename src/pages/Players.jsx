@@ -76,6 +76,7 @@ export default function Players() {
   const [showManageArchivesDialog, setShowManageArchivesDialog] = useState(false);
   const [editingArchive, setEditingArchive] = useState(null);
   const [archiveToDelete, setArchiveToDelete] = useState(null);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
 
   // Restore scroll position on mount
   React.useEffect(() => {
@@ -180,10 +181,10 @@ export default function Players() {
 
   const deleteArchiveMutation = useMutation({
     mutationFn: async (archiveId) => {
-      // Erst alle Spieler aus diesem Archiv entarchivieren
+      // Alle Spieler aus diesem Archiv löschen
       const playersInArchive = players.filter(p => p.archive_id === archiveId);
       await Promise.all(
-        playersInArchive.map(p => base44.entities.Player.update(p.id, { archive_id: null }))
+        playersInArchive.map(p => base44.entities.Player.delete(p.id))
       );
       // Dann das Archiv löschen
       await base44.entities.Archive.delete(archiveId);
@@ -192,6 +193,7 @@ export default function Players() {
       queryClient.invalidateQueries({ queryKey: ['archives'] });
       queryClient.invalidateQueries({ queryKey: ['players'] });
       setArchiveToDelete(null);
+      setDeleteConfirmationText("");
       setShowManageArchivesDialog(false);
     },
   });
@@ -993,23 +995,47 @@ export default function Players() {
             </DialogContent>
           </Dialog>
 
-          <AlertDialog open={!!archiveToDelete} onOpenChange={() => setArchiveToDelete(null)}>
+          <AlertDialog open={!!archiveToDelete} onOpenChange={() => {
+            setArchiveToDelete(null);
+            setDeleteConfirmationText("");
+          }}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Archiv löschen?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Sind Sie sicher, dass Sie das Archiv "{archiveToDelete?.name}" löschen möchten? 
-                  Alle {players.filter(p => p.archive_id === archiveToDelete?.id).length} Spieler 
-                  in diesem Archiv werden automatisch entarchiviert und wieder zur aktiven Liste hinzugefügt.
+                <AlertDialogTitle className="text-red-600">⚠️ Archiv unwiderruflich löschen?</AlertDialogTitle>
+                <AlertDialogDescription className="space-y-3">
+                  <p className="font-semibold">
+                    ACHTUNG: Diese Aktion kann nicht rückgängig gemacht werden!
+                  </p>
+                  <p>
+                    Alle <strong>{players.filter(p => p.archive_id === archiveToDelete?.id).length} Spieler</strong> in 
+                    diesem Archiv werden <strong className="text-red-600">unwiderruflich gelöscht</strong>.
+                  </p>
+                  <div className="bg-red-50 border border-red-200 rounded p-3 mt-3">
+                    <p className="text-sm text-red-800 mb-2">
+                      Zum Bestätigen geben Sie bitte den Archivnamen ein:
+                    </p>
+                    <p className="font-mono font-semibold text-red-900 mb-2">
+                      {archiveToDelete?.name}
+                    </p>
+                    <Input
+                      value={deleteConfirmationText}
+                      onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                      placeholder="Archivnamen hier eingeben"
+                      className="border-red-300 focus:border-red-500"
+                    />
+                  </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => setDeleteConfirmationText("")}>
+                  Abbrechen
+                </AlertDialogCancel>
                 <AlertDialogAction 
                   onClick={() => deleteArchiveMutation.mutate(archiveToDelete.id)}
-                  className="bg-red-600 hover:bg-red-700"
+                  disabled={deleteConfirmationText !== archiveToDelete?.name}
+                  className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Löschen
+                  Unwiderruflich löschen
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
