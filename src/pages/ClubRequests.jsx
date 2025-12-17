@@ -68,6 +68,9 @@ export default function ClubRequests() {
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [archiveAction, setArchiveAction] = useState(null);
   const [newArchiveName, setNewArchiveName] = useState("");
+  const [showManageArchivesDialog, setShowManageArchivesDialog] = useState(false);
+  const [editingArchive, setEditingArchive] = useState(null);
+  const [archiveToDelete, setArchiveToDelete] = useState(null);
 
   // Restore scroll position on mount
   useEffect(() => {
@@ -165,6 +168,32 @@ export default function ClubRequests() {
       queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
       setSelectionMode(false);
       setSelectedRequests(new Set());
+    },
+  });
+
+  const updateArchiveMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Archive.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['archives'] });
+      setEditingArchive(null);
+    },
+  });
+
+  const deleteArchiveMutation = useMutation({
+    mutationFn: async (archiveId) => {
+      // Erst alle Anfragen aus diesem Archiv entarchivieren
+      const requestsInArchive = requests.filter(r => r.archive_id === archiveId);
+      await Promise.all(
+        requestsInArchive.map(r => base44.entities.ClubRequest.update(r.id, { archive_id: null }))
+      );
+      // Dann das Archiv löschen
+      await base44.entities.Archive.delete(archiveId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['archives'] });
+      queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
+      setArchiveToDelete(null);
+      setShowManageArchivesDialog(false);
     },
   });
 
@@ -352,6 +381,12 @@ export default function ClubRequests() {
           <div className="flex gap-2">
             {!selectionMode ? (
               <>
+                <Button 
+                  onClick={() => setShowManageArchivesDialog(true)}
+                  variant="outline"
+                >
+                  Archive verwalten
+                </Button>
                 <Button 
                   onClick={() => setSelectionMode(true)}
                   variant="outline"
@@ -1033,36 +1068,139 @@ export default function ClubRequests() {
             </Dialog>
 
             <Dialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Neues Archiv erstellen</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <Label htmlFor="archive_name">Archivname *</Label>
-                <Input
-                  id="archive_name"
-                  value={newArchiveName}
-                  onChange={(e) => setNewArchiveName(e.target.value)}
-                  placeholder="z.B. Saison 2024/25 - Abgeschlossen"
-                  className="mt-1.5"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowArchiveDialog(false)}>
-                Abbrechen
-              </Button>
-              <Button 
-                onClick={handleCreateAndArchive}
-                disabled={!newArchiveName}
-                className="bg-blue-900 hover:bg-blue-800"
-              >
-                Erstellen und Archivieren
-              </Button>
-            </div>
-          </DialogContent>
-          </Dialog>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Neues Archiv erstellen</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label htmlFor="archive_name">Archivname *</Label>
+                    <Input
+                      id="archive_name"
+                      value={newArchiveName}
+                      onChange={(e) => setNewArchiveName(e.target.value)}
+                      placeholder="z.B. Saison 2024/25 - Abgeschlossen"
+                      className="mt-1.5"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setShowArchiveDialog(false)}>
+                    Abbrechen
+                  </Button>
+                  <Button 
+                    onClick={handleCreateAndArchive}
+                    disabled={!newArchiveName}
+                    className="bg-blue-900 hover:bg-blue-800"
+                  >
+                    Erstellen und Archivieren
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={showManageArchivesDialog} onOpenChange={setShowManageArchivesDialog}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Archive verwalten</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 py-4 max-h-[60vh] overflow-y-auto">
+                  {archives.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-8">
+                      Keine Archive vorhanden
+                    </p>
+                  ) : (
+                    archives.map(archive => {
+                      const requestsInArchive = requests.filter(r => r.archive_id === archive.id);
+                      const isEditing = editingArchive?.id === archive.id;
+
+                      return (
+                        <div key={archive.id} className="border border-slate-200 rounded-lg p-4">
+                          {isEditing ? (
+                            <div className="space-y-3">
+                              <Input
+                                value={editingArchive.name}
+                                onChange={(e) => setEditingArchive({...editingArchive, name: e.target.value})}
+                                placeholder="Archivname"
+                              />
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingArchive(null)}
+                                >
+                                  Abbrechen
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    updateArchiveMutation.mutate({
+                                      id: archive.id,
+                                      data: { name: editingArchive.name }
+                                    });
+                                  }}
+                                  className="bg-blue-900 hover:bg-blue-800"
+                                >
+                                  Speichern
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-slate-900">📁 {archive.name}</h4>
+                                <p className="text-sm text-slate-600 mt-1">
+                                  {requestsInArchive.length} Vereinsanfragen
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingArchive(archive)}
+                                >
+                                  Umbenennen
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setArchiveToDelete(archive)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  Löschen
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <AlertDialog open={!!archiveToDelete} onOpenChange={() => setArchiveToDelete(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Archiv löschen?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Sind Sie sicher, dass Sie das Archiv "{archiveToDelete?.name}" löschen möchten? 
+                    Alle {requests.filter(r => r.archive_id === archiveToDelete?.id).length} Vereinsanfragen 
+                    in diesem Archiv werden automatisch entarchiviert und wieder zur aktiven Liste hinzugefügt.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => deleteArchiveMutation.mutate(archiveToDelete.id)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Löschen
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           </div>
           );
