@@ -210,7 +210,29 @@ export default function ClubRequests() {
   });
 
   const createRequestMutation = useMutation({
-    mutationFn: (requestData) => base44.entities.ClubRequest.create(requestData),
+    mutationFn: async (requestData) => {
+      const request = await base44.entities.ClubRequest.create(requestData);
+      
+      // Benachrichtigung an zugewiesene Benutzer
+      if (requestData.assigned_to && requestData.assigned_to.length > 0) {
+        const currentUser = await base44.auth.me();
+        for (const userEmail of requestData.assigned_to) {
+          if (userEmail !== currentUser.email) {
+            await base44.entities.Notification.create({
+              user_email: userEmail,
+              type: 'neue_anfrage',
+              title: 'Neue Vereinsanfrage zugewiesen',
+              message: `Ihnen wurde die Vereinsanfrage von ${requestData.club_name} zugewiesen`,
+              link: `ClubRequestDetail?id=${request.id}`,
+              entity_id: request.id,
+              entity_type: 'ClubRequest'
+            });
+          }
+        }
+      }
+      
+      return request;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
       setShowCreateDialog(false);

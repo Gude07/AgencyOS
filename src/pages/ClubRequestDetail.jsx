@@ -130,9 +130,10 @@ export default function ClubRequestDetail() {
   const handleToggleShortlist = async (playerId) => {
     if (!request) return;
     const shortlist = request.shortlist || [];
-    const newShortlist = shortlist.includes(playerId)
-      ? shortlist.filter(id => id !== playerId)
-      : [...shortlist, playerId];
+    const isAdding = !shortlist.includes(playerId);
+    const newShortlist = isAdding
+      ? [...shortlist, playerId]
+      : shortlist.filter(id => id !== playerId);
     
     // Update club request shortlist
     await updateRequestMutation.mutateAsync({ 
@@ -144,13 +145,43 @@ export default function ClubRequestDetail() {
     const player = players.find(p => p.id === playerId);
     if (player) {
       const favorites = player.favorite_matches || [];
-      const newFavorites = newShortlist.includes(playerId)
+      const newFavorites = isAdding
         ? [...new Set([...favorites, requestId])]
         : favorites.filter(id => id !== requestId);
       
       await base44.entities.Player.update(playerId, { favorite_matches: newFavorites });
       queryClient.invalidateQueries({ queryKey: ['players'] });
       queryClient.invalidateQueries({ queryKey: ['player', playerId] });
+    }
+    
+    // Auto-Generierung: Aufgabe bei Shortlist-Meilenstein (z.B. erster Spieler)
+    if (isAdding && shortlist.length === 0) {
+      const currentUser = await base44.auth.me();
+      await base44.entities.Task.create({
+        title: `Angebot für ${player.name} vorbereiten`,
+        description: `Spieler wurde zur Shortlist von ${request.club_name} hinzugefügt. Angebot vorbereiten und Details abstimmen.`,
+        priority: 'hoch',
+        status: 'offen',
+        category: 'spieleranfrage',
+        assigned_to: request.assigned_to || [currentUser.email],
+        progress: 0
+      });
+      
+      // Benachrichtigung
+      if (request.assigned_to && request.assigned_to.length > 0) {
+        for (const userEmail of request.assigned_to) {
+          await base44.entities.Notification.create({
+            user_email: userEmail,
+            type: 'neue_aufgabe',
+            title: 'Neue Aufgabe erstellt',
+            message: `Aufgabe "Angebot für ${player.name} vorbereiten" wurde automatisch erstellt`,
+            link: 'Tasks',
+            entity_type: 'Task'
+          });
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     }
   };
 
