@@ -72,21 +72,21 @@ export default function CommunicationHistory({ clubRequestId, players = [] }) {
         await base44.entities.ClubRequest.update(clubRequestId, { status: 'in_bearbeitung' });
       }
       
-      // Benachrichtigung an zugewiesene Benutzer
-      if (request?.assigned_to && request.assigned_to.length > 0) {
-        const currentUser = await base44.auth.me();
-        for (const userEmail of request.assigned_to) {
-          if (userEmail !== currentUser.email) {
-            await base44.entities.Notification.create({
-              user_email: userEmail,
-              type: 'neue_antwort',
-              title: 'Neue Kommunikation',
-              message: `Neue Kommunikation für ${request.club_name}: ${data.subject}`,
-              link: `ClubRequestDetail?id=${clubRequestId}&tab=communication`,
-              entity_id: clubRequestId,
-              entity_type: 'ClubRequest'
-            });
-          }
+      // Benachrichtigung an ALLE Benutzer
+      const currentUser = await base44.auth.me();
+      const allUsers = await base44.entities.User.list();
+      
+      for (const user of allUsers) {
+        if (user.email !== currentUser.email) {
+          await base44.entities.Notification.create({
+            user_email: user.email,
+            type: 'neue_antwort',
+            title: 'Neue Kommunikation',
+            message: `Neue Kommunikation für ${request.club_name}: ${data.subject}`,
+            link: `ClubRequestDetail?id=${clubRequestId}&tab=communication`,
+            entity_id: clubRequestId,
+            entity_type: 'ClubRequest'
+          });
         }
       }
       
