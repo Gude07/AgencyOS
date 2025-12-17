@@ -844,7 +844,7 @@ export default function PlayerDetail() {
                     }
                   }
                   queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
-                }
+                }}
                 onNavigateToRequest={(requestId) => {
                   const params = new URLSearchParams();
                   params.set('id', playerId);
