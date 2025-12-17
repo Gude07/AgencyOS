@@ -78,7 +78,11 @@ export default function TaskDetail() {
   });
 
   const handleSaveTask = () => {
-    updateTaskMutation.mutate({ id: taskId, data: editedTask });
+    const taskData = {
+      ...editedTask,
+      status: editedTask.progress === 100 ? 'abgeschlossen' : editedTask.status
+    };
+    updateTaskMutation.mutate({ id: taskId, data: taskData });
   };
 
   const handleDeleteTask = () => {
@@ -88,9 +92,10 @@ export default function TaskDetail() {
   const handleUpdateSubtasks = (subtasks) => {
     const completedCount = subtasks.filter(st => st.completed).length;
     const progress = subtasks.length > 0 ? Math.round((completedCount / subtasks.length) * 100) : 0;
+    const status = progress === 100 ? 'abgeschlossen' : task.status;
     updateTaskMutation.mutate({ 
       id: taskId, 
-      data: { subtasks, progress }
+      data: { subtasks, progress, status }
     });
   };
 
@@ -237,7 +242,14 @@ export default function TaskDetail() {
                         min="0"
                         max="100"
                         value={editedTask.progress}
-                        onChange={(e) => setEditedTask({...editedTask, progress: parseInt(e.target.value) || 0})}
+                        onChange={(e) => {
+                          const newProgress = parseInt(e.target.value) || 0;
+                          setEditedTask({
+                            ...editedTask, 
+                            progress: newProgress,
+                            status: newProgress === 100 ? 'abgeschlossen' : editedTask.status
+                          });
+                        }}
                         className="w-24"
                       />
                     )}
