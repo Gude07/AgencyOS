@@ -49,8 +49,8 @@ const transferItems = [
     icon: UserCog,
   },
   {
-    title: "Anfragen Dashboard",
-    url: createPageUrl("ClubRequestsDashboard"),
+    title: "Organisatorisches",
+    url: createPageUrl("OrganizationalOverview"),
     icon: Inbox,
   },
   {

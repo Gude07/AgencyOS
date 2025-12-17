@@ -53,7 +53,10 @@ export default function ClubRequests() {
   const [searchRequirements, setSearchRequirements] = useState(urlParams.get('searchRequirements') || "");
   const [filterStatus, setFilterStatus] = useState(urlParams.get('status') || "alle");
   const [filterFavorites, setFilterFavorites] = useState(urlParams.get('favorites') || "alle");
+  const [filterPriority, setFilterPriority] = useState(urlParams.get('priority') || "alle");
   const [filterCountry, setFilterCountry] = useState(urlParams.get('country') || "alle");
+  const [filterPosition, setFilterPosition] = useState(urlParams.get('position') || "alle");
+  const [filterShortlist, setFilterShortlist] = useState(urlParams.get('shortlist') || "alle");
   const [filterBudgetMin, setFilterBudgetMin] = useState(urlParams.get('budgetMin') || "");
   const [filterBudgetMax, setFilterBudgetMax] = useState(urlParams.get('budgetMax') || "");
   const [filterSalaryMin, setFilterSalaryMin] = useState(urlParams.get('salaryMin') || "");
@@ -166,7 +169,10 @@ export default function ClubRequests() {
     if (searchRequirements) params.set('searchRequirements', searchRequirements);
     if (filterStatus !== 'alle') params.set('status', filterStatus);
     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+    if (filterPriority !== 'alle') params.set('priority', filterPriority);
     if (filterCountry !== 'alle') params.set('country', filterCountry);
+    if (filterPosition !== 'alle') params.set('position', filterPosition);
+    if (filterShortlist !== 'alle') params.set('shortlist', filterShortlist);
     if (filterBudgetMin) params.set('budgetMin', filterBudgetMin);
     if (filterBudgetMax) params.set('budgetMax', filterBudgetMax);
     if (filterSalaryMin) params.set('salaryMin', filterSalaryMin);
@@ -178,18 +184,28 @@ export default function ClubRequests() {
     if (newSearch !== currentSearch) {
       window.history.replaceState(null, '', `?${newSearch}`);
     }
-  }, [searchTerm, searchRequirements, filterStatus, filterFavorites, filterCountry, filterBudgetMin, filterBudgetMax, filterSalaryMin, filterSalaryMax]);
+  }, [searchTerm, searchRequirements, filterStatus, filterFavorites, filterPriority, filterCountry, filterPosition, filterShortlist, filterBudgetMin, filterBudgetMax, filterSalaryMin, filterSalaryMax]);
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.club_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.position_needed?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.league?.toLowerCase().includes(searchTerm.toLowerCase());
+                         request.league?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         request.contact_person?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRequirements = searchRequirements === "" || 
                                 request.requirements?.toLowerCase().includes(searchRequirements.toLowerCase());
     const matchesStatus = filterStatus === "alle" || request.status === filterStatus;
     const matchesFavorites = filterFavorites === "alle" || 
                              (filterFavorites === "favoriten" && userFavorites.includes(request.id));
+    const matchesPriority = filterPriority === "alle" || request.priority === filterPriority;
     const matchesCountry = filterCountry === "alle" || request.country === filterCountry;
+    const matchesPosition = filterPosition === "alle" || request.position_needed === filterPosition;
+    
+    const shortlistCount = request.shortlist?.length || 0;
+    const matchesShortlist = filterShortlist === "alle" || 
+                             (filterShortlist === "leer" && shortlistCount === 0) ||
+                             (filterShortlist === "1-3" && shortlistCount >= 1 && shortlistCount <= 3) ||
+                             (filterShortlist === "4-10" && shortlistCount >= 4 && shortlistCount <= 10) ||
+                             (filterShortlist === "10+" && shortlistCount > 10);
     
     const matchesBudget = (!filterBudgetMin || (request.budget_min && request.budget_min >= parseFloat(filterBudgetMin))) &&
                           (!filterBudgetMax || (request.budget_max && request.budget_max <= parseFloat(filterBudgetMax)));
@@ -197,7 +213,7 @@ export default function ClubRequests() {
     const matchesSalary = (!filterSalaryMin || (request.salary_min && request.salary_min >= parseFloat(filterSalaryMin))) &&
                           (!filterSalaryMax || (request.salary_max && request.salary_max <= parseFloat(filterSalaryMax)));
 
-    return matchesSearch && matchesRequirements && matchesStatus && matchesFavorites && matchesCountry && matchesBudget && matchesSalary;
+    return matchesSearch && matchesRequirements && matchesStatus && matchesFavorites && matchesPriority && matchesCountry && matchesPosition && matchesShortlist && matchesBudget && matchesSalary;
   });
 
   const stats = [
@@ -208,6 +224,7 @@ export default function ClubRequests() {
   ];
 
   const uniqueCountries = [...new Set(requests.map(r => r.country).filter(Boolean))].sort();
+  const uniquePositions = [...new Set(requests.map(r => r.position_needed).filter(Boolean))];
   
   const getContinent = (country) => {
     const continents = {
@@ -287,11 +304,11 @@ export default function ClubRequests() {
             </Button>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="relative lg:col-span-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <Input
-                placeholder="Verein, Position oder Liga suchen..."
+                placeholder="Verein, Position, Liga oder Person suchen..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 border-slate-200"
@@ -299,7 +316,7 @@ export default function ClubRequests() {
             </div>
 
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full md:w-[200px] border-slate-200">
+              <SelectTrigger className="border-slate-200">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -312,8 +329,21 @@ export default function ClubRequests() {
               </SelectContent>
             </Select>
 
+            <Select value={filterPriority} onValueChange={setFilterPriority}>
+              <SelectTrigger className="border-slate-200">
+                <SelectValue placeholder="Priorität" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alle">Alle Prioritäten</SelectItem>
+                <SelectItem value="dringend">Dringend</SelectItem>
+                <SelectItem value="hoch">Hoch</SelectItem>
+                <SelectItem value="mittel">Mittel</SelectItem>
+                <SelectItem value="niedrig">Niedrig</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={filterCountry} onValueChange={setFilterCountry}>
-              <SelectTrigger className="w-full md:w-[200px] border-slate-200">
+              <SelectTrigger className="border-slate-200">
                 <SelectValue placeholder="Land" />
               </SelectTrigger>
               <SelectContent>
@@ -326,6 +356,31 @@ export default function ClubRequests() {
                     ))}
                   </SelectGroup>
                 ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterPosition} onValueChange={setFilterPosition}>
+              <SelectTrigger className="border-slate-200">
+                <SelectValue placeholder="Position" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alle">Alle Positionen</SelectItem>
+                {uniquePositions.map(position => (
+                  <SelectItem key={position} value={position}>{position}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterShortlist} onValueChange={setFilterShortlist}>
+              <SelectTrigger className="border-slate-200">
+                <SelectValue placeholder="Shortlist" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alle">Alle Shortlists</SelectItem>
+                <SelectItem value="leer">Leer (0)</SelectItem>
+                <SelectItem value="1-3">1-3 Spieler</SelectItem>
+                <SelectItem value="4-10">4-10 Spieler</SelectItem>
+                <SelectItem value="10+">10+ Spieler</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -386,7 +441,7 @@ export default function ClubRequests() {
                 </div>
               </div>
 
-              {(filterBudgetMin || filterBudgetMax || filterSalaryMin || filterSalaryMax || filterCountry !== "alle" || searchRequirements) && (
+              {(filterBudgetMin || filterBudgetMax || filterSalaryMin || filterSalaryMax || searchRequirements) && (
                 <div className="flex justify-end">
                   <Button
                     variant="ghost"
@@ -396,13 +451,12 @@ export default function ClubRequests() {
                       setFilterBudgetMax("");
                       setFilterSalaryMin("");
                       setFilterSalaryMax("");
-                      setFilterCountry("alle");
                       setSearchRequirements("");
                     }}
                     className="text-slate-600 hover:text-slate-900"
                   >
                     <X className="w-4 h-4 mr-2" />
-                    Filter zurücksetzen
+                    Erweiterte Filter zurücksetzen
                   </Button>
                 </div>
               )}
