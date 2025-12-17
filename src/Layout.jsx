@@ -35,6 +35,11 @@ const navigationItems = [
     url: createPageUrl("Calendar"),
     icon: Calendar,
   },
+  {
+    title: "Organisatorisches",
+    url: createPageUrl("OrganizationalOverview"),
+    icon: Inbox,
+  },
 ];
 
 const transferItems = [
@@ -47,11 +52,6 @@ const transferItems = [
     title: "Trainer",
     url: createPageUrl("Coaches"),
     icon: UserCog,
-  },
-  {
-    title: "Organisatorisches",
-    url: createPageUrl("OrganizationalOverview"),
-    icon: Inbox,
   },
   {
     title: "Vereine",
