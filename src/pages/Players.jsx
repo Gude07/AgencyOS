@@ -57,6 +57,12 @@ export default function Players() {
   const [filterStatus, setFilterStatus] = useState(urlParams.get('status') || "alle");
   const [filterFavorites, setFilterFavorites] = useState(urlParams.get('favorites') || "alle");
   const [filterHasMatches, setFilterHasMatches] = useState(urlParams.get('hasMatches') || "alle");
+  const [filterArchive, setFilterArchive] = useState(urlParams.get('archive') || "active");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedPlayers, setSelectedPlayers] = useState(new Set());
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [archiveAction, setArchiveAction] = useState(null);
+  const [newArchiveName, setNewArchiveName] = useState("");
 
   // Restore scroll position on mount
   React.useEffect(() => {
@@ -96,6 +102,14 @@ export default function Players() {
     queryFn: () => base44.auth.me(),
   });
 
+  const { data: archives = [] } = useQuery({
+    queryKey: ['archives', 'player'],
+    queryFn: async () => {
+      const allArchives = await base44.entities.Archive.list();
+      return allArchives.filter(a => a.type === 'player');
+    },
+  });
+
   const toggleFavoriteMutation = useMutation({
     mutationFn: async (playerId) => {
       const favorites = currentUser?.favorite_players || [];
@@ -106,6 +120,40 @@ export default function Players() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+
+  const createArchiveMutation = useMutation({
+    mutationFn: (archiveData) => base44.entities.Archive.create(archiveData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['archives'] });
+    },
+  });
+
+  const archivePlayersMutation = useMutation({
+    mutationFn: async ({ playerIds, archiveId }) => {
+      await Promise.all(
+        playerIds.map(id => base44.entities.Player.update(id, { archive_id: archiveId }))
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['players'] });
+      setSelectionMode(false);
+      setSelectedPlayers(new Set());
+      setShowArchiveDialog(false);
+    },
+  });
+
+  const unarchivePlayersMutation = useMutation({
+    mutationFn: async (playerIds) => {
+      await Promise.all(
+        playerIds.map(id => base44.entities.Player.update(id, { archive_id: null }))
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['players'] });
+      setSelectionMode(false);
+      setSelectedPlayers(new Set());
     },
   });
 
@@ -170,6 +218,7 @@ export default function Players() {
     if (filterStatus !== 'alle') params.set('status', filterStatus);
     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
     if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
+    if (filterArchive !== 'active') params.set('archive', filterArchive);
 
     const newSearch = params.toString();
     const currentSearch = window.location.search.slice(1);
@@ -177,7 +226,7 @@ export default function Players() {
     if (newSearch !== currentSearch) {
       window.history.replaceState(null, '', `?${newSearch}`);
     }
-  }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches]);
+  }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches, filterArchive]);
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -190,16 +239,60 @@ export default function Players() {
     const matchesHasMatches = filterHasMatches === "alle" || 
                              (filterHasMatches === "mit_matches" && Array.isArray(player.favorite_matches) && player.favorite_matches.length > 0) ||
                              (filterHasMatches === "ohne_matches" && (!Array.isArray(player.favorite_matches) || player.favorite_matches.length === 0));
+    
+    const matchesArchive = filterArchive === "active" ? !player.archive_id :
+                          filterArchive === "alle_archiviert" ? !!player.archive_id :
+                          player.archive_id === filterArchive;
 
-    return matchesSearch && matchesCategory && matchesPosition && matchesStatus && matchesFavorites && matchesHasMatches;
+    return matchesSearch && matchesCategory && matchesPosition && matchesStatus && matchesFavorites && matchesHasMatches && matchesArchive;
   });
 
+  const activePlayers = players.filter(p => !p.archive_id);
   const stats = [
-    { label: "Gesamt", value: players.length },
-    { label: "Wintertransfer", value: players.filter(p => p.category === "Wintertransferperiode").length },
-    { label: "Sommertransfer", value: players.filter(p => p.category === "Sommertransferperiode").length },
-    { label: "Top-Priorität", value: players.filter(p => p.category === "Top-Priorität").length },
+    { label: "Aktiv", value: activePlayers.length },
+    { label: "Wintertransfer", value: activePlayers.filter(p => p.category === "Wintertransferperiode").length },
+    { label: "Sommertransfer", value: activePlayers.filter(p => p.category === "Sommertransferperiode").length },
+    { label: "Archiviert", value: players.filter(p => !!p.archive_id).length },
   ];
+
+  const handleArchiveSelected = async (archiveId) => {
+    if (archiveId === 'new') {
+      setArchiveAction('create');
+      setShowArchiveDialog(true);
+    } else {
+      await archivePlayersMutation.mutateAsync({
+        playerIds: Array.from(selectedPlayers),
+        archiveId
+      });
+    }
+  };
+
+  const handleCreateAndArchive = async () => {
+    if (!newArchiveName) return;
+    const archive = await createArchiveMutation.mutateAsync({
+      name: newArchiveName,
+      type: 'player'
+    });
+    await archivePlayersMutation.mutateAsync({
+      playerIds: Array.from(selectedPlayers),
+      archiveId: archive.id
+    });
+    setNewArchiveName("");
+  };
+
+  const handleUnarchiveSelected = async () => {
+    await unarchivePlayersMutation.mutateAsync(Array.from(selectedPlayers));
+  };
+
+  const togglePlayerSelection = (playerId) => {
+    const newSelection = new Set(selectedPlayers);
+    if (newSelection.has(playerId)) {
+      newSelection.delete(playerId);
+    } else {
+      newSelection.add(playerId);
+    }
+    setSelectedPlayers(newSelection);
+  };
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
@@ -207,15 +300,67 @@ export default function Players() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Spielerverwaltung</h1>
-            <p className="text-slate-600 mt-1">{filteredPlayers.length} Spieler im Portfolio</p>
+            <p className="text-slate-600 mt-1">
+              {filteredPlayers.length} Spieler {selectionMode && `(${selectedPlayers.size} ausgewählt)`}
+            </p>
           </div>
-          <Button 
-            onClick={() => setShowCreateDialog(true)}
-            className="bg-blue-900 hover:bg-blue-800 shadow-sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Spieler hinzufügen
-          </Button>
+          <div className="flex gap-2">
+            {!selectionMode ? (
+              <>
+                <Button 
+                  onClick={() => setSelectionMode(true)}
+                  variant="outline"
+                >
+                  Mehrfachauswahl
+                </Button>
+                <Button 
+                  onClick={() => setShowCreateDialog(true)}
+                  className="bg-blue-900 hover:bg-blue-800 shadow-sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Spieler hinzufügen
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  onClick={() => {
+                    setSelectionMode(false);
+                    setSelectedPlayers(new Set());
+                  }}
+                  variant="outline"
+                >
+                  Abbrechen
+                </Button>
+                {selectedPlayers.size > 0 && (
+                  <>
+                    {filterArchive === "active" ? (
+                      <Select onValueChange={handleArchiveSelected}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Archivieren..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">+ Neues Archiv</SelectItem>
+                          {archives.map(archive => (
+                            <SelectItem key={archive.id} value={archive.id}>
+                              {archive.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Button 
+                        onClick={handleUnarchiveSelected}
+                        className="bg-blue-900 hover:bg-blue-800"
+                      >
+                        Entarchivieren
+                      </Button>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -326,6 +471,21 @@ export default function Players() {
               <SelectItem value="ohne_matches">Ohne favorisierte Matches</SelectItem>
             </SelectContent>
           </Select>
+
+          <Select value={filterArchive} onValueChange={setFilterArchive}>
+            <SelectTrigger className="w-[200px] border-slate-200">
+              <SelectValue placeholder="Archiv" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Aktive Spieler</SelectItem>
+              <SelectItem value="alle_archiviert">Alle Archivierten</SelectItem>
+              {archives.map(archive => (
+                <SelectItem key={archive.id} value={archive.id}>
+                  📁 {archive.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -338,20 +498,42 @@ export default function Players() {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <Card 
-                  className="hover:shadow-md transition-all duration-200 border border-slate-200 bg-white relative"
+                  className={`hover:shadow-md transition-all duration-200 border bg-white relative ${
+                    selectionMode && selectedPlayers.has(player.id) 
+                      ? 'border-blue-500 ring-2 ring-blue-200' 
+                      : 'border-slate-200'
+                  }`}
                 >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavoriteMutation.mutate(player.id);
-                    }}
-                    className="absolute top-3 right-3 z-10 p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                  >
-                    <Star 
-                      className={`w-5 h-5 ${userFavorites.includes(player.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`}
-                    />
-                  </button>
+                  {selectionMode ? (
+                    <div className="absolute top-3 right-3 z-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedPlayers.has(player.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          togglePlayerSelection(player.id);
+                        }}
+                        className="w-5 h-5 rounded border-slate-300"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavoriteMutation.mutate(player.id);
+                      }}
+                      className="absolute top-3 right-3 z-10 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      <Star 
+                        className={`w-5 h-5 ${userFavorites.includes(player.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`}
+                      />
+                    </button>
+                  )}
                   <div onClick={() => {
+                    if (selectionMode) {
+                      togglePlayerSelection(player.id);
+                      return;
+                    }
                     const params = new URLSearchParams();
                     if (searchTerm) params.set('search', searchTerm);
                     if (filterCategory !== 'alle') params.set('category', filterCategory);
@@ -359,9 +541,10 @@ export default function Players() {
                     if (filterStatus !== 'alle') params.set('status', filterStatus);
                     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
                     if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
+                    if (filterArchive !== 'active') params.set('archive', filterArchive);
                     params.set('scrollY', window.scrollY.toString());
                     navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
-                  }} className="cursor-pointer">
+                    }} className={selectionMode ? "cursor-pointer" : "cursor-pointer"}>
                   <CardHeader className="pb-3">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
@@ -649,8 +832,41 @@ export default function Players() {
               </Button>
             </div>
           </DialogContent>
-        </Dialog>
-      </div>
-    </div>
-  );
-}
+          </Dialog>
+
+          {/* Archive Dialog */}
+          <Dialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Neues Archiv erstellen</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="archive_name">Archivname *</Label>
+                <Input
+                  id="archive_name"
+                  value={newArchiveName}
+                  onChange={(e) => setNewArchiveName(e.target.value)}
+                  placeholder="z.B. Saison 2024/25 - Abgeschlossen"
+                  className="mt-1.5"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowArchiveDialog(false)}>
+                Abbrechen
+              </Button>
+              <Button 
+                onClick={handleCreateAndArchive}
+                disabled={!newArchiveName}
+                className="bg-blue-900 hover:bg-blue-800"
+              >
+                Erstellen und Archivieren
+              </Button>
+            </div>
+          </DialogContent>
+          </Dialog>
+          </div>
+          </div>
+          );
+          }
