@@ -62,6 +62,12 @@ export default function ClubRequests() {
   const [filterSalaryMin, setFilterSalaryMin] = useState(urlParams.get('salaryMin') || "");
   const [filterSalaryMax, setFilterSalaryMax] = useState(urlParams.get('salaryMax') || "");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterArchive, setFilterArchive] = useState(urlParams.get('archive') || "active");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedRequests, setSelectedRequests] = useState(new Set());
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [archiveAction, setArchiveAction] = useState(null);
+  const [newArchiveName, setNewArchiveName] = useState("");
 
   // Restore scroll position on mount
   useEffect(() => {
@@ -107,6 +113,14 @@ export default function ClubRequests() {
     queryFn: () => base44.entities.User.list(),
   });
 
+  const { data: archives = [] } = useQuery({
+    queryKey: ['archives', 'club'],
+    queryFn: async () => {
+      const allArchives = await base44.entities.Archive.list();
+      return allArchives.filter(a => a.type === 'club');
+    },
+  });
+
   const toggleFavoriteMutation = useMutation({
     mutationFn: async (requestId) => {
       const favorites = currentUser?.favorite_club_requests || [];
@@ -117,6 +131,40 @@ export default function ClubRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+
+  const createArchiveMutation = useMutation({
+    mutationFn: (archiveData) => base44.entities.Archive.create(archiveData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['archives'] });
+    },
+  });
+
+  const archiveRequestsMutation = useMutation({
+    mutationFn: async ({ requestIds, archiveId }) => {
+      await Promise.all(
+        requestIds.map(id => base44.entities.ClubRequest.update(id, { archive_id: archiveId }))
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
+      setSelectionMode(false);
+      setSelectedRequests(new Set());
+      setShowArchiveDialog(false);
+    },
+  });
+
+  const unarchiveRequestsMutation = useMutation({
+    mutationFn: async (requestIds) => {
+      await Promise.all(
+        requestIds.map(id => base44.entities.ClubRequest.update(id, { archive_id: null }))
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
+      setSelectionMode(false);
+      setSelectedRequests(new Set());
     },
   });
 
@@ -177,6 +225,7 @@ export default function ClubRequests() {
     if (filterBudgetMax) params.set('budgetMax', filterBudgetMax);
     if (filterSalaryMin) params.set('salaryMin', filterSalaryMin);
     if (filterSalaryMax) params.set('salaryMax', filterSalaryMax);
+    if (filterArchive !== 'active') params.set('archive', filterArchive);
     
     const newSearch = params.toString();
     const currentSearch = window.location.search.slice(1);
@@ -184,7 +233,7 @@ export default function ClubRequests() {
     if (newSearch !== currentSearch) {
       window.history.replaceState(null, '', `?${newSearch}`);
     }
-  }, [searchTerm, searchRequirements, filterStatus, filterFavorites, filterPriority, filterCountry, filterPosition, filterShortlist, filterBudgetMin, filterBudgetMax, filterSalaryMin, filterSalaryMax]);
+  }, [searchTerm, searchRequirements, filterStatus, filterFavorites, filterPriority, filterCountry, filterPosition, filterShortlist, filterBudgetMin, filterBudgetMax, filterSalaryMin, filterSalaryMax, filterArchive]);
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.club_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -213,15 +262,59 @@ export default function ClubRequests() {
     const matchesSalary = (!filterSalaryMin || (request.salary_min && request.salary_min >= parseFloat(filterSalaryMin))) &&
                           (!filterSalaryMax || (request.salary_max && request.salary_max <= parseFloat(filterSalaryMax)));
 
-    return matchesSearch && matchesRequirements && matchesStatus && matchesFavorites && matchesPriority && matchesCountry && matchesPosition && matchesShortlist && matchesBudget && matchesSalary;
+    const matchesArchive = filterArchive === "active" ? !request.archive_id :
+                          filterArchive === "alle_archiviert" ? !!request.archive_id :
+                          request.archive_id === filterArchive;
+
+    return matchesSearch && matchesRequirements && matchesStatus && matchesFavorites && matchesPriority && matchesCountry && matchesPosition && matchesShortlist && matchesBudget && matchesSalary && matchesArchive;
   });
 
+  const activeRequests = requests.filter(r => !r.archive_id);
   const stats = [
-    { label: "Gesamt", value: requests.length },
-    { label: "Offen", value: requests.filter(r => r.status === "offen").length },
-    { label: "In Bearbeitung", value: requests.filter(r => r.status === "in_bearbeitung").length },
-    { label: "Abgeschlossen", value: requests.filter(r => r.status === "abgeschlossen").length },
+    { label: "Aktiv", value: activeRequests.length },
+    { label: "Offen", value: activeRequests.filter(r => r.status === "offen").length },
+    { label: "In Bearbeitung", value: activeRequests.filter(r => r.status === "in_bearbeitung").length },
+    { label: "Archiviert", value: requests.filter(r => !!r.archive_id).length },
   ];
+
+  const handleArchiveSelected = async (archiveId) => {
+    if (archiveId === 'new') {
+      setArchiveAction('create');
+      setShowArchiveDialog(true);
+    } else {
+      await archiveRequestsMutation.mutateAsync({
+        requestIds: Array.from(selectedRequests),
+        archiveId
+      });
+    }
+  };
+
+  const handleCreateAndArchive = async () => {
+    if (!newArchiveName) return;
+    const archive = await createArchiveMutation.mutateAsync({
+      name: newArchiveName,
+      type: 'club'
+    });
+    await archiveRequestsMutation.mutateAsync({
+      requestIds: Array.from(selectedRequests),
+      archiveId: archive.id
+    });
+    setNewArchiveName("");
+  };
+
+  const handleUnarchiveSelected = async () => {
+    await unarchiveRequestsMutation.mutateAsync(Array.from(selectedRequests));
+  };
+
+  const toggleRequestSelection = (requestId) => {
+    const newSelection = new Set(selectedRequests);
+    if (newSelection.has(requestId)) {
+      newSelection.delete(requestId);
+    } else {
+      newSelection.add(requestId);
+    }
+    setSelectedRequests(newSelection);
+  };
 
   const uniqueCountries = [...new Set(requests.map(r => r.country).filter(Boolean))].sort();
   const uniquePositions = [...new Set(requests.map(r => r.position_needed).filter(Boolean))];
@@ -252,15 +345,67 @@ export default function ClubRequests() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Vereinsanfragen</h1>
-            <p className="text-slate-600 mt-1">{filteredRequests.length} Anfragen im System</p>
+            <p className="text-slate-600 mt-1">
+              {filteredRequests.length} Anfragen {selectionMode && `(${selectedRequests.size} ausgewählt)`}
+            </p>
           </div>
-          <Button 
-            onClick={() => setShowCreateDialog(true)}
-            className="bg-blue-900 hover:bg-blue-800 shadow-sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Anfrage hinzufügen
-          </Button>
+          <div className="flex gap-2">
+            {!selectionMode ? (
+              <>
+                <Button 
+                  onClick={() => setSelectionMode(true)}
+                  variant="outline"
+                >
+                  Mehrfachauswahl
+                </Button>
+                <Button 
+                  onClick={() => setShowCreateDialog(true)}
+                  className="bg-blue-900 hover:bg-blue-800 shadow-sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Anfrage hinzufügen
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  onClick={() => {
+                    setSelectionMode(false);
+                    setSelectedRequests(new Set());
+                  }}
+                  variant="outline"
+                >
+                  Abbrechen
+                </Button>
+                {selectedRequests.size > 0 && (
+                  <>
+                    {filterArchive === "active" ? (
+                      <Select onValueChange={handleArchiveSelected}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Archivieren..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">+ Neues Archiv</SelectItem>
+                          {archives.map(archive => (
+                            <SelectItem key={archive.id} value={archive.id}>
+                              {archive.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Button 
+                        onClick={handleUnarchiveSelected}
+                        className="bg-blue-900 hover:bg-blue-800"
+                      >
+                        Entarchivieren
+                      </Button>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -382,8 +527,23 @@ export default function ClubRequests() {
                 <SelectItem value="4-10">4-10 Spieler</SelectItem>
                 <SelectItem value="10+">10+ Spieler</SelectItem>
               </SelectContent>
-            </Select>
-          </div>
+              </Select>
+
+              <Select value={filterArchive} onValueChange={setFilterArchive}>
+              <SelectTrigger className="border-slate-200">
+                <SelectValue placeholder="Archiv" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Aktive Anfragen</SelectItem>
+                <SelectItem value="alle_archiviert">Alle Archivierten</SelectItem>
+                {archives.map(archive => (
+                  <SelectItem key={archive.id} value={archive.id}>
+                    📁 {archive.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+              </Select>
+              </div>
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -474,20 +634,42 @@ export default function ClubRequests() {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <Card 
-                  className="hover:shadow-md transition-all duration-200 border border-slate-200 bg-white relative"
+                  className={`hover:shadow-md transition-all duration-200 border bg-white relative ${
+                    selectionMode && selectedRequests.has(request.id) 
+                      ? 'border-blue-500 ring-2 ring-blue-200' 
+                      : 'border-slate-200'
+                  }`}
                 >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavoriteMutation.mutate(request.id);
-                    }}
-                    className="absolute top-3 right-3 z-10 p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                  >
-                    <Star 
-                      className={`w-5 h-5 ${userFavorites.includes(request.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`}
-                    />
-                  </button>
+                  {selectionMode ? (
+                    <div className="absolute top-3 right-3 z-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedRequests.has(request.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleRequestSelection(request.id);
+                        }}
+                        className="w-5 h-5 rounded border-slate-300"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavoriteMutation.mutate(request.id);
+                      }}
+                      className="absolute top-3 right-3 z-10 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      <Star 
+                        className={`w-5 h-5 ${userFavorites.includes(request.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`}
+                      />
+                    </button>
+                  )}
                   <div onClick={() => {
+                    if (selectionMode) {
+                      toggleRequestSelection(request.id);
+                      return;
+                    }
                     const params = new URLSearchParams();
                     if (searchTerm) params.set('search', searchTerm);
                     if (searchRequirements) params.set('searchRequirements', searchRequirements);
@@ -848,8 +1030,41 @@ export default function ClubRequests() {
               </Button>
             </div>
           </DialogContent>
-        </Dialog>
-      </div>
-    </div>
-  );
-}
+          </Dialog>
+
+          {/* Archive Dialog */}
+          <Dialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Neues Archiv erstellen</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="archive_name">Archivname *</Label>
+                <Input
+                  id="archive_name"
+                  value={newArchiveName}
+                  onChange={(e) => setNewArchiveName(e.target.value)}
+                  placeholder="z.B. Saison 2024/25 - Abgeschlossen"
+                  className="mt-1.5"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowArchiveDialog(false)}>
+                Abbrechen
+              </Button>
+              <Button 
+                onClick={handleCreateAndArchive}
+                disabled={!newArchiveName}
+                className="bg-blue-900 hover:bg-blue-800"
+              >
+                Erstellen und Archivieren
+              </Button>
+            </div>
+          </DialogContent>
+          </Dialog>
+          </div>
+          </div>
+          );
+          }
