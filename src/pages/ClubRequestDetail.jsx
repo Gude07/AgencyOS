@@ -367,42 +367,43 @@ export default function ClubRequestDetail() {
               ))}
             </div>
           </div>
-        {showMatchScore && player.matchScore !== undefined && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
-            <Star className="w-3 h-3 fill-current" />
-            <span className="text-sm font-bold">{player.matchScore}%</span>
+          {showMatchScore && player.matchScore !== undefined && (
+            <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
+              <Star className="w-3 h-3 fill-current" />
+              <span className="text-sm font-bold">{player.matchScore}%</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+          <div>
+            <p className="text-slate-600">Alter</p>
+            <p className="font-semibold text-slate-900">
+              {player.date_of_birth ? Math.floor((new Date() - new Date(player.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000)) : '-'}
+            </p>
           </div>
-        )}
-      </div>
-      
-      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-      <div>
-        <p className="text-slate-600">Alter</p>
-        <p className="font-semibold text-slate-900">
-          {player.date_of_birth ? Math.floor((new Date() - new Date(player.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000)) : '-'}
-        </p>
-      </div>
-        <div>
-          <p className="text-slate-600">Marktwert</p>
-          <p className="font-semibold text-slate-900">
-            {player.market_value ? `${(player.market_value / 1000000).toFixed(1)}M €` : '-'}
-          </p>
+          <div>
+            <p className="text-slate-600">Marktwert</p>
+            <p className="font-semibold text-slate-900">
+              {player.market_value ? `${(player.market_value / 1000000).toFixed(1)}M €` : '-'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleToggleShortlist(player.id)}
+            className={`flex-1 ${request.shortlist?.includes(player.id) ? 'bg-blue-50 border-blue-300 text-blue-900' : ''}`}
+          >
+            <ListChecks className="w-4 h-4 mr-2" />
+            {request.shortlist?.includes(player.id) ? 'Auf Shortlist' : 'Zu Shortlist'}
+          </Button>
         </div>
       </div>
-
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleToggleShortlist(player.id)}
-          className={`flex-1 ${request.shortlist?.includes(player.id) ? 'bg-blue-50 border-blue-300 text-blue-900' : ''}`}
-        >
-          <ListChecks className="w-4 h-4 mr-2" />
-          {request.shortlist?.includes(player.id) ? 'Auf Shortlist' : 'Zu Shortlist'}
-        </Button>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
