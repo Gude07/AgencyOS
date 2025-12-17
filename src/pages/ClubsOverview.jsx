@@ -66,7 +66,7 @@ export default function ClubsOverview() {
   // Spieler die bei einer bestimmten Anfrage angeboten wurden
   const getOfferedPlayersForRequest = (requestId) => {
     return players.filter(p => 
-      p.status === 'bei_verein_angeboten' && 
+      (p.status === 'bei_verein_angeboten' || p.status === 'in_bearbeitung') && 
       p.offered_to_requests?.includes(requestId)
     );
   };

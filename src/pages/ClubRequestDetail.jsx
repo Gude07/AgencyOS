@@ -322,35 +322,51 @@ export default function ClubRequestDetail() {
 
   const currentRequestData = editMode ? editedRequest : request;
 
-  const renderPlayerCard = (player, showMatchScore = false) => (
-    <div 
-      key={player.id}
-      className="p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-blue-300 transition-colors"
-    >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div 
-          className="flex-1 cursor-pointer"
-          onClick={() => {
-            const params = new URLSearchParams();
-            params.set('id', requestId);
-            params.set('tab', activeTab);
-            if (backUrl) params.set('back', backUrl);
-            navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
-          }}
-        >
-          <h4 className="font-semibold text-slate-900">{player.name}</h4>
-          <p className="text-sm text-slate-600 mt-1">{player.current_club}</p>
-          <div className="flex flex-wrap gap-1 mt-2">
-            <Badge variant="outline" className={`text-xs ${player.positionMatch === 'main' ? 'border-blue-300 bg-blue-50 text-blue-900' : 'border-slate-200'}`}>
-              {player.position}
-            </Badge>
-            {player.secondary_positions?.map((pos) => (
-              <Badge key={pos} variant="outline" className={`text-xs ${pos === request.position_needed ? 'border-blue-200 bg-blue-50 text-blue-800' : 'border-slate-200'}`}>
-                {pos}
+  const renderPlayerCard = (player, showMatchScore = false) => {
+    const isOfferedToThisRequest = player.offered_to_requests?.includes(requestId);
+
+    return (
+      <div 
+        key={player.id}
+        className={`p-4 rounded-lg border transition-colors ${
+          isOfferedToThisRequest 
+            ? 'bg-green-50 border-green-300 hover:border-green-400' 
+            : 'bg-slate-50 border-slate-200 hover:border-blue-300'
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div 
+            className="flex-1 cursor-pointer"
+            onClick={() => {
+              const params = new URLSearchParams();
+              params.set('id', requestId);
+              params.set('tab', activeTab);
+              if (backUrl) params.set('back', backUrl);
+              navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <h4 className={`font-semibold ${isOfferedToThisRequest ? 'text-green-900' : 'text-slate-900'}`}>
+                {player.name}
+              </h4>
+              {isOfferedToThisRequest && (
+                <Badge className="bg-green-600 text-white text-xs">Angeboten</Badge>
+              )}
+            </div>
+            <p className={`text-sm mt-1 ${isOfferedToThisRequest ? 'text-green-700' : 'text-slate-600'}`}>
+              {player.current_club}
+            </p>
+            <div className="flex flex-wrap gap-1 mt-2">
+              <Badge variant="outline" className={`text-xs ${player.positionMatch === 'main' ? 'border-blue-300 bg-blue-50 text-blue-900' : 'border-slate-200'}`}>
+                {player.position}
               </Badge>
-            ))}
+              {player.secondary_positions?.map((pos) => (
+                <Badge key={pos} variant="outline" className={`text-xs ${pos === request.position_needed ? 'border-blue-200 bg-blue-50 text-blue-800' : 'border-slate-200'}`}>
+                  {pos}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
         {showMatchScore && player.matchScore !== undefined && (
           <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
             <Star className="w-3 h-3 fill-current" />

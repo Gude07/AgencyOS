@@ -826,10 +826,14 @@ export default function PlayerDetail() {
                   const previousOffered = player.offered_to_requests || [];
                   const newlyAdded = newOffered.filter(id => !previousOffered.includes(id));
                   
-                  // Update Spieler
+                  // Update Spieler (mit Status-Update wenn etwas angeboten wird)
+                  const newStatus = newOffered.length > 0 ? 'bei_verein_angeboten' : player.status;
                   await updatePlayerMutation.mutateAsync({
                     id: playerId,
-                    data: { offered_to_requests: newOffered }
+                    data: { 
+                      offered_to_requests: newOffered,
+                      status: newStatus
+                    }
                   });
                   
                   // Setze Status der neuen Anfragen auf "angebote_gesendet"
@@ -840,7 +844,7 @@ export default function PlayerDetail() {
                     }
                   }
                   queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
-                }}
+                }
                 onNavigateToRequest={(requestId) => {
                   const params = new URLSearchParams();
                   params.set('id', playerId);
