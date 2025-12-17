@@ -62,9 +62,40 @@ export default function CommunicationHistory({ clubRequestId, players = [] }) {
   });
 
   const createCommunicationMutation = useMutation({
-    mutationFn: (data) => base44.entities.Communication.create(data),
+    mutationFn: async (data) => {
+      const comm = await base44.entities.Communication.create(data);
+      
+      // Auto-Update: Request-Status von "offen" auf "in_bearbeitung"
+      const requests = await base44.entities.ClubRequest.list();
+      const request = requests.find(r => r.id === clubRequestId);
+      if (request && request.status === 'offen') {
+        await base44.entities.ClubRequest.update(clubRequestId, { status: 'in_bearbeitung' });
+      }
+      
+      // Benachrichtigung an zugewiesene Benutzer
+      if (request?.assigned_to && request.assigned_to.length > 0) {
+        const currentUser = await base44.auth.me();
+        for (const userEmail of request.assigned_to) {
+          if (userEmail !== currentUser.email) {
+            await base44.entities.Notification.create({
+              user_email: userEmail,
+              type: 'neue_antwort',
+              title: 'Neue Kommunikation',
+              message: `Neue Kommunikation für ${request.club_name}: ${data.subject}`,
+              link: `ClubRequestDetail?id=${clubRequestId}&tab=communication`,
+              entity_id: clubRequestId,
+              entity_type: 'ClubRequest'
+            });
+          }
+        }
+      }
+      
+      return comm;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communications', clubRequestId] });
+      queryClient.invalidateQueries({ queryKey: ['clubRequest', clubRequestId] });
+      queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
       setShowAddDialog(false);
       setNewCommunication({
         date: new Date().toISOString().slice(0, 16),

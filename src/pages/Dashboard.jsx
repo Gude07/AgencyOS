@@ -1,6 +1,6 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -11,13 +11,15 @@ import {
   Clock, 
   AlertTriangle,
   TrendingUp,
-  ArrowRight
+  ArrowRight,
+  MessageCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import TaskCard from "../components/tasks/TaskCard";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
@@ -28,6 +30,54 @@ export default function Dashboard() {
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
   });
+
+  // Auto-Erinnerungen für Deadlines
+  React.useEffect(() => {
+    const checkDeadlines = async () => {
+      if (!user?.email || tasks.length === 0) return;
+      
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      for (const task of tasks) {
+        if (task.status === 'abgeschlossen' || !task.deadline) continue;
+        
+        const assignedUsers = Array.isArray(task.assigned_to) ? task.assigned_to : [];
+        if (!assignedUsers.includes(user.email)) continue;
+        
+        const deadline = new Date(task.deadline);
+        const isOverdue = deadline < now && task.status !== 'abgeschlossen';
+        const isDueTomorrow = deadline > now && deadline <= tomorrow;
+        
+        // Benachrichtigungen nur einmal pro Tag
+        const existingNotifications = await base44.entities.Notification.filter({
+          user_email: user.email,
+          entity_id: task.id,
+          type: 'deadline_erinnerung'
+        });
+        
+        const hasRecentNotification = existingNotifications.some(n => {
+          const notifDate = new Date(n.created_date);
+          return (now - notifDate) < 24 * 60 * 60 * 1000; // innerhalb 24h
+        });
+        
+        if (!hasRecentNotification && (isOverdue || isDueTomorrow)) {
+          await base44.entities.Notification.create({
+            user_email: user.email,
+            type: 'deadline_erinnerung',
+            title: isOverdue ? 'Aufgabe überfällig!' : 'Deadline morgen',
+            message: `Aufgabe "${task.title}" ist ${isOverdue ? 'überfällig' : 'morgen fällig'}`,
+            link: `TaskDetail?id=${task.id}`,
+            entity_id: task.id,
+            entity_type: 'Task'
+          });
+        }
+      }
+    };
+    
+    checkDeadlines();
+  }, [tasks, user]);
 
   const myTasks = tasks.filter(t => {
     const assignedUsers = Array.isArray(t.assigned_to) ? t.assigned_to : [];
@@ -85,12 +135,24 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
             <p className="text-slate-600 mt-1">Willkommen zurück, {user?.full_name}</p>
           </div>
-          <Link to={createPageUrl("Tasks") + "?new=true"}>
-            <Button className="bg-blue-900 hover:bg-blue-800 shadow-sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Neue Aufgabe
-            </Button>
-          </Link>
+          <div className="flex gap-3">
+            <a 
+              href={base44.agents.getWhatsAppConnectURL('notification_manager')} 
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                WhatsApp verbinden
+              </Button>
+            </a>
+            <Link to={createPageUrl("Tasks") + "?new=true"}>
+              <Button className="bg-blue-900 hover:bg-blue-800 shadow-sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Neue Aufgabe
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

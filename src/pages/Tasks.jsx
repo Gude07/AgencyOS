@@ -64,7 +64,29 @@ export default function Tasks() {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: (taskData) => base44.entities.Task.create(taskData),
+    mutationFn: async (taskData) => {
+      const task = await base44.entities.Task.create(taskData);
+      
+      // Benachrichtigung an zugewiesene Benutzer
+      if (taskData.assigned_to && taskData.assigned_to.length > 0) {
+        const currentUser = await base44.auth.me();
+        for (const userEmail of taskData.assigned_to) {
+          if (userEmail !== currentUser.email) {
+            await base44.entities.Notification.create({
+              user_email: userEmail,
+              type: 'neue_aufgabe',
+              title: 'Neue Aufgabe zugewiesen',
+              message: `Ihnen wurde die Aufgabe "${taskData.title}" zugewiesen`,
+              link: `TaskDetail?id=${task.id}`,
+              entity_id: task.id,
+              entity_type: 'Task'
+            });
+          }
+        }
+      }
+      
+      return task;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowCreateDialog(false);
