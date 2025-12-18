@@ -20,10 +20,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote } from "lucide-react";
+import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import AssignmentOverview from "../components/clubRequests/AssignmentOverview";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const categoryConfig = {
   meeting: { label: "Meeting", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Calendar },
@@ -33,19 +41,42 @@ const categoryConfig = {
   sonstiges: { label: "Sonstiges", color: "bg-gray-100 text-gray-800 border-gray-200", icon: FileText },
 };
 
+const folderColors = {
+  blue: { bg: "bg-blue-100", text: "text-blue-800", border: "border-blue-200" },
+  green: { bg: "bg-green-100", text: "text-green-800", border: "border-green-200" },
+  purple: { bg: "bg-purple-100", text: "text-purple-800", border: "border-purple-200" },
+  orange: { bg: "bg-orange-100", text: "text-orange-800", border: "border-orange-200" },
+  red: { bg: "bg-red-100", text: "text-red-800", border: "border-red-200" },
+  gray: { bg: "bg-gray-100", text: "text-gray-800", border: "border-gray-200" },
+};
+
 export default function OrganizationalOverview() {
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showFolderDialog, setShowFolderDialog] = useState(false);
+  const [editingFolder, setEditingFolder] = useState(null);
+  const [selectedFolder, setSelectedFolder] = useState(null);
   const [newNote, setNewNote] = useState({
     title: "",
     content: "",
     category: "information",
     pinned: false,
+    folder_id: null,
+  });
+  const [newFolder, setNewFolder] = useState({
+    name: "",
+    description: "",
+    color: "blue",
   });
 
   const { data: notes = [] } = useQuery({
     queryKey: ['internalNotes'],
     queryFn: () => base44.entities.InternalNote.list('-created_date'),
+  });
+
+  const { data: folders = [] } = useQuery({
+    queryKey: ['folders'],
+    queryFn: () => base44.entities.Folder.list('-created_date'),
   });
 
   const { data: currentUser } = useQuery({
@@ -58,7 +89,41 @@ export default function OrganizationalOverview() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['internalNotes'] });
       setShowCreateDialog(false);
-      setNewNote({ title: "", content: "", category: "information", pinned: false });
+      setNewNote({ title: "", content: "", category: "information", pinned: false, folder_id: selectedFolder });
+    },
+  });
+
+  const createFolderMutation = useMutation({
+    mutationFn: (folderData) => base44.entities.Folder.create(folderData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      setShowFolderDialog(false);
+      setNewFolder({ name: "", description: "", color: "blue" });
+    },
+  });
+
+  const updateFolderMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Folder.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      setEditingFolder(null);
+    },
+  });
+
+  const deleteFolderMutation = useMutation({
+    mutationFn: async (folderId) => {
+      // Notizen in diesem Ordner entkoppeln
+      const notesInFolder = notes.filter(n => n.folder_id === folderId);
+      await Promise.all(
+        notesInFolder.map(n => base44.entities.InternalNote.update(n.id, { folder_id: null }))
+      );
+      // Ordner löschen
+      await base44.entities.Folder.delete(folderId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ['internalNotes'] });
+      setSelectedFolder(null);
     },
   });
 
@@ -78,11 +143,31 @@ export default function OrganizationalOverview() {
 
   const handleCreateNote = () => {
     if (!newNote.title || !newNote.content) return;
-    createNoteMutation.mutate(newNote);
+    createNoteMutation.mutate({
+      ...newNote,
+      folder_id: selectedFolder,
+    });
   };
 
-  const pinnedNotes = notes.filter(note => note.pinned);
-  const regularNotes = notes.filter(note => !note.pinned);
+  const handleCreateFolder = () => {
+    if (!newFolder.name) return;
+    createFolderMutation.mutate(newFolder);
+  };
+
+  const handleUpdateFolder = () => {
+    if (!editingFolder || !editingFolder.name) return;
+    updateFolderMutation.mutate({
+      id: editingFolder.id,
+      data: { name: editingFolder.name, description: editingFolder.description, color: editingFolder.color }
+    });
+  };
+
+  const filteredNotes = selectedFolder 
+    ? notes.filter(note => note.folder_id === selectedFolder)
+    : notes.filter(note => !note.folder_id);
+
+  const pinnedNotes = filteredNotes.filter(note => note.pinned);
+  const regularNotes = filteredNotes.filter(note => !note.pinned);
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
@@ -97,15 +182,90 @@ export default function OrganizationalOverview() {
         {/* Zuständigkeiten Übersicht */}
         <AssignmentOverview />
 
+        {/* Ordner Section */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <FolderIcon className="w-5 h-5 text-slate-700" />
+              <h2 className="text-xl font-bold text-slate-900">Wissensmanagement</h2>
+            </div>
+            <Button 
+              onClick={() => setShowFolderDialog(true)}
+              variant="outline"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Ordner erstellen
+            </Button>
+          </div>
+
+          {/* Ordner Liste */}
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant={selectedFolder === null ? "default" : "outline"}
+              onClick={() => setSelectedFolder(null)}
+              className={selectedFolder === null ? "bg-blue-900 hover:bg-blue-800" : ""}
+            >
+              <StickyNote className="w-4 h-4 mr-2" />
+              Ohne Ordner ({notes.filter(n => !n.folder_id).length})
+            </Button>
+            {folders.map(folder => {
+              const colorClasses = folderColors[folder.color];
+              const notesCount = notes.filter(n => n.folder_id === folder.id).length;
+              return (
+                <div key={folder.id} className="relative group">
+                  <Button
+                    variant={selectedFolder === folder.id ? "default" : "outline"}
+                    onClick={() => setSelectedFolder(folder.id)}
+                    className={selectedFolder === folder.id ? "bg-blue-900 hover:bg-blue-800 pr-10" : "pr-10"}
+                  >
+                    <FolderIcon className={`w-4 h-4 mr-2 ${selectedFolder === folder.id ? '' : colorClasses.text}`} />
+                    {folder.name} ({notesCount})
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreVertical className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditingFolder(folder)}>
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Bearbeiten
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => deleteFolderMutation.mutate(folder.id)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Löschen
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Interne Notizen Section */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <StickyNote className="w-5 h-5 text-slate-700" />
-              <h2 className="text-xl font-bold text-slate-900">Interne Notizen</h2>
+              <h2 className="text-xl font-bold text-slate-900">
+                Notizen {selectedFolder && `in ${folders.find(f => f.id === selectedFolder)?.name}`}
+              </h2>
             </div>
             <Button 
-              onClick={() => setShowCreateDialog(true)}
+              onClick={() => {
+                setNewNote({ title: "", content: "", category: "information", pinned: false, folder_id: selectedFolder });
+                setShowCreateDialog(true);
+              }}
               className="bg-blue-900 hover:bg-blue-800"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -163,7 +323,7 @@ export default function OrganizationalOverview() {
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{note.content}</p>
+                        <div className="text-sm text-slate-700 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: note.content }} />
                         <p className="text-xs text-slate-500 mt-3">
                           Erstellt von: {note.created_by}
                         </p>
@@ -219,7 +379,7 @@ export default function OrganizationalOverview() {
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <p className="text-sm text-slate-600 whitespace-pre-wrap line-clamp-4">{note.content}</p>
+                        <div className="text-sm text-slate-600 prose prose-sm max-w-none line-clamp-4" dangerouslySetInnerHTML={{ __html: note.content }} />
                         <div className="flex items-center justify-between mt-3 text-xs text-slate-500">
                           <span>{format(new Date(note.created_date), "dd.MM.yyyy", { locale: de })}</span>
                           <span>{note.created_by}</span>
@@ -232,13 +392,15 @@ export default function OrganizationalOverview() {
             </div>
           )}
 
-          {notes.length === 0 && (
+          {filteredNotes.length === 0 && (
             <Card className="border-slate-200 bg-white">
               <CardContent className="p-8 text-center">
                 <StickyNote className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <p className="text-slate-600">Noch keine Notizen vorhanden</p>
                 <p className="text-sm text-slate-500 mt-1">
-                  Erstellen Sie Notizen zu Meetings, Entscheidungen und wichtigen Informationen
+                  {selectedFolder 
+                    ? "Fügen Sie diesem Ordner Notizen hinzu" 
+                    : "Erstellen Sie Notizen zu Meetings, Entscheidungen und wichtigen Informationen"}
                 </p>
               </CardContent>
             </Card>
@@ -287,14 +449,26 @@ export default function OrganizationalOverview() {
               </div>
 
               <div>
-                <Label htmlFor="content">Inhalt *</Label>
-                <Textarea
-                  id="content"
-                  value={newNote.content}
-                  onChange={(e) => setNewNote({...newNote, content: e.target.value})}
-                  placeholder="Notizinhalt..."
-                  className="mt-1.5 h-40"
-                />
+                <Label htmlFor="content">Inhalt * (Rich-Text Editor)</Label>
+                <div className="mt-1.5">
+                  <ReactQuill
+                    theme="snow"
+                    value={newNote.content}
+                    onChange={(content) => setNewNote({...newNote, content})}
+                    placeholder="Notizinhalt... Sie können Text formatieren, Tabellen einfügen, Listen erstellen, etc."
+                    modules={{
+                      toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'color': [] }, { 'background': [] }],
+                        ['link'],
+                        ['clean']
+                      ],
+                    }}
+                    style={{ height: '200px', marginBottom: '50px' }}
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -321,6 +495,89 @@ export default function OrganizationalOverview() {
                 className="bg-blue-900 hover:bg-blue-800"
               >
                 {createNoteMutation.isPending ? "Wird erstellt..." : "Notiz erstellen"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create/Edit Folder Dialog */}
+        <Dialog open={showFolderDialog || !!editingFolder} onOpenChange={(open) => {
+          if (!open) {
+            setShowFolderDialog(false);
+            setEditingFolder(null);
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">
+                {editingFolder ? "Ordner bearbeiten" : "Neuen Ordner erstellen"}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="folder_name">Name *</Label>
+                <Input
+                  id="folder_name"
+                  value={editingFolder ? editingFolder.name : newFolder.name}
+                  onChange={(e) => editingFolder 
+                    ? setEditingFolder({...editingFolder, name: e.target.value})
+                    : setNewFolder({...newFolder, name: e.target.value})
+                  }
+                  placeholder="z.B. Marketing, Finanzen, Strategieplanung"
+                  className="mt-1.5"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="folder_description">Beschreibung</Label>
+                <Textarea
+                  id="folder_description"
+                  value={editingFolder ? editingFolder.description : newFolder.description}
+                  onChange={(e) => editingFolder 
+                    ? setEditingFolder({...editingFolder, description: e.target.value})
+                    : setNewFolder({...newFolder, description: e.target.value})
+                  }
+                  placeholder="Wofür ist dieser Ordner gedacht?"
+                  className="mt-1.5 h-20"
+                />
+              </div>
+
+              <div>
+                <Label>Farbe</Label>
+                <div className="grid grid-cols-6 gap-2 mt-1.5">
+                  {Object.entries(folderColors).map(([colorKey, colorClasses]) => (
+                    <button
+                      key={colorKey}
+                      type="button"
+                      onClick={() => editingFolder 
+                        ? setEditingFolder({...editingFolder, color: colorKey})
+                        : setNewFolder({...newFolder, color: colorKey})
+                      }
+                      className={`h-10 rounded-lg border-2 ${colorClasses.bg} ${
+                        (editingFolder?.color === colorKey || (!editingFolder && newFolder.color === colorKey))
+                          ? 'border-slate-900 ring-2 ring-slate-900 ring-offset-2'
+                          : 'border-slate-200'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => {
+                setShowFolderDialog(false);
+                setEditingFolder(null);
+              }}>
+                Abbrechen
+              </Button>
+              <Button 
+                onClick={editingFolder ? handleUpdateFolder : handleCreateFolder}
+                disabled={editingFolder ? !editingFolder.name : !newFolder.name}
+                className="bg-blue-900 hover:bg-blue-800"
+              >
+                {editingFolder ? "Speichern" : "Erstellen"}
               </Button>
             </div>
           </DialogContent>
