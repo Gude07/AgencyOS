@@ -29,7 +29,12 @@ import 'react-quill/dist/quill.snow.css';
 import QuillBetterTable from 'quill-better-table';
 import 'quill-better-table/dist/quill-better-table.css';
 
-Quill.register('modules/better-table', QuillBetterTable);
+// Register table module
+if (typeof window !== 'undefined') {
+  Quill.register({
+    'modules/better-table': QuillBetterTable
+  }, true);
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
