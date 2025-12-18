@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import AssignmentOverview from "../components/clubRequests/AssignmentOverview";
