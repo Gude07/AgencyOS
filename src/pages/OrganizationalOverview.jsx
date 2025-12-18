@@ -24,17 +24,8 @@ import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, F
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import AssignmentOverview from "../components/clubRequests/AssignmentOverview";
-import ReactQuill, { Quill } from 'react-quill';
+import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import QuillBetterTable from 'quill-better-table';
-import 'quill-better-table/dist/quill-better-table.css';
-
-// Register table module
-if (typeof window !== 'undefined') {
-  Quill.register({
-    'modules/better-table': QuillBetterTable
-  }, true);
-}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -472,42 +463,8 @@ export default function OrganizationalOverview() {
                         [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                         [{ 'color': [] }, { 'background': [] }],
                         ['link'],
-                        ['clean'],
-                        ['better-table-insert-row', 'better-table-insert-column']
+                        ['clean']
                       ],
-                      'better-table': {
-                        operationMenu: {
-                          items: {
-                            unmergeCells: {
-                              text: 'Zellen trennen'
-                            },
-                            insertColumnRight: {
-                              text: 'Spalte rechts einfügen'
-                            },
-                            insertColumnLeft: {
-                              text: 'Spalte links einfügen'
-                            },
-                            insertRowUp: {
-                              text: 'Zeile oben einfügen'
-                            },
-                            insertRowDown: {
-                              text: 'Zeile unten einfügen'
-                            },
-                            mergeCells: {
-                              text: 'Zellen verbinden'
-                            },
-                            deleteColumn: {
-                              text: 'Spalte löschen'
-                            },
-                            deleteRow: {
-                              text: 'Zeile löschen'
-                            },
-                            deleteTable: {
-                              text: 'Tabelle löschen'
-                            }
-                          }
-                        }
-                      }
                     }}
                     style={{ height: '200px', marginBottom: '50px' }}
                   />
