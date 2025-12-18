@@ -55,6 +55,7 @@ export default function OrganizationalOverview() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [editingFolder, setEditingFolder] = useState(null);
+  const [editingNote, setEditingNote] = useState(null);
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [newNote, setNewNote] = useState({
     title: "",
@@ -90,6 +91,14 @@ export default function OrganizationalOverview() {
       queryClient.invalidateQueries({ queryKey: ['internalNotes'] });
       setShowCreateDialog(false);
       setNewNote({ title: "", content: "", category: "information", pinned: false, folder_id: selectedFolder });
+    },
+  });
+
+  const updateNoteMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.InternalNote.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['internalNotes'] });
+      setEditingNote(null);
     },
   });
 
@@ -146,6 +155,20 @@ export default function OrganizationalOverview() {
     createNoteMutation.mutate({
       ...newNote,
       folder_id: selectedFolder,
+    });
+  };
+
+  const handleUpdateNote = () => {
+    if (!editingNote || !editingNote.title || !editingNote.content) return;
+    updateNoteMutation.mutate({
+      id: editingNote.id,
+      data: {
+        title: editingNote.title,
+        content: editingNote.content,
+        category: editingNote.category,
+        pinned: editingNote.pinned,
+        folder_id: editingNote.folder_id
+      }
     });
   };
 
@@ -314,6 +337,14 @@ export default function OrganizationalOverview() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              onClick={() => setEditingNote(note)}
+                              className="h-8 w-8"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => deleteNoteMutation.mutate(note.id)}
                               className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
@@ -370,6 +401,14 @@ export default function OrganizationalOverview() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              onClick={() => setEditingNote(note)}
+                              className="h-8 w-8"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => deleteNoteMutation.mutate(note.id)}
                               className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
@@ -407,11 +446,18 @@ export default function OrganizationalOverview() {
           )}
         </div>
 
-        {/* Create Note Dialog */}
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        {/* Create/Edit Note Dialog */}
+        <Dialog open={showCreateDialog || !!editingNote} onOpenChange={(open) => {
+          if (!open) {
+            setShowCreateDialog(false);
+            setEditingNote(null);
+          }
+        }}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold">Neue Notiz erstellen</DialogTitle>
+              <DialogTitle className="text-xl font-bold">
+                {editingNote ? "Notiz bearbeiten" : "Neue Notiz erstellen"}
+              </DialogTitle>
             </DialogHeader>
             
             <div className="space-y-4 py-4">
@@ -419,8 +465,11 @@ export default function OrganizationalOverview() {
                 <Label htmlFor="title">Titel *</Label>
                 <Input
                   id="title"
-                  value={newNote.title}
-                  onChange={(e) => setNewNote({...newNote, title: e.target.value})}
+                  value={editingNote ? editingNote.title : newNote.title}
+                  onChange={(e) => editingNote 
+                    ? setEditingNote({...editingNote, title: e.target.value})
+                    : setNewNote({...newNote, title: e.target.value})
+                  }
                   placeholder="z.B. Team Meeting 17.12.2025"
                   className="mt-1.5"
                 />
@@ -428,7 +477,13 @@ export default function OrganizationalOverview() {
 
               <div>
                 <Label htmlFor="category">Kategorie</Label>
-                <Select value={newNote.category} onValueChange={(value) => setNewNote({...newNote, category: value})}>
+                <Select 
+                  value={editingNote ? editingNote.category : newNote.category} 
+                  onValueChange={(value) => editingNote 
+                    ? setEditingNote({...editingNote, category: value})
+                    : setNewNote({...newNote, category: value})
+                  }
+                >
                   <SelectTrigger className="mt-1.5">
                     <SelectValue />
                   </SelectTrigger>
@@ -453,8 +508,11 @@ export default function OrganizationalOverview() {
                 <div className="mt-1.5">
                   <ReactQuill
                     theme="snow"
-                    value={newNote.content}
-                    onChange={(content) => setNewNote({...newNote, content})}
+                    value={editingNote ? editingNote.content : newNote.content}
+                    onChange={(content) => editingNote 
+                      ? setEditingNote({...editingNote, content})
+                      : setNewNote({...newNote, content})
+                    }
                     placeholder="Notizinhalt... Sie können Text formatieren, Tabellen einfügen, Listen erstellen, etc."
                     modules={{
                       toolbar: [
@@ -475,8 +533,11 @@ export default function OrganizationalOverview() {
                 <input
                   type="checkbox"
                   id="pinned"
-                  checked={newNote.pinned}
-                  onChange={(e) => setNewNote({...newNote, pinned: e.target.checked})}
+                  checked={editingNote ? editingNote.pinned : newNote.pinned}
+                  onChange={(e) => editingNote 
+                    ? setEditingNote({...editingNote, pinned: e.target.checked})
+                    : setNewNote({...newNote, pinned: e.target.checked})
+                  }
                   className="h-4 w-4"
                 />
                 <Label htmlFor="pinned" className="cursor-pointer">
@@ -486,15 +547,24 @@ export default function OrganizationalOverview() {
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              <Button variant="outline" onClick={() => {
+                setShowCreateDialog(false);
+                setEditingNote(null);
+              }}>
                 Abbrechen
               </Button>
               <Button 
-                onClick={handleCreateNote}
-                disabled={!newNote.title || !newNote.content || createNoteMutation.isPending}
+                onClick={editingNote ? handleUpdateNote : handleCreateNote}
+                disabled={editingNote 
+                  ? (!editingNote.title || !editingNote.content || updateNoteMutation.isPending)
+                  : (!newNote.title || !newNote.content || createNoteMutation.isPending)
+                }
                 className="bg-blue-900 hover:bg-blue-800"
               >
-                {createNoteMutation.isPending ? "Wird erstellt..." : "Notiz erstellen"}
+                {editingNote 
+                  ? (updateNoteMutation.isPending ? "Wird gespeichert..." : "Speichern")
+                  : (createNoteMutation.isPending ? "Wird erstellt..." : "Notiz erstellen")
+                }
               </Button>
             </div>
           </DialogContent>
