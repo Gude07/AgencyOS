@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star } from "lucide-react";
+import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -109,11 +109,19 @@ export default function Players() {
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
     queryFn: () => base44.entities.Player.list('-created_date'),
+    refetchInterval: 3000, // Automatisches Update alle 3 Sekunden
+  });
+
+  const { data: allComments = [] } = useQuery({
+    queryKey: ['playerComments'],
+    queryFn: () => base44.entities.PlayerComment.list(),
+    refetchInterval: 5000,
   });
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+    refetchInterval: 10000,
   });
 
   const { data: archives = [] } = useQuery({
@@ -122,6 +130,7 @@ export default function Players() {
       const allArchives = await base44.entities.Archive.list();
       return allArchives.filter(a => a.type === 'player');
     },
+    refetchInterval: 5000,
   });
 
   const toggleFavoriteMutation = useMutation({
@@ -646,12 +655,21 @@ export default function Players() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-slate-600">Vertrag bis</p>
-                        <p className="font-semibold text-slate-900">
-                          {player.contract_until ? format(new Date(player.contract_until), "MM/yyyy") : '-'}
-                        </p>
+                       <p className="text-slate-600">Vertrag bis</p>
+                       <p className="font-semibold text-slate-900">
+                         {player.contract_until ? format(new Date(player.contract_until), "MM/yyyy") : '-'}
+                       </p>
                       </div>
-                    </div>
+                      </div>
+                      {allComments.filter(c => c.player_id === player.id).length > 0 && (
+                      <div className="flex items-center justify-end gap-1 pt-2 mt-2 border-t border-slate-100">
+                       <MessageCircle className="w-4 h-4 text-red-500" />
+                       <span className="text-sm font-semibold text-red-600">
+                         {allComments.filter(c => c.player_id === player.id).length}
+                       </span>
+                       <span className="text-xs text-slate-500">Kommentare</span>
+                      </div>
+                      )}
                       </CardContent>
                       </div>
                       </Card>

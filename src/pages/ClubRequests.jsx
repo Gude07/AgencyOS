@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User } from "lucide-react";
+import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -115,16 +115,25 @@ export default function ClubRequests() {
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['clubRequests'],
     queryFn: () => base44.entities.ClubRequest.list('-created_date'),
+    refetchInterval: 3000, // Automatisches Update alle 3 Sekunden
+  });
+
+  const { data: allCommunications = [] } = useQuery({
+    queryKey: ['communications'],
+    queryFn: () => base44.entities.Communication.list(),
+    refetchInterval: 5000,
   });
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+    refetchInterval: 10000,
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
+    refetchInterval: 10000,
   });
 
   const { data: archives = [] } = useQuery({
@@ -133,6 +142,7 @@ export default function ClubRequests() {
       const allArchives = await base44.entities.Archive.list();
       return allArchives.filter(a => a.type === 'club');
     },
+    refetchInterval: 5000,
   });
 
   const toggleFavoriteMutation = useMutation({
@@ -831,6 +841,16 @@ export default function ClubRequests() {
                         )}
                       </div>
                       )}
+
+                    {allCommunications.filter(c => c.club_request_id === request.id).length > 0 && (
+                      <div className="flex items-center justify-end gap-1 pt-2 mt-2 border-t border-slate-100">
+                        <MessageCircle className="w-4 h-4 text-red-500" />
+                        <span className="text-sm font-semibold text-red-600">
+                          {allCommunications.filter(c => c.club_request_id === request.id).length}
+                        </span>
+                        <span className="text-xs text-slate-500">Kommunikationen</span>
+                      </div>
+                    )}
                       </CardContent>
                       </div>
                       </Card>
