@@ -20,7 +20,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical } from "lucide-react";
+import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical, MessageCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import AssignmentOverview from "../components/clubRequests/AssignmentOverview";
@@ -51,6 +52,7 @@ const folderColors = {
 };
 
 export default function OrganizationalOverview() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showFolderDialog, setShowFolderDialog] = useState(false);
@@ -73,11 +75,18 @@ export default function OrganizationalOverview() {
   const { data: notes = [] } = useQuery({
     queryKey: ['internalNotes'],
     queryFn: () => base44.entities.InternalNote.list('-created_date'),
+    refetchInterval: 3000,
   });
 
   const { data: folders = [] } = useQuery({
     queryKey: ['folders'],
     queryFn: () => base44.entities.Folder.list('-created_date'),
+  });
+
+  const { data: allNoteComments = [] } = useQuery({
+    queryKey: ['noteComments'],
+    queryFn: () => base44.entities.NoteComment.list(),
+    refetchInterval: 5000,
   });
 
   const { data: currentUser } = useQuery({
@@ -307,8 +316,13 @@ export default function OrganizationalOverview() {
                 {pinnedNotes.map(note => {
                   const config = categoryConfig[note.category];
                   const CategoryIcon = config.icon;
+                  const commentCount = allNoteComments.filter(c => c.note_id === note.id).length;
                   return (
-                    <Card key={note.id} className="border-yellow-200 bg-yellow-50/50">
+                    <Card 
+                      key={note.id} 
+                      className="border-yellow-200 bg-yellow-50/50 cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => navigate(createPageUrl("NoteDetail") + "?id=" + note.id + "&back=" + encodeURIComponent(window.location.pathname))}
+                    >
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
@@ -329,7 +343,10 @@ export default function OrganizationalOverview() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => togglePinMutation.mutate({ id: note.id, pinned: false })}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePinMutation.mutate({ id: note.id, pinned: false });
+                              }}
                               className="h-8 w-8"
                             >
                               <Pin className="w-4 h-4 fill-yellow-600 text-yellow-600" />
@@ -337,7 +354,10 @@ export default function OrganizationalOverview() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setEditingNote(note)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingNote(note);
+                              }}
                               className="h-8 w-8"
                             >
                               <Edit2 className="w-4 h-4" />
@@ -345,7 +365,10 @@ export default function OrganizationalOverview() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => deleteNoteMutation.mutate(note.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteNoteMutation.mutate(note.id);
+                              }}
                               className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -354,7 +377,14 @@ export default function OrganizationalOverview() {
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <div className="text-sm text-slate-700 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: note.content }} />
+                        <div className="text-sm text-slate-700 prose prose-sm max-w-none line-clamp-3" dangerouslySetInnerHTML={{ __html: note.content }} />
+                        {commentCount > 0 && (
+                          <div className="flex items-center gap-1 pt-3 mt-3 border-t border-yellow-200">
+                            <MessageCircle className="w-4 h-4 text-red-500" />
+                            <span className="text-sm font-semibold text-red-600">{commentCount}</span>
+                            <span className="text-xs text-slate-500">Kommentare</span>
+                          </div>
+                        )}
                         <p className="text-xs text-slate-500 mt-3">
                           Erstellt von: {note.created_by}
                         </p>
@@ -376,8 +406,13 @@ export default function OrganizationalOverview() {
                 {regularNotes.map(note => {
                   const config = categoryConfig[note.category];
                   const CategoryIcon = config.icon;
+                  const commentCount = allNoteComments.filter(c => c.note_id === note.id).length;
                   return (
-                    <Card key={note.id} className="border-slate-200 bg-white">
+                    <Card 
+                      key={note.id} 
+                      className="border-slate-200 bg-white cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => navigate(createPageUrl("NoteDetail") + "?id=" + note.id + "&back=" + encodeURIComponent(window.location.pathname))}
+                    >
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
@@ -393,7 +428,10 @@ export default function OrganizationalOverview() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => togglePinMutation.mutate({ id: note.id, pinned: true })}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePinMutation.mutate({ id: note.id, pinned: true });
+                              }}
                               className="h-8 w-8"
                             >
                               <Pin className="w-4 h-4 text-slate-400" />
@@ -401,7 +439,10 @@ export default function OrganizationalOverview() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setEditingNote(note)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingNote(note);
+                              }}
                               className="h-8 w-8"
                             >
                               <Edit2 className="w-4 h-4" />
@@ -409,7 +450,10 @@ export default function OrganizationalOverview() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => deleteNoteMutation.mutate(note.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteNoteMutation.mutate(note.id);
+                              }}
                               className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -419,6 +463,13 @@ export default function OrganizationalOverview() {
                       </CardHeader>
                       <CardContent className="pt-0">
                         <div className="text-sm text-slate-600 prose prose-sm max-w-none line-clamp-4" dangerouslySetInnerHTML={{ __html: note.content }} />
+                        {commentCount > 0 && (
+                          <div className="flex items-center gap-1 pt-2 mt-2 border-t border-slate-100">
+                            <MessageCircle className="w-4 h-4 text-red-500" />
+                            <span className="text-sm font-semibold text-red-600">{commentCount}</span>
+                            <span className="text-xs text-slate-500">Kommentare</span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between mt-3 text-xs text-slate-500">
                           <span>{format(new Date(note.created_date), "dd.MM.yyyy", { locale: de })}</span>
                           <span>{note.created_by}</span>

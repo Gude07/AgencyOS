@@ -13,6 +13,7 @@ import NotificationSettings from './pages/NotificationSettings';
 import Notifications from './pages/Notifications';
 import ClubsOverview from './pages/ClubsOverview';
 import OrganizationalOverview from './pages/OrganizationalOverview';
+import NoteDetail from './pages/NoteDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +33,7 @@ export const PAGES = {
     "Notifications": Notifications,
     "ClubsOverview": ClubsOverview,
     "OrganizationalOverview": OrganizationalOverview,
+    "NoteDetail": NoteDetail,
 }
 
 export const pagesConfig = {
