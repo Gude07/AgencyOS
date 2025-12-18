@@ -32,7 +32,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import ExportToSheetsButton from "../components/ExportToSheetsButton";
 
 const categoryConfig = {
   meeting: { label: "Meeting", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Calendar },
@@ -262,19 +261,16 @@ export default function OrganizationalOverview() {
                 Notizen {selectedFolder && `in ${folders.find(f => f.id === selectedFolder)?.name}`}
               </h2>
             </div>
-            <div className="flex gap-2">
-              <ExportToSheetsButton entityName="InternalNote" entityLabel="Interne Notizen" />
-              <Button 
-                onClick={() => {
-                  setNewNote({ title: "", content: "", category: "information", pinned: false, folder_id: selectedFolder });
-                  setShowCreateDialog(true);
-                }}
-                className="bg-blue-900 hover:bg-blue-800"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Notiz hinzufügen
-              </Button>
-            </div>
+            <Button 
+              onClick={() => {
+                setNewNote({ title: "", content: "", category: "information", pinned: false, folder_id: selectedFolder });
+                setShowCreateDialog(true);
+              }}
+              className="bg-blue-900 hover:bg-blue-800"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Notiz hinzufügen
+            </Button>
           </div>
 
           {/* Angepinnte Notizen */}
