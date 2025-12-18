@@ -502,9 +502,6 @@ export default function OrganizationalOverview() {
                             }
                           }
                         }
-                      },
-                      keyboard: {
-                        bindings: QuillBetterTable.keyboardBindings
                       }
                     }}
                     style={{ height: '200px', marginBottom: '50px' }}
