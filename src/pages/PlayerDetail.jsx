@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal, Trash2, IdCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, differenceInYears } from "date-fns";
@@ -516,8 +516,14 @@ export default function PlayerDetail() {
                             <Badge variant="outline" className="border-slate-200">
                               {currentPlayerData?.status?.replace(/_/g, ' ') || 'noch offen'}
                             </Badge>
-                          )}
-                        </div>
+                            )}
+                            {!editMode && currentPlayerData?.has_player_card && (
+                            <Badge className="bg-green-600 text-white flex items-center gap-1">
+                              <IdCard className="w-4 h-4" />
+                              Player Card vorhanden
+                            </Badge>
+                            )}
+                            </div>
 
                         {editMode && editedPlayer && (
                           <div className="space-y-3">
@@ -702,6 +708,25 @@ export default function PlayerDetail() {
                         <p className="text-slate-600">{currentPlayerData?.notes || "Keine Notizen"}</p>
                       )}
                     </div>
+
+                    {editMode && (
+                      <div>
+                        <Label className="text-sm font-semibold text-slate-700 mb-2 block">Player Card</Label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="has_player_card_edit"
+                            checked={editedPlayer?.has_player_card || false}
+                            onChange={(e) => setEditedPlayer({...editedPlayer, has_player_card: e.target.checked})}
+                            className="h-4 w-4"
+                          />
+                          <Label htmlFor="has_player_card_edit" className="cursor-pointer flex items-center gap-2">
+                            <IdCard className="w-4 h-4 text-green-600" />
+                            Player Card vorhanden
+                          </Label>
+                        </div>
+                      </div>
+                    )}
 
                     {currentPlayerData?.transfermarkt_url && (
                       <div>

@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle } from "lucide-react";
+import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle, IdCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -104,7 +104,8 @@ export default function Players() {
     strengths: "",
     foot: "",
     height: "",
-  });
+    has_player_card: false,
+    });
 
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
@@ -635,10 +636,16 @@ export default function Players() {
                         <Badge variant="outline" className="border-slate-200 text-xs">
                           {player.status?.replace(/_/g, ' ') || 'noch offen'}
                         </Badge>
-                      </div>
-                      </div>
-                      </CardHeader>
-                      <CardContent className="pt-0 space-y-2">
+                        {player.has_player_card && (
+                          <Badge className="bg-green-600 text-white text-xs flex items-center gap-1">
+                            <IdCard className="w-3 h-3" />
+                            Player Card
+                          </Badge>
+                        )}
+                        </div>
+                        </div>
+                        </CardHeader>
+                        <CardContent className="pt-0 space-y-2">
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
                         <p className="text-slate-600">Alter</p>
@@ -881,8 +888,24 @@ export default function Players() {
                     className="mt-1.5 h-20"
                   />
                 </div>
-              </div>
-            </div>
+
+                <div className="col-span-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="has_player_card"
+                      checked={newPlayer.has_player_card}
+                      onChange={(e) => setNewPlayer({...newPlayer, has_player_card: e.target.checked})}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="has_player_card" className="cursor-pointer flex items-center gap-2">
+                      <IdCard className="w-4 h-4 text-green-600" />
+                      Player Card vorhanden
+                    </Label>
+                  </div>
+                </div>
+                </div>
+                </div>
 
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
