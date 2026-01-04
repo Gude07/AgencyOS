@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, MessageCircle, Send } from "lucide-react";
+import { ArrowLeft, Calendar, MessageCircle, Send, Sparkles, Tag, CheckSquare, Lightbulb } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
@@ -27,6 +27,9 @@ export default function NoteDetail() {
   const backUrl = urlParams.get('back');
 
   const [newComment, setNewComment] = useState("");
+  const [aiActionItems, setAiActionItems] = useState([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showAiInsights, setShowAiInsights] = useState(false);
 
   const { data: note, isLoading } = useQuery({
     queryKey: ['internalNote', noteId],
@@ -128,6 +131,14 @@ export default function NoteDetail() {
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-slate-900">Notiz Details</h1>
           </div>
+          <Button
+            onClick={handleAiAnalysis}
+            disabled={isAnalyzing}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            {isAnalyzing ? "Analysiere..." : "AI-Analyse"}
+          </Button>
         </div>
 
         <Card className="border-slate-200 bg-white">
@@ -144,16 +155,95 @@ export default function NoteDetail() {
                 <Badge variant="outline" className="border-slate-200">
                   Erstellt von: {note.created_by}
                 </Badge>
+                {note.ai_tags?.map(tag => (
+                  <Badge key={tag} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                    <Tag className="w-3 h-3 mr-1" />
+                    {tag}
+                  </Badge>
+                ))}
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-6 space-y-6">
+            {note.ai_summary && (
+              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-purple-700" />
+                  <span className="font-semibold text-purple-900 text-sm">AI-Zusammenfassung</span>
+                </div>
+                <p className="text-sm text-purple-800 italic">{note.ai_summary}</p>
+              </div>
+            )}
+
             <div 
               className="prose prose-slate max-w-none"
               dangerouslySetInnerHTML={{ __html: note.content }} 
             />
           </CardContent>
         </Card>
+
+        {showAiInsights && aiActionItems && (
+          <Card className="border-purple-200 bg-purple-50/50">
+            <CardHeader className="border-b border-purple-200">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-700" />
+                <CardTitle className="text-lg text-purple-900">AI-Insights</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {aiActionItems.action_items?.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckSquare className="w-4 h-4 text-purple-700" />
+                    <h3 className="font-semibold text-purple-900">Action Items</h3>
+                  </div>
+                  <ul className="space-y-2">
+                    {aiActionItems.action_items.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-purple-800">
+                        <span className="text-purple-600 mt-1">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {aiActionItems.decisions?.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckSquare className="w-4 h-4 text-purple-700" />
+                    <h3 className="font-semibold text-purple-900">Entscheidungen</h3>
+                  </div>
+                  <ul className="space-y-2">
+                    {aiActionItems.decisions.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-purple-800">
+                        <span className="text-purple-600 mt-1">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {aiActionItems.key_takeaways?.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lightbulb className="w-4 h-4 text-purple-700" />
+                    <h3 className="font-semibold text-purple-900">Key Takeaways</h3>
+                  </div>
+                  <ul className="space-y-2">
+                    {aiActionItems.key_takeaways.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-purple-800">
+                        <span className="text-purple-600 mt-1">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-slate-200 bg-white">
           <CardHeader className="border-b border-slate-100">

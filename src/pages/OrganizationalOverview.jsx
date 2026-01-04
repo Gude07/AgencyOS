@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical, MessageCircle } from "lucide-react";
+import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical, MessageCircle, Sparkles, Tag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
@@ -66,6 +66,8 @@ export default function OrganizationalOverview() {
     category: "information",
     pinned: false,
     folder_id: null,
+    ai_tags: [],
+    ai_summary: "",
   });
   const [newFolder, setNewFolder] = useState({
     name: "",
@@ -160,11 +162,49 @@ export default function OrganizationalOverview() {
     },
   });
 
-  const handleCreateNote = () => {
+  const handleCreateNote = async () => {
     if (!newNote.title || !newNote.content) return;
+    
+    // AI-Analyse beim Erstellen
+    let aiTags = [];
+    let aiSummary = "";
+    
+    try {
+      const analysisPrompt = `Analysiere die folgende Notiz und extrahiere:
+1. Relevante Tags (max 5 Schlüsselwörter)
+2. Eine kurze Zusammenfassung (max 150 Zeichen)
+
+Notiz-Titel: ${newNote.title}
+Notiz-Inhalt: ${newNote.content.replace(/<[^>]*>/g, '')}
+
+Antworte im JSON-Format:
+{
+  "tags": ["tag1", "tag2", ...],
+  "summary": "kurze zusammenfassung"
+}`;
+
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: analysisPrompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            tags: { type: "array", items: { type: "string" } },
+            summary: { type: "string" }
+          }
+        }
+      });
+
+      aiTags = result.tags || [];
+      aiSummary = result.summary || "";
+    } catch (error) {
+      console.log("AI-Analyse fehlgeschlagen, fahre ohne fort");
+    }
+
     createNoteMutation.mutate({
       ...newNote,
       folder_id: selectedFolder,
+      ai_tags: aiTags,
+      ai_summary: aiSummary,
     });
   };
 
@@ -315,31 +355,37 @@ export default function OrganizationalOverview() {
               </h3>
               <div className="grid md:grid-cols-2 gap-4">
                 {pinnedNotes.map(note => {
-                  const config = categoryConfig[note.category];
-                  const CategoryIcon = config.icon;
-                  const commentCount = allNoteComments.filter(c => c.note_id === note.id).length;
-                  return (
-                    <Card 
-                      key={note.id} 
-                      className="border-yellow-200 bg-yellow-50/50 cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => navigate(createPageUrl("NoteDetail") + "?id=" + note.id + "&back=" + encodeURIComponent(window.location.pathname))}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <CardTitle className="text-lg flex items-center gap-2">
-                              {note.title}
-                            </CardTitle>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="secondary" className={config.color + " border text-xs"}>
-                                <CategoryIcon className="w-3 h-3 mr-1" />
-                                {config.label}
+                const config = categoryConfig[note.category];
+                const CategoryIcon = config.icon;
+                const commentCount = allNoteComments.filter(c => c.note_id === note.id).length;
+                return (
+                  <Card 
+                    key={note.id} 
+                    className="border-yellow-200 bg-yellow-50/50 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => navigate(createPageUrl("NoteDetail") + "?id=" + note.id + "&back=" + encodeURIComponent(window.location.pathname))}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            {note.title}
+                          </CardTitle>
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <Badge variant="secondary" className={config.color + " border text-xs"}>
+                              <CategoryIcon className="w-3 h-3 mr-1" />
+                              {config.label}
+                            </Badge>
+                            <span className="text-xs text-slate-500">
+                              {format(new Date(note.created_date), "dd.MM.yyyy", { locale: de })}
+                            </span>
+                            {note.ai_tags?.slice(0, 2).map(tag => (
+                              <Badge key={tag} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                                <Tag className="w-3 h-3 mr-1" />
+                                {tag}
                               </Badge>
-                              <span className="text-xs text-slate-500">
-                                {format(new Date(note.created_date), "dd.MM.yyyy", { locale: de })}
-                              </span>
-                            </div>
+                            ))}
                           </div>
+                        </div>
                           <div className="flex gap-1">
                             <Button
                               variant="ghost"
@@ -378,7 +424,11 @@ export default function OrganizationalOverview() {
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <div className="text-sm text-slate-700 prose prose-sm max-w-none line-clamp-3" dangerouslySetInnerHTML={{ __html: note.content }} />
+                        {note.ai_summary ? (
+                          <p className="text-sm text-slate-700 mb-2 italic">{note.ai_summary}</p>
+                        ) : (
+                          <div className="text-sm text-slate-700 prose prose-sm max-w-none line-clamp-3" dangerouslySetInnerHTML={{ __html: note.content }} />
+                        )}
                         {commentCount > 0 && (
                           <div className="flex items-center gap-1 pt-3 mt-3 border-t border-yellow-200">
                             <MessageCircle className="w-4 h-4 text-red-500" />
@@ -405,26 +455,32 @@ export default function OrganizationalOverview() {
               )}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {regularNotes.map(note => {
-                  const config = categoryConfig[note.category];
-                  const CategoryIcon = config.icon;
-                  const commentCount = allNoteComments.filter(c => c.note_id === note.id).length;
-                  return (
-                    <Card 
-                      key={note.id} 
-                      className="border-slate-200 bg-white cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => navigate(createPageUrl("NoteDetail") + "?id=" + note.id + "&back=" + encodeURIComponent(window.location.pathname))}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <CardTitle className="text-base">{note.title}</CardTitle>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="secondary" className={config.color + " border text-xs"}>
-                                <CategoryIcon className="w-3 h-3 mr-1" />
-                                {config.label}
+                const config = categoryConfig[note.category];
+                const CategoryIcon = config.icon;
+                const commentCount = allNoteComments.filter(c => c.note_id === note.id).length;
+                return (
+                  <Card 
+                    key={note.id} 
+                    className="border-slate-200 bg-white cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => navigate(createPageUrl("NoteDetail") + "?id=" + note.id + "&back=" + encodeURIComponent(window.location.pathname))}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <CardTitle className="text-base">{note.title}</CardTitle>
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <Badge variant="secondary" className={config.color + " border text-xs"}>
+                              <CategoryIcon className="w-3 h-3 mr-1" />
+                              {config.label}
+                            </Badge>
+                            {note.ai_tags?.slice(0, 3).map(tag => (
+                              <Badge key={tag} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                                <Tag className="w-3 h-3 mr-1" />
+                                {tag}
                               </Badge>
-                            </div>
+                            ))}
                           </div>
+                        </div>
                           <div className="flex gap-1">
                             <Button
                               variant="ghost"
@@ -463,7 +519,11 @@ export default function OrganizationalOverview() {
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <div className="text-sm text-slate-600 prose prose-sm max-w-none line-clamp-4" dangerouslySetInnerHTML={{ __html: note.content }} />
+                        {note.ai_summary ? (
+                          <p className="text-sm text-slate-600 mb-2 italic">{note.ai_summary}</p>
+                        ) : (
+                          <div className="text-sm text-slate-600 prose prose-sm max-w-none line-clamp-4" dangerouslySetInnerHTML={{ __html: note.content }} />
+                        )}
                         {commentCount > 0 && (
                           <div className="flex items-center gap-1 pt-2 mt-2 border-t border-slate-100">
                             <MessageCircle className="w-4 h-4 text-red-500" />
