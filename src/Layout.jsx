@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   LogOut,
-  Inbox
+  Inbox,
+  TrendingUp
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,11 @@ const transferItems = [
     title: "Vereinsanfragen",
     url: createPageUrl("ClubRequests"),
     icon: Building2,
+  },
+  {
+    title: "Deals",
+    url: createPageUrl("Deals"),
+    icon: TrendingUp,
   },
 ];
 
