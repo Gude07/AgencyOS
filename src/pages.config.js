@@ -17,6 +17,8 @@ import PlayerDetail from './pages/PlayerDetail';
 import Players from './pages/Players';
 import TaskDetail from './pages/TaskDetail';
 import Tasks from './pages/Tasks';
+import Archives from './pages/Archives';
+import MyActivity from './pages/MyActivity';
 import __Layout from './Layout.jsx';
 
 
@@ -40,6 +42,8 @@ export const PAGES = {
     "Players": Players,
     "TaskDetail": TaskDetail,
     "Tasks": Tasks,
+    "Archives": Archives,
+    "MyActivity": MyActivity,
 }
 
 export const pagesConfig = {

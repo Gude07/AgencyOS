@@ -41,6 +41,11 @@ const navigationItems = [
     url: createPageUrl("OrganizationalOverview"),
     icon: Inbox,
   },
+  {
+    title: "Meine Aktivitäten",
+    url: createPageUrl("MyActivity"),
+    icon: TrendingUp,
+  },
 ];
 
 const transferItems = [
@@ -67,7 +72,12 @@ const transferItems = [
   {
     title: "Deals",
     url: createPageUrl("Deals"),
-    icon: TrendingUp,
+    icon: CheckSquare,
+  },
+  {
+    title: "Archive",
+    url: createPageUrl("Archives"),
+    icon: Inbox,
   },
 ];
 
