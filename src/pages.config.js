@@ -6,17 +6,17 @@ import ClubsOverview from './pages/ClubsOverview';
 import CoachDetail from './pages/CoachDetail';
 import Coaches from './pages/Coaches';
 import Dashboard from './pages/Dashboard';
+import DealDetail from './pages/DealDetail';
+import Deals from './pages/Deals';
 import Home from './pages/Home';
+import NoteDetail from './pages/NoteDetail';
 import NotificationSettings from './pages/NotificationSettings';
 import Notifications from './pages/Notifications';
+import OrganizationalOverview from './pages/OrganizationalOverview';
 import PlayerDetail from './pages/PlayerDetail';
 import Players from './pages/Players';
 import TaskDetail from './pages/TaskDetail';
 import Tasks from './pages/Tasks';
-import NoteDetail from './pages/NoteDetail';
-import OrganizationalOverview from './pages/OrganizationalOverview';
-import Deals from './pages/Deals';
-import DealDetail from './pages/DealDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -29,17 +29,17 @@ export const PAGES = {
     "CoachDetail": CoachDetail,
     "Coaches": Coaches,
     "Dashboard": Dashboard,
+    "DealDetail": DealDetail,
+    "Deals": Deals,
     "Home": Home,
+    "NoteDetail": NoteDetail,
     "NotificationSettings": NotificationSettings,
     "Notifications": Notifications,
+    "OrganizationalOverview": OrganizationalOverview,
     "PlayerDetail": PlayerDetail,
     "Players": Players,
     "TaskDetail": TaskDetail,
     "Tasks": Tasks,
-    "NoteDetail": NoteDetail,
-    "OrganizationalOverview": OrganizationalOverview,
-    "Deals": Deals,
-    "DealDetail": DealDetail,
 }
 
 export const pagesConfig = {

@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -20,73 +19,61 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, TrendingUp, User, Building2, Clock, DollarSign, Filter } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
-import MultiUserSelect from "../components/tasks/MultiUserSelect";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
+  Plus, 
+  Search, 
+  TrendingUp, 
+  DollarSign, 
+  FileCheck, 
+  BarChart3,
+  Trash2,
+  Edit,
+  ArrowLeft
+} from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import DealCard from "@/components/deals/DealCard";
+import DealForm from "@/components/deals/DealForm";
+import FinancialOverview from "@/components/deals/FinancialOverview";
 
-const statusColors = {
-  interesse: "bg-slate-100 text-slate-800 border-slate-200",
-  verhandlung: "bg-blue-100 text-blue-800 border-blue-200",
-  angebot_erhalten: "bg-purple-100 text-purple-800 border-purple-200",
-  medizincheck: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  vertragsunterzeichnung: "bg-orange-100 text-orange-800 border-orange-200",
-  abgeschlossen: "bg-green-100 text-green-800 border-green-200",
-  abgelehnt: "bg-red-100 text-red-800 border-red-200",
-  pausiert: "bg-gray-100 text-gray-800 border-gray-200",
-};
-
-const priorityColors = {
-  kritisch: "bg-red-100 text-red-800 border-red-200",
-  hoch: "bg-orange-100 text-orange-800 border-orange-200",
-  mittel: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  niedrig: "bg-green-100 text-green-800 border-green-200",
-};
+const statusOrder = [
+  'interesse',
+  'verhandlung', 
+  'angebot_erhalten',
+  'medizincheck',
+  'vertragsunterzeichnung',
+  'abgeschlossen',
+  'pausiert',
+  'abgelehnt'
+];
 
 export default function Deals() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  const [activeTab, setActiveTab] = useState(urlParams.get('tab') || "deals");
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("alle");
+  const [filterPriority, setFilterPriority] = useState("alle");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingDeal, setEditingDeal] = useState(null);
+  const [selectedDeal, setSelectedDeal] = useState(null);
+  const [deletingDeal, setDeletingDeal] = useState(null);
 
-  const [newDeal, setNewDeal] = useState({
-    title: "",
-    player_id: "",
-    player_name: "",
-    club_request_id: "",
-    receiving_club: "",
-    releasing_club: "",
-    status: "interesse",
-    transfer_type: "transfer",
-    transfer_fee: "",
-    annual_salary: "",
-    contract_length: "",
-    agent_name: "",
-    transfer_window: "Sommer 2026",
-    priority: "mittel",
-    assigned_to: [],
-    probability: 50,
-    notes: "",
-  });
-
+  // Daten laden
   const { data: deals = [], isLoading } = useQuery({
     queryKey: ['deals'],
     queryFn: () => base44.entities.Deal.list('-created_date'),
-  });
-
-  const { data: players = [] } = useQuery({
-    queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list(),
-  });
-
-  const { data: clubRequests = [] } = useQuery({
-    queryKey: ['clubRequests'],
-    queryFn: () => base44.entities.ClubRequest.list(),
+    refetchInterval: 10000,
   });
 
   const { data: users = [] } = useQuery({
@@ -94,329 +81,178 @@ export default function Deals() {
     queryFn: () => base44.entities.User.list(),
   });
 
+  const { data: players = [] } = useQuery({
+    queryKey: ['players'],
+    queryFn: () => base44.entities.Player.list(),
+  });
+
+  // Mutations
   const createDealMutation = useMutation({
-    mutationFn: (dealData) => base44.entities.Deal.create(dealData),
+    mutationFn: (data) => base44.entities.Deal.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       setShowCreateDialog(false);
-      setNewDeal({
-        title: "",
-        player_id: "",
-        player_name: "",
-        club_request_id: "",
-        receiving_club: "",
-        releasing_club: "",
-        status: "interesse",
-        transfer_type: "transfer",
-        transfer_fee: "",
-        annual_salary: "",
-        contract_length: "",
-        agent_name: "",
-        transfer_window: "Sommer 2026",
-        priority: "mittel",
-        assigned_to: [],
-        probability: 50,
-        notes: "",
-      });
     },
   });
 
-  const handleCreateDeal = () => {
-    const dealData = {
-      ...newDeal,
-      transfer_fee: newDeal.transfer_fee ? parseFloat(newDeal.transfer_fee) : undefined,
-      annual_salary: newDeal.annual_salary ? parseFloat(newDeal.annual_salary) : undefined,
-      contract_length: newDeal.contract_length ? parseFloat(newDeal.contract_length) : undefined,
-    };
-    createDealMutation.mutate(dealData);
-  };
-
-  const handlePlayerSelect = (playerId) => {
-    const player = players.find(p => p.id === playerId);
-    if (player) {
-      setNewDeal({
-        ...newDeal,
-        player_id: playerId,
-        player_name: player.name,
-        releasing_club: player.current_club || "",
-        title: `${player.name} → ${newDeal.receiving_club || "..."}`,
-      });
-    }
-  };
-
-  const handleClubRequestSelect = (requestId) => {
-    const request = clubRequests.find(r => r.id === requestId);
-    if (request) {
-      setNewDeal({
-        ...newDeal,
-        club_request_id: requestId,
-        receiving_club: request.club_name,
-        title: `${newDeal.player_name || "..."} → ${request.club_name}`,
-      });
-    }
-  };
-
-  const filteredDeals = deals.filter(deal => {
-    const matchesSearch = deal.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         deal.player_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         deal.receiving_club?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === "all" || deal.status === filterStatus;
-    const matchesPriority = filterPriority === "all" || deal.priority === filterPriority;
-    return matchesSearch && matchesStatus && matchesPriority;
+  const updateDealMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Deal.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      setEditingDeal(null);
+      setSelectedDeal(null);
+    },
   });
 
-  const stats = [
-    {
-      label: "Aktive Deals",
-      value: deals.filter(d => !["abgeschlossen", "abgelehnt"].includes(d.status)).length,
-      icon: TrendingUp,
-      color: "text-blue-600",
+  const deleteDealMutation = useMutation({
+    mutationFn: (id) => base44.entities.Deal.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      setDeletingDeal(null);
+      setSelectedDeal(null);
     },
-    {
-      label: "Abgeschlossen",
-      value: deals.filter(d => d.status === "abgeschlossen").length,
-      icon: TrendingUp,
-      color: "text-green-600",
-    },
-    {
-      label: "Gesamtvolumen",
-      value: `${(deals.filter(d => d.status === "abgeschlossen").reduce((sum, d) => sum + (d.transfer_fee || 0), 0) / 1000000).toFixed(1)}M €`,
-      icon: DollarSign,
-      color: "text-purple-600",
-    },
-  ];
+  });
+
+  // Filtern
+  const filteredDeals = useMemo(() => {
+    return deals.filter(deal => {
+      const matchesSearch = searchTerm === "" || 
+        deal.player_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        deal.receiving_club?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        deal.title?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = filterStatus === "alle" || deal.status === filterStatus;
+      const matchesPriority = filterPriority === "alle" || deal.priority === filterPriority;
+      
+      return matchesSearch && matchesStatus && matchesPriority;
+    }).sort((a, b) => {
+      // Erst nach Status, dann nach Datum
+      const statusA = statusOrder.indexOf(a.status);
+      const statusB = statusOrder.indexOf(b.status);
+      if (statusA !== statusB) return statusA - statusB;
+      return new Date(b.created_date) - new Date(a.created_date);
+    });
+  }, [deals, searchTerm, filterStatus, filterPriority]);
+
+  // Statistiken
+  const stats = useMemo(() => {
+    const active = deals.filter(d => !['abgeschlossen', 'abgelehnt'].includes(d.status)).length;
+    const completed = deals.filter(d => d.status === 'abgeschlossen').length;
+    const totalValue = deals.filter(d => d.status === 'abgeschlossen')
+      .reduce((sum, d) => sum + (d.transfer_fee || 0), 0);
+    
+    return { active, completed, totalValue };
+  }, [deals]);
+
+  const handleDealClick = (deal) => {
+    setSelectedDeal(deal);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-slate-900">Transfer Management</h1>
-          <Button onClick={() => setShowCreateDialog(true)} className="bg-blue-900 hover:bg-blue-800">
-            <Plus className="w-5 h-5 mr-2" />
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Deals</h1>
+            <p className="text-slate-600 mt-1">
+              {deals.length} Deals • {stats.active} aktiv • {stats.completed} abgeschlossen
+            </p>
+          </div>
+          <Button 
+            onClick={() => setShowCreateDialog(true)}
+            className="bg-blue-900 hover:bg-blue-800"
+          >
+            <Plus className="w-4 h-4 mr-2" />
             Neuer Deal
           </Button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
-          {stats.map((stat) => (
-            <Card key={stat.label} className="border-slate-200 bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="deals" className="flex items-center gap-2">
+              <FileCheck className="w-4 h-4" />
+              Deals
+            </TabsTrigger>
+            <TabsTrigger value="finanzen" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Finanzübersicht
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Deals Tab */}
+          <TabsContent value="deals" className="space-y-4">
+            {/* Kurzstatistiken */}
+            <div className="grid grid-cols-3 gap-4">
+              <Card className="border-slate-200 bg-white">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                  </div>
                   <div>
-                    <p className="text-sm text-slate-600">{stat.label}</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</p>
+                    <p className="text-xs text-slate-500">Aktive Deals</p>
+                    <p className="text-xl font-bold text-slate-900">{stats.active}</p>
                   </div>
-                  <stat.icon className={`w-8 h-8 ${stat.color}`} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <Card className="border-slate-200 bg-white">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <Input
-                  placeholder="Suche nach Spieler, Verein..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-full md:w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Status</SelectItem>
-                  <SelectItem value="interesse">Interesse</SelectItem>
-                  <SelectItem value="verhandlung">Verhandlung</SelectItem>
-                  <SelectItem value="angebot_erhalten">Angebot erhalten</SelectItem>
-                  <SelectItem value="medizincheck">Medizincheck</SelectItem>
-                  <SelectItem value="vertragsunterzeichnung">Vertragsunterzeichnung</SelectItem>
-                  <SelectItem value="abgeschlossen">Abgeschlossen</SelectItem>
-                  <SelectItem value="abgelehnt">Abgelehnt</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filterPriority} onValueChange={setFilterPriority}>
-                <SelectTrigger className="w-full md:w-[180px]">
-                  <SelectValue placeholder="Priorität" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Prioritäten</SelectItem>
-                  <SelectItem value="kritisch">Kritisch</SelectItem>
-                  <SelectItem value="hoch">Hoch</SelectItem>
-                  <SelectItem value="mittel">Mittel</SelectItem>
-                  <SelectItem value="niedrig">Niedrig</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center p-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900" />
-          </div>
-        ) : filteredDeals.length === 0 ? (
-          <Card className="border-slate-200 bg-white">
-            <CardContent className="p-12 text-center">
-              <TrendingUp className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-600">
-                {deals.length === 0 ? "Noch keine Deals erfasst" : "Keine Deals gefunden"}
-              </p>
-              <p className="text-sm text-slate-500 mt-2">
-                {deals.length === 0 ? "Erstellen Sie Ihren ersten Transfer-Deal" : "Versuchen Sie andere Filter"}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDeals.map((deal) => (
-              <Card
-                key={deal.id}
-                className="border-slate-200 bg-white hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(createPageUrl("DealDetail") + "?id=" + deal.id)}
-              >
-                <CardHeader className="border-b border-slate-100">
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg">{deal.title}</CardTitle>
-                      {deal.probability && (
-                        <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900">
-                          {deal.probability}%
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="secondary" className={statusColors[deal.status] + " border text-xs"}>
-                        {deal.status.replace(/_/g, ' ')}
-                      </Badge>
-                      <Badge variant="secondary" className={priorityColors[deal.priority] + " border text-xs"}>
-                        {deal.priority}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="w-4 h-4 text-slate-500" />
-                    <span className="text-slate-700">{deal.player_name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Building2 className="w-4 h-4 text-slate-500" />
-                    <span className="text-slate-700">{deal.receiving_club}</span>
-                  </div>
-                  {deal.transfer_fee && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <DollarSign className="w-4 h-4 text-slate-500" />
-                      <span className="text-slate-700 font-semibold">
-                        {(deal.transfer_fee / 1000000).toFixed(2)}M €
-                      </span>
-                    </div>
-                  )}
-                  {deal.expected_completion_date && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="w-4 h-4 text-slate-500" />
-                      <span className="text-slate-600">
-                        {format(new Date(deal.expected_completion_date), "dd.MM.yyyy")}
-                      </span>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
+              <Card className="border-slate-200 bg-white">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <FileCheck className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Abgeschlossen</p>
+                    <p className="text-xl font-bold text-slate-900">{stats.completed}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-slate-200 bg-white">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="p-2 bg-emerald-100 rounded-lg">
+                    <DollarSign className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Transfervolumen</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      {stats.totalValue >= 1000000 
+                        ? `${(stats.totalValue / 1000000).toFixed(1)}M €`
+                        : `${(stats.totalValue / 1000).toFixed(0)}K €`
+                      }
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Neuen Deal erstellen</DialogTitle>
-            </DialogHeader>
+            {/* Filter */}
+            <Card className="border-slate-200 bg-white">
+              <CardContent className="p-4">
+                <div className="grid md:grid-cols-3 gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <Input
+                      placeholder="Spieler, Verein suchen..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
 
-            <div className="space-y-4 py-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label>Spieler auswählen (optional)</Label>
-                  <Select value={newDeal.player_id} onValueChange={handlePlayerSelect}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Spieler aus System wählen..." />
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      {players.map(player => (
-                        <SelectItem key={player.id} value={player.id}>
-                          {player.name} ({player.current_club || "Vereinslos"})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="player_name">Spielername *</Label>
-                  <Input
-                    id="player_name"
-                    value={newDeal.player_name}
-                    onChange={(e) => setNewDeal({...newDeal, player_name: e.target.value})}
-                    placeholder="Name des Spielers"
-                    className="mt-1.5"
-                  />
-                </div>
-
-                <div>
-                  <Label>Vereinsanfrage verknüpfen (optional)</Label>
-                  <Select value={newDeal.club_request_id} onValueChange={handleClubRequestSelect}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Anfrage wählen..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clubRequests.map(request => (
-                        <SelectItem key={request.id} value={request.id}>
-                          {request.club_name} - {request.position_needed}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="receiving_club">Aufnehmender Verein *</Label>
-                  <Input
-                    id="receiving_club"
-                    value={newDeal.receiving_club}
-                    onChange={(e) => {
-                      setNewDeal({
-                        ...newDeal,
-                        receiving_club: e.target.value,
-                        title: `${newDeal.player_name || "..."} → ${e.target.value}`,
-                      });
-                    }}
-                    placeholder="Name des Vereins"
-                    className="mt-1.5"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="releasing_club">Abgebender Verein</Label>
-                  <Input
-                    id="releasing_club"
-                    value={newDeal.releasing_club}
-                    onChange={(e) => setNewDeal({...newDeal, releasing_club: e.target.value})}
-                    placeholder="Aktueller Verein"
-                    className="mt-1.5"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={newDeal.status} onValueChange={(value) => setNewDeal({...newDeal, status: value})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
+                      <SelectItem value="alle">Alle Status</SelectItem>
                       <SelectItem value="interesse">Interesse</SelectItem>
                       <SelectItem value="verhandlung">Verhandlung</SelectItem>
                       <SelectItem value="angebot_erhalten">Angebot erhalten</SelectItem>
@@ -424,153 +260,229 @@ export default function Deals() {
                       <SelectItem value="vertragsunterzeichnung">Vertragsunterzeichnung</SelectItem>
                       <SelectItem value="abgeschlossen">Abgeschlossen</SelectItem>
                       <SelectItem value="abgelehnt">Abgelehnt</SelectItem>
+                      <SelectItem value="pausiert">Pausiert</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
 
-                <div>
-                  <Label htmlFor="priority">Priorität</Label>
-                  <Select value={newDeal.priority} onValueChange={(value) => setNewDeal({...newDeal, priority: value})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue />
+                  <Select value={filterPriority} onValueChange={setFilterPriority}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Priorität" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="niedrig">Niedrig</SelectItem>
-                      <SelectItem value="mittel">Mittel</SelectItem>
-                      <SelectItem value="hoch">Hoch</SelectItem>
+                      <SelectItem value="alle">Alle Prioritäten</SelectItem>
                       <SelectItem value="kritisch">Kritisch</SelectItem>
+                      <SelectItem value="hoch">Hoch</SelectItem>
+                      <SelectItem value="mittel">Mittel</SelectItem>
+                      <SelectItem value="niedrig">Niedrig</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div>
-                  <Label htmlFor="transfer_type">Transfer-Art</Label>
-                  <Select value={newDeal.transfer_type} onValueChange={(value) => setNewDeal({...newDeal, transfer_type: value})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="transfer">Transfer</SelectItem>
-                      <SelectItem value="leihe">Leihe</SelectItem>
-                      <SelectItem value="ablösefrei">Ablösefrei</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="transfer_fee">Ablösesumme (€)</Label>
-                  <Input
-                    id="transfer_fee"
-                    type="number"
-                    value={newDeal.transfer_fee}
-                    onChange={(e) => setNewDeal({...newDeal, transfer_fee: e.target.value})}
-                    placeholder="z.B. 5000000"
-                    className="mt-1.5"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="annual_salary">Jahresgehalt (€)</Label>
-                  <Input
-                    id="annual_salary"
-                    type="number"
-                    value={newDeal.annual_salary}
-                    onChange={(e) => setNewDeal({...newDeal, annual_salary: e.target.value})}
-                    placeholder="z.B. 500000"
-                    className="mt-1.5"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="contract_length">Vertragslaufzeit (Jahre)</Label>
-                  <Input
-                    id="contract_length"
-                    type="number"
-                    value={newDeal.contract_length}
-                    onChange={(e) => setNewDeal({...newDeal, contract_length: e.target.value})}
-                    placeholder="z.B. 3"
-                    className="mt-1.5"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="agent_name">Berater</Label>
-                  <Input
-                    id="agent_name"
-                    value={newDeal.agent_name}
-                    onChange={(e) => setNewDeal({...newDeal, agent_name: e.target.value})}
-                    placeholder="Name des Beraters"
-                    className="mt-1.5"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="transfer_window">Transferfenster</Label>
-                  <Select value={newDeal.transfer_window} onValueChange={(value) => setNewDeal({...newDeal, transfer_window: value})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Winter 2025/26">Winter 2025/26</SelectItem>
-                      <SelectItem value="Sommer 2026">Sommer 2026</SelectItem>
-                      <SelectItem value="Winter 2026/27">Winter 2026/27</SelectItem>
-                      <SelectItem value="Sommer 2027">Sommer 2027</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="probability">Wahrscheinlichkeit (%)</Label>
-                  <Input
-                    id="probability"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={newDeal.probability}
-                    onChange={(e) => setNewDeal({...newDeal, probability: parseInt(e.target.value) || 0})}
-                    className="mt-1.5"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <Label>Zuständige Personen</Label>
-                  <div className="mt-1.5">
-                    <MultiUserSelect
-                      selectedUsers={newDeal.assigned_to}
-                      users={users}
-                      onChange={(users) => setNewDeal({...newDeal, assigned_to: users})}
+            {/* Deal Liste */}
+            {filteredDeals.length === 0 ? (
+              <Card className="border-slate-200 bg-white">
+                <CardContent className="p-8 text-center">
+                  <FileCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-600">Keine Deals gefunden</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => setShowCreateDialog(true)}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Ersten Deal erstellen
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                <AnimatePresence>
+                  {filteredDeals.map(deal => (
+                    <DealCard 
+                      key={deal.id} 
+                      deal={deal} 
+                      onClick={() => handleDealClick(deal)}
                     />
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Finanzen Tab */}
+          <TabsContent value="finanzen">
+            <FinancialOverview deals={deals} />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Create Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Neuen Deal erstellen</DialogTitle>
+          </DialogHeader>
+          <DealForm
+            onSave={(data) => createDealMutation.mutate(data)}
+            onCancel={() => setShowCreateDialog(false)}
+            users={users}
+            players={players}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingDeal} onOpenChange={() => setEditingDeal(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Deal bearbeiten</DialogTitle>
+          </DialogHeader>
+          {editingDeal && (
+            <DealForm
+              deal={editingDeal}
+              onSave={(data) => updateDealMutation.mutate({ id: editingDeal.id, data })}
+              onCancel={() => setEditingDeal(null)}
+              users={users}
+              players={players}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!selectedDeal && !editingDeal} onOpenChange={() => setSelectedDeal(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedDeal && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center justify-between">
+                  <DialogTitle>{selectedDeal.title || selectedDeal.player_name}</DialogTitle>
+                </div>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500">Spieler</p>
+                    <p className="font-semibold">{selectedDeal.player_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Neuer Verein</p>
+                    <p className="font-semibold">{selectedDeal.receiving_club}</p>
+                  </div>
+                  {selectedDeal.releasing_club && (
+                    <div>
+                      <p className="text-sm text-slate-500">Abgebender Verein</p>
+                      <p className="font-semibold">{selectedDeal.releasing_club}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm text-slate-500">Status</p>
+                    <Badge className="mt-1">{selectedDeal.status}</Badge>
                   </div>
                 </div>
 
-                <div className="md:col-span-2">
-                  <Label htmlFor="notes">Notizen</Label>
-                  <Textarea
-                    id="notes"
-                    value={newDeal.notes}
-                    onChange={(e) => setNewDeal({...newDeal, notes: e.target.value})}
-                    placeholder="Zusätzliche Details..."
-                    className="mt-1.5 h-24"
-                  />
-                </div>
-              </div>
-            </div>
+                {(selectedDeal.transfer_fee || selectedDeal.annual_salary) && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold mb-2">Finanzen</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      {selectedDeal.transfer_fee && (
+                        <div>
+                          <p className="text-sm text-slate-500">Ablöse</p>
+                          <p className="font-semibold">{(selectedDeal.transfer_fee / 1000000).toFixed(2)}M €</p>
+                        </div>
+                      )}
+                      {selectedDeal.annual_salary && (
+                        <div>
+                          <p className="text-sm text-slate-500">Jahresgehalt</p>
+                          <p className="font-semibold">{(selectedDeal.annual_salary / 1000).toFixed(0)}K €</p>
+                        </div>
+                      )}
+                      {selectedDeal.agency_commission && (
+                        <div>
+                          <p className="text-sm text-slate-500">Provision</p>
+                          <p className="font-semibold text-green-600">{(selectedDeal.agency_commission / 1000).toFixed(0)}K €</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                Abbrechen
-              </Button>
-              <Button 
-                onClick={handleCreateDeal}
-                disabled={!newDeal.player_name || !newDeal.receiving_club || createDealMutation.isPending}
-                className="bg-blue-900 hover:bg-blue-800"
-              >
-                {createDealMutation.isPending ? "Wird erstellt..." : "Deal erstellen"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+                {selectedDeal.documents && selectedDeal.documents.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold mb-2">Dokumente</h4>
+                    <div className="space-y-2">
+                      {selectedDeal.documents.map((doc, index) => (
+                        <a
+                          key={index}
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                        >
+                          <span>📄</span>
+                          <span className="text-sm text-blue-600 underline">{doc.name}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedDeal.notes && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold mb-2">Notizen</h4>
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{selectedDeal.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-between border-t pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeletingDeal(selectedDeal)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Löschen
+                </Button>
+                <Button
+                  onClick={() => {
+                    setEditingDeal(selectedDeal);
+                  }}
+                  className="bg-blue-900 hover:bg-blue-800"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Bearbeiten
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingDeal} onOpenChange={() => setDeletingDeal(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deal löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie den Deal "{deletingDeal?.title || deletingDeal?.player_name}" wirklich löschen? 
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteDealMutation.mutate(deletingDeal.id)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
