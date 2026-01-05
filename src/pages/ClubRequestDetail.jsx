@@ -33,6 +33,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import MatchingCriteriaEditor from "../components/clubRequests/MatchingCriteriaEditor";
 import CommunicationHistory from "../components/clubRequests/CommunicationHistory";
+import MatchScoreBreakdown from "../components/clubRequests/MatchScoreBreakdown";
 
 const priorityColors = {
   niedrig: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -399,10 +400,11 @@ export default function ClubRequestDetail() {
             </div>
           </div>
           {showMatchScore && player.matchScore !== undefined && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
-              <Star className="w-3 h-3 fill-current" />
-              <span className="text-sm font-bold">{player.matchScore}%</span>
-            </div>
+            <MatchScoreBreakdown 
+              player={player} 
+              request={request} 
+              matchScore={player.matchScore} 
+            />
           )}
         </div>
         
