@@ -1,3 +1,4 @@
+import Archives from './pages/Archives';
 import Calendar from './pages/Calendar';
 import ClubRequestDetail from './pages/ClubRequestDetail';
 import ClubRequests from './pages/ClubRequests';
@@ -9,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import DealDetail from './pages/DealDetail';
 import Deals from './pages/Deals';
 import Home from './pages/Home';
+import MyActivity from './pages/MyActivity';
 import NoteDetail from './pages/NoteDetail';
 import NotificationSettings from './pages/NotificationSettings';
 import Notifications from './pages/Notifications';
@@ -17,12 +19,11 @@ import PlayerDetail from './pages/PlayerDetail';
 import Players from './pages/Players';
 import TaskDetail from './pages/TaskDetail';
 import Tasks from './pages/Tasks';
-import Archives from './pages/Archives';
-import MyActivity from './pages/MyActivity';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "Archives": Archives,
     "Calendar": Calendar,
     "ClubRequestDetail": ClubRequestDetail,
     "ClubRequests": ClubRequests,
@@ -34,6 +35,7 @@ export const PAGES = {
     "DealDetail": DealDetail,
     "Deals": Deals,
     "Home": Home,
+    "MyActivity": MyActivity,
     "NoteDetail": NoteDetail,
     "NotificationSettings": NotificationSettings,
     "Notifications": Notifications,
@@ -42,8 +44,6 @@ export const PAGES = {
     "Players": Players,
     "TaskDetail": TaskDetail,
     "Tasks": Tasks,
-    "Archives": Archives,
-    "MyActivity": MyActivity,
 }
 
 export const pagesConfig = {

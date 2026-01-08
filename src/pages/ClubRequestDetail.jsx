@@ -27,10 +27,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock } from "lucide-react";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 import MatchingCriteriaEditor from "../components/clubRequests/MatchingCriteriaEditor";
 import CommunicationHistory from "../components/clubRequests/CommunicationHistory";
 import MatchScoreBreakdown from "../components/clubRequests/MatchScoreBreakdown";
@@ -120,6 +122,7 @@ export default function ClubRequestDetail() {
       salary_max: editedRequest.salary_max ? parseFloat(editedRequest.salary_max) : undefined,
       age_min: editedRequest.age_min ? parseInt(editedRequest.age_min) : undefined,
       age_max: editedRequest.age_max ? parseInt(editedRequest.age_max) : undefined,
+      last_modified_date: new Date().toISOString(),
     };
     updateRequestMutation.mutate({ id: requestId, data: requestData });
   };
