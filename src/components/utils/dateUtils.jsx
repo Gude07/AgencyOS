@@ -1,5 +1,5 @@
 import { format as dateFnsFormat } from "date-fns";
-import { utcToZonedTime } from "date-fns-tz";
+import { toZonedTime } from "date-fns-tz";
 import { de } from "date-fns/locale";
 
 const TIMEZONE = "Europe/Berlin";
@@ -13,7 +13,7 @@ const TIMEZONE = "Europe/Berlin";
 export const formatInGermanTime = (date, formatStr = "dd.MM.yyyy HH:mm") => {
   if (!date) return "";
   const dateObj = typeof date === "string" ? new Date(date) : date;
-  const zonedDate = utcToZonedTime(dateObj, TIMEZONE);
+  const zonedDate = toZonedTime(dateObj, TIMEZONE);
   return dateFnsFormat(zonedDate, formatStr, { locale: de });
 };
 
@@ -22,5 +22,5 @@ export const formatInGermanTime = (date, formatStr = "dd.MM.yyyy HH:mm") => {
  * @returns {Date} - Aktuelles Datum in deutscher Zeitzone
  */
 export const getCurrentGermanTime = () => {
-  return utcToZonedTime(new Date(), TIMEZONE);
+  return toZonedTime(new Date(), TIMEZONE);
 };
