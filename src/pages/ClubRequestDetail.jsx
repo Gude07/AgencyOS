@@ -31,8 +31,7 @@ import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSqua
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
+import { formatInGermanTime } from "@/utils/dateUtils";
 import MatchingCriteriaEditor from "../components/clubRequests/MatchingCriteriaEditor";
 import CommunicationHistory from "../components/clubRequests/CommunicationHistory";
 import MatchScoreBreakdown from "../components/clubRequests/MatchScoreBreakdown";
@@ -614,7 +613,7 @@ export default function ClubRequestDetail() {
                         <span className="font-medium">Erstellt:</span>
                       </div>
                       <p className="text-slate-800">
-                        {format(new Date(currentRequestData.created_date), "dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de })}
+                        {formatInGermanTime(currentRequestData.created_date, "dd.MM.yyyy 'um' HH:mm 'Uhr'")}
                       </p>
                     </div>
                     {currentRequestData.last_modified_date && (
@@ -624,7 +623,7 @@ export default function ClubRequestDetail() {
                           <span className="font-medium">Letzte Änderung:</span>
                         </div>
                         <p className="text-slate-800">
-                          {format(new Date(currentRequestData.last_modified_date), "dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de })}
+                          {formatInGermanTime(currentRequestData.last_modified_date, "dd.MM.yyyy 'um' HH:mm 'Uhr'")}
                         </p>
                       </div>
                     )}

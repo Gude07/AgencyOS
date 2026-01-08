@@ -34,8 +34,7 @@ import {
 import { ArrowLeft, Edit2, Trash2, Plus, Clock, DollarSign, User, Building2, FileText, TrendingUp, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
+import { formatInGermanTime } from "@/utils/dateUtils";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
 
 const statusColors = {
@@ -412,7 +411,7 @@ export default function DealDetail() {
                       <div>
                         <p className="text-xs text-slate-600 mb-1">Erwartetes Datum</p>
                         <p className="font-semibold text-slate-900">
-                          {format(new Date(currentDealData.expected_completion_date), "dd.MM.yyyy")}
+                          {formatInGermanTime(currentDealData.expected_completion_date, "dd.MM.yyyy")}
                         </p>
                       </div>
                     )}
@@ -634,7 +633,7 @@ export default function DealDetail() {
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <h4 className="font-semibold text-slate-900">{update.title}</h4>
                             <span className="text-xs text-slate-500 flex-shrink-0">
-                              {format(new Date(update.created_date), "dd.MM.yyyy HH:mm", { locale: de })}
+                              {formatInGermanTime(update.created_date, "dd.MM.yyyy HH:mm")}
                             </span>
                           </div>
                           {update.description && (

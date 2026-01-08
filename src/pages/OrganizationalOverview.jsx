@@ -23,8 +23,7 @@ import {
 import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
+import { formatInGermanTime } from "@/utils/dateUtils";
 import AssignmentOverview from "../components/clubRequests/AssignmentOverview";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -472,7 +471,7 @@ export default function OrganizationalOverview() {
                           </div>
                         )}
                         <div className="flex items-center justify-between mt-3 text-xs text-slate-500">
-                          <span>{format(new Date(note.created_date), "dd.MM.yyyy", { locale: de })}</span>
+                          <span>{formatInGermanTime(note.created_date, "dd.MM.yyyy")}</span>
                           <span>{note.created_by}</span>
                         </div>
                       </CardContent>
