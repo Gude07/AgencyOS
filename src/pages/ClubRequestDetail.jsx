@@ -605,6 +605,32 @@ export default function ClubRequestDetail() {
                 </div>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
+                {/* Datum-Anzeige */}
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex items-start gap-3 text-xs text-slate-600">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span className="font-medium">Erstellt:</span>
+                      </div>
+                      <p className="text-slate-800">
+                        {format(new Date(currentRequestData.created_date), "dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de })}
+                      </p>
+                    </div>
+                    {currentRequestData.last_modified_date && (
+                      <div className="flex-1">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span className="font-medium">Letzte Änderung:</span>
+                        </div>
+                        <p className="text-slate-800">
+                          {format(new Date(currentRequestData.last_modified_date), "dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div>
                   <Label className="text-sm font-semibold text-slate-700 mb-3 block">Kontaktinformationen</Label>
                   {editMode ? (
