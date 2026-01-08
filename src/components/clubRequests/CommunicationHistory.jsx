@@ -21,8 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Plus, Phone, Mail, Calendar, MessageSquare, Trash2 } from "lucide-react";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
+import { formatInGermanTime } from "@/components/utils/dateUtils";
 import { motion, AnimatePresence } from "framer-motion";
 
 const communicationTypeIcons = {
@@ -185,7 +184,7 @@ export default function CommunicationHistory({ clubRequestId, players = [] }) {
                             <div>
                               <h4 className="font-semibold text-slate-900">{comm.subject}</h4>
                               <div className="flex items-center gap-2 mt-1 text-sm text-slate-600">
-                                <span>{format(new Date(comm.date), "d. MMM yyyy, HH:mm", { locale: de })}</span>
+                                <span>{formatInGermanTime(comm.date, "d. MMM yyyy, HH:mm")}</span>
                                 {comm.contact_person && (
                                   <>
                                     <span>•</span>

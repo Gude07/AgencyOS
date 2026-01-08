@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageSquare, Send, Trash2 } from "lucide-react";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
+import { formatInGermanTime } from "@/components/utils/dateUtils";
 
 export default function PlayerComments({ playerId }) {
   const queryClient = useQueryClient();
@@ -173,7 +172,7 @@ export default function PlayerComments({ playerId }) {
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{comment.created_by}</p>
                         <p className="text-xs text-slate-500">
-                          {format(new Date(comment.created_date), "dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de })}
+                          {formatInGermanTime(comment.created_date, "dd.MM.yyyy 'um' HH:mm 'Uhr'")}
                         </p>
                       </div>
                     </div>
@@ -216,7 +215,7 @@ export default function PlayerComments({ playerId }) {
                               <div>
                                 <p className="text-xs font-semibold text-slate-900">{reply.created_by}</p>
                                 <p className="text-xs text-slate-500">
-                                  {format(new Date(reply.created_date), "dd.MM.yyyy 'um' HH:mm 'Uhr'", { locale: de })}
+                                  {formatInGermanTime(reply.created_date, "dd.MM.yyyy 'um' HH:mm 'Uhr'")}
                                 </p>
                               </div>
                             </div>

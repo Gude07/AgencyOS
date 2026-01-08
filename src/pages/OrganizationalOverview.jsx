@@ -23,7 +23,7 @@ import {
 import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatInGermanTime } from "@/utils/dateUtils";
+import { formatInGermanTime } from "@/components/utils/dateUtils";
 import AssignmentOverview from "../components/clubRequests/AssignmentOverview";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';

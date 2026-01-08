@@ -5,8 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, Send } from "lucide-react";
-import { format } from "date-fns";
-import { de } from "date-fns/locale";
+import { formatInGermanTime } from "@/components/utils/dateUtils";
 
 export default function TaskComments({ taskId }) {
   const queryClient = useQueryClient();
@@ -105,7 +104,7 @@ export default function TaskComments({ taskId }) {
                     {comment.created_by?.split('@')[0]}
                   </span>
                   <span className="text-xs text-slate-500">
-                    {format(new Date(comment.created_date), "d. MMM yyyy, HH:mm", { locale: de })}
+                    {formatInGermanTime(comment.created_date, "d. MMM yyyy, HH:mm")}
                   </span>
                 </div>
                 <p className="text-slate-700 text-sm">{comment.content}</p>

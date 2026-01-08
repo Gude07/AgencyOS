@@ -31,7 +31,7 @@ import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSqua
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatInGermanTime } from "@/utils/dateUtils";
+import { formatInGermanTime } from "@/components/utils/dateUtils";
 import MatchingCriteriaEditor from "../components/clubRequests/MatchingCriteriaEditor";
 import CommunicationHistory from "../components/clubRequests/CommunicationHistory";
 import MatchScoreBreakdown from "../components/clubRequests/MatchScoreBreakdown";

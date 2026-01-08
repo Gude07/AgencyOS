@@ -34,7 +34,7 @@ import {
 import { ArrowLeft, Edit2, Trash2, Plus, Clock, DollarSign, User, Building2, FileText, TrendingUp, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatInGermanTime } from "@/utils/dateUtils";
+import { formatInGermanTime } from "@/components/utils/dateUtils";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
 
 const statusColors = {

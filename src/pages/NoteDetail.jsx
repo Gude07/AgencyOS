@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, MessageCircle, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatInGermanTime } from "@/utils/dateUtils";
+import { formatInGermanTime } from "@/components/utils/dateUtils";
 
 const categoryConfig = {
   meeting: { label: "Meeting", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Calendar },
