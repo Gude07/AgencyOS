@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle, IdCard } from "lucide-react";
+import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle, IdCard, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -345,6 +345,30 @@ export default function Players() {
     setSelectedPlayers(newSelection);
   };
 
+  const exportFavoritePlayers = () => {
+    const favoritePlayers = players.filter(p => userFavorites.includes(p.id));
+    const csvData = [
+      ['Name', 'Position', 'Alter', 'Nationalität', 'Aktueller Verein', 'Marktwert', 'Vertrag bis', 'Kategorie', 'Status'].join(';'),
+      ...favoritePlayers.map(p => [
+        p.name,
+        p.position,
+        calculateAge(p.date_of_birth) || '',
+        p.nationality || '',
+        p.current_club || '',
+        p.market_value ? (p.market_value / 1000000).toFixed(2) + 'M €' : '',
+        p.contract_until ? format(new Date(p.contract_until), "MM/yyyy") : '',
+        p.category || '',
+        p.status?.replace(/_/g, ' ') || ''
+      ].join(';'))
+    ].join('\n');
+    
+    const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Favorisierte_Spieler_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -439,15 +463,28 @@ export default function Players() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
-          <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
-            <TabsList className="bg-slate-100">
-              <TabsTrigger value="alle">Alle</TabsTrigger>
-              <TabsTrigger value="favoriten" className="flex items-center gap-2">
-                <Star className="w-4 h-4" />
-                Favoriten ({userFavorites.length})
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center justify-between">
+            <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
+              <TabsList className="bg-slate-100">
+                <TabsTrigger value="alle">Alle</TabsTrigger>
+                <TabsTrigger value="favoriten" className="flex items-center gap-2">
+                  <Star className="w-4 h-4" />
+                  Favoriten ({userFavorites.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {filterFavorites === "favoriten" && userFavorites.length > 0 && (
+              <Button
+                onClick={exportFavoritePlayers}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </Button>
+            )}
+          </div>
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />

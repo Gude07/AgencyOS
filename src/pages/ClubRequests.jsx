@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User, MessageCircle } from "lucide-react";
+import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User, MessageCircle, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -412,6 +412,35 @@ export default function ClubRequests() {
     setSelectedRequests(newSelection);
   };
 
+  const exportFavoriteRequests = () => {
+    const favoriteRequests = requests.filter(r => userFavorites.includes(r.id));
+    const csvData = [
+      ['Vereinsname', 'Liga', 'Land', 'Position', 'Budget Min', 'Budget Max', 'Alter Min', 'Alter Max', 'Transferperiode', 'Priorität', 'Status', 'Kontaktperson', 'E-Mail', 'Telefon'].join(';'),
+      ...favoriteRequests.map(r => [
+        r.club_name,
+        r.league || '',
+        r.country || '',
+        r.position_needed,
+        r.budget_min ? (r.budget_min / 1000000).toFixed(2) + 'M €' : '',
+        r.budget_max ? (r.budget_max / 1000000).toFixed(2) + 'M €' : '',
+        r.age_min || '',
+        r.age_max || '',
+        r.transfer_period || '',
+        r.priority || '',
+        r.status?.replace(/_/g, ' ') || '',
+        r.contact_person || '',
+        r.contact_email || '',
+        r.contact_phone || ''
+      ].join(';'))
+    ].join('\n');
+    
+    const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Favorisierte_Vereinsanfragen_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -516,16 +545,29 @@ export default function ClubRequests() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="gap-2"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              Erweiterte Filter
-              {showAdvancedFilters && <X className="w-3 h-3" />}
-            </Button>
+            <div className="flex gap-2">
+              {filterFavorites === "favoriten" && userFavorites.length > 0 && (
+                <Button
+                  onClick={exportFavoriteRequests}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="gap-2"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                Erweiterte Filter
+                {showAdvancedFilters && <X className="w-3 h-3" />}
+              </Button>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
