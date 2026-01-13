@@ -412,28 +412,52 @@ export default function ClubRequests() {
     setSelectedRequests(newSelection);
   };
 
+  const escapeCsvField = (field) => {
+    if (field == null) return '';
+    const str = String(field);
+    // Escape Anführungszeichen und wrappe Feld wenn nötig
+    if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
+
   const exportFavoriteRequests = () => {
     const favoriteRequests = requests.filter(r => userFavorites.includes(r.id));
-    const csvData = [
-      ['Vereinsname', 'Liga', 'Land', 'Position', 'Budget Min', 'Budget Max', 'Alter Min', 'Alter Max', 'Transferperiode', 'Priorität', 'Status', 'Kontaktperson', 'E-Mail', 'Telefon', 'Anforderungen'].join(';'),
-      ...favoriteRequests.map(r => [
-        r.club_name,
-        r.league || '',
-        r.country || '',
-        r.position_needed,
-        r.budget_min ? (r.budget_min / 1000000).toFixed(2) + 'M €' : '',
-        r.budget_max ? (r.budget_max / 1000000).toFixed(2) + 'M €' : '',
-        r.age_min || '',
-        r.age_max || '',
-        r.transfer_period || '',
-        r.priority || '',
-        r.status?.replace(/_/g, ' ') || '',
-        r.contact_person || '',
-        r.contact_email || '',
-        r.contact_phone || '',
-        (r.requirements || '').replace(/;/g, ',')
-      ].join(';'))
-    ].join('\n');
+    
+    // Kommunikationen für jede Anfrage sammeln
+    const requestCommunications = {};
+    favoriteRequests.forEach(r => {
+      const comms = allCommunications.filter(c => c.club_request_id === r.id);
+      requestCommunications[r.id] = comms.map(c => 
+        `${c.type} (${format(new Date(c.date), "dd.MM.yyyy")}): ${c.subject}`
+      ).join(' | ');
+    });
+    
+    const headers = ['Vereinsname', 'Liga', 'Land', 'Position', 'Budget Min', 'Budget Max', 'Gehalt Min', 'Gehalt Max', 'Alter Min', 'Alter Max', 'Transferperiode', 'Priorität', 'Status', 'Kontaktperson', 'E-Mail', 'Telefon', 'Anforderungen', 'Kommunikationen'];
+    
+    const rows = favoriteRequests.map(r => [
+      escapeCsvField(r.club_name),
+      escapeCsvField(r.league || ''),
+      escapeCsvField(r.country || ''),
+      escapeCsvField(r.position_needed),
+      escapeCsvField(r.budget_min ? (r.budget_min / 1000000).toFixed(2) + 'M €' : ''),
+      escapeCsvField(r.budget_max ? (r.budget_max / 1000000).toFixed(2) + 'M €' : ''),
+      escapeCsvField(r.salary_min ? (r.salary_min / 1000).toFixed(0) + 'k €' : ''),
+      escapeCsvField(r.salary_max ? (r.salary_max / 1000).toFixed(0) + 'k €' : ''),
+      escapeCsvField(r.age_min || ''),
+      escapeCsvField(r.age_max || ''),
+      escapeCsvField(r.transfer_period || ''),
+      escapeCsvField(r.priority || ''),
+      escapeCsvField(r.status?.replace(/_/g, ' ') || ''),
+      escapeCsvField(r.contact_person || ''),
+      escapeCsvField(r.contact_email || ''),
+      escapeCsvField(r.contact_phone || ''),
+      escapeCsvField(r.requirements || ''),
+      escapeCsvField(requestCommunications[r.id] || '')
+    ].join(';'));
+    
+    const csvData = [headers.join(';'), ...rows].join('\n');
     
     const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');

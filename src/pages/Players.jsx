@@ -345,24 +345,47 @@ export default function Players() {
     setSelectedPlayers(newSelection);
   };
 
+  const escapeCsvField = (field) => {
+    if (field == null) return '';
+    const str = String(field);
+    // Escape Anführungszeichen und wrappe Feld wenn nötig
+    if (str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
+
   const exportFavoritePlayers = () => {
     const favoritePlayers = players.filter(p => userFavorites.includes(p.id));
-    const csvData = [
-      ['Name', 'Position', 'Alter', 'Nationalität', 'Aktueller Verein', 'Marktwert', 'Vertrag bis', 'Kategorie', 'Status', 'Stärken', 'Notizen'].join(';'),
-      ...favoritePlayers.map(p => [
-        p.name,
-        p.position,
-        calculateAge(p.date_of_birth) || '',
-        p.nationality || '',
-        p.current_club || '',
-        p.market_value ? (p.market_value / 1000000).toFixed(2) + 'M €' : '',
-        p.contract_until ? format(new Date(p.contract_until), "MM/yyyy") : '',
-        p.category || '',
-        p.status?.replace(/_/g, ' ') || '',
-        (p.strengths || '').replace(/;/g, ','),
-        (p.notes || '').replace(/;/g, ',')
-      ].join(';'))
-    ].join('\n');
+    
+    // Kommentare für jeden Spieler sammeln
+    const playerComments = {};
+    favoritePlayers.forEach(p => {
+      const comments = allComments.filter(c => c.player_id === p.id);
+      playerComments[p.id] = comments.map(c => 
+        `${c.created_by} (${format(new Date(c.created_date), "dd.MM.yyyy")}): ${c.content}`
+      ).join(' | ');
+    });
+    
+    const headers = ['Name', 'Position', 'Nebenpositionen', 'Alter', 'Nationalität', 'Aktueller Verein', 'Marktwert', 'Vertrag bis', 'Kategorie', 'Status', 'Stärken', 'Notizen', 'Kommentare'];
+    
+    const rows = favoritePlayers.map(p => [
+      escapeCsvField(p.name),
+      escapeCsvField(p.position),
+      escapeCsvField(Array.isArray(p.secondary_positions) ? p.secondary_positions.join(', ') : ''),
+      escapeCsvField(calculateAge(p.date_of_birth) || ''),
+      escapeCsvField(p.nationality || ''),
+      escapeCsvField(p.current_club || ''),
+      escapeCsvField(p.market_value ? (p.market_value / 1000000).toFixed(2) + 'M €' : ''),
+      escapeCsvField(p.contract_until ? format(new Date(p.contract_until), "MM/yyyy") : ''),
+      escapeCsvField(p.category || ''),
+      escapeCsvField(p.status?.replace(/_/g, ' ') || ''),
+      escapeCsvField(p.strengths || ''),
+      escapeCsvField(p.notes || ''),
+      escapeCsvField(playerComments[p.id] || '')
+    ].join(';'));
+    
+    const csvData = [headers.join(';'), ...rows].join('\n');
     
     const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
