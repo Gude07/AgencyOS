@@ -348,7 +348,7 @@ export default function Players() {
   const exportFavoritePlayers = () => {
     const favoritePlayers = players.filter(p => userFavorites.includes(p.id));
     const csvData = [
-      ['Name', 'Position', 'Alter', 'Nationalität', 'Aktueller Verein', 'Marktwert', 'Vertrag bis', 'Kategorie', 'Status'].join(';'),
+      ['Name', 'Position', 'Alter', 'Nationalität', 'Aktueller Verein', 'Marktwert', 'Vertrag bis', 'Kategorie', 'Status', 'Stärken', 'Notizen'].join(';'),
       ...favoritePlayers.map(p => [
         p.name,
         p.position,
@@ -358,7 +358,9 @@ export default function Players() {
         p.market_value ? (p.market_value / 1000000).toFixed(2) + 'M €' : '',
         p.contract_until ? format(new Date(p.contract_until), "MM/yyyy") : '',
         p.category || '',
-        p.status?.replace(/_/g, ' ') || ''
+        p.status?.replace(/_/g, ' ') || '',
+        (p.strengths || '').replace(/;/g, ','),
+        (p.notes || '').replace(/;/g, ',')
       ].join(';'))
     ].join('\n');
     

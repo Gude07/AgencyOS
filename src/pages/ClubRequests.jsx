@@ -415,7 +415,7 @@ export default function ClubRequests() {
   const exportFavoriteRequests = () => {
     const favoriteRequests = requests.filter(r => userFavorites.includes(r.id));
     const csvData = [
-      ['Vereinsname', 'Liga', 'Land', 'Position', 'Budget Min', 'Budget Max', 'Alter Min', 'Alter Max', 'Transferperiode', 'Priorität', 'Status', 'Kontaktperson', 'E-Mail', 'Telefon'].join(';'),
+      ['Vereinsname', 'Liga', 'Land', 'Position', 'Budget Min', 'Budget Max', 'Alter Min', 'Alter Max', 'Transferperiode', 'Priorität', 'Status', 'Kontaktperson', 'E-Mail', 'Telefon', 'Anforderungen'].join(';'),
       ...favoriteRequests.map(r => [
         r.club_name,
         r.league || '',
@@ -430,7 +430,8 @@ export default function ClubRequests() {
         r.status?.replace(/_/g, ' ') || '',
         r.contact_person || '',
         r.contact_email || '',
-        r.contact_phone || ''
+        r.contact_phone || '',
+        (r.requirements || '').replace(/;/g, ',')
       ].join(';'))
     ].join('\n');
     
