@@ -157,35 +157,7 @@ export default function ClubRequestDetail() {
       queryClient.invalidateQueries({ queryKey: ['player', playerId] });
     }
     
-    // Auto-Generierung: Aufgabe bei Shortlist-Meilenstein (z.B. erster Spieler)
-    if (isAdding && shortlist.length === 0) {
-      const currentUser = await base44.auth.me();
-      await base44.entities.Task.create({
-        title: `Angebot für ${player.name} vorbereiten`,
-        description: `Spieler wurde zur Shortlist von ${request.club_name} hinzugefügt. Angebot vorbereiten und Details abstimmen.`,
-        priority: 'hoch',
-        status: 'offen',
-        category: 'spieleranfrage',
-        assigned_to: request.assigned_to || [currentUser.email],
-        progress: 0
-      });
-      
-      // Benachrichtigung
-      if (request.assigned_to && request.assigned_to.length > 0) {
-        for (const userEmail of request.assigned_to) {
-          await base44.entities.Notification.create({
-            user_email: userEmail,
-            type: 'neue_aufgabe',
-            title: 'Neue Aufgabe erstellt',
-            message: `Aufgabe "Angebot für ${player.name} vorbereiten" wurde automatisch erstellt`,
-            link: 'Tasks',
-            entity_type: 'Task'
-          });
-        }
-      }
-      
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    }
+
   };
 
   const handleSaveMatchingCriteria = (criteria) => {
@@ -327,6 +299,7 @@ export default function ClubRequestDetail() {
   }
 
   const matchingPlayers = players
+    .filter(player => !player.archive_id)  // Archivierte Spieler ausschließen
     .map(player => ({
       ...player,
       matchScore: calculateMatchScore(player),

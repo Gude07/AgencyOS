@@ -319,6 +319,7 @@ export default function PlayerDetail() {
   }
 
   const matchingRequests = clubRequests
+    .filter(request => request.status !== 'abgeschlossen' && !request.archive_id)  // Abgeschlossene und archivierte ausschließen
     .map(request => ({
       ...request,
       matchScore: calculateBidirectionalMatchScore(request)
@@ -345,7 +346,7 @@ export default function PlayerDetail() {
   });
 
   const favoriteMatches = clubRequests.filter(req => 
-    (player.favorite_matches || []).includes(req.id)
+    (player.favorite_matches || []).includes(req.id) && req.status !== 'abgeschlossen' && !req.archive_id
   );
 
   const uniqueCountries = [...new Set(matchingRequests.map(r => r.country).filter(Boolean))];
