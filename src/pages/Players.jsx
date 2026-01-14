@@ -285,8 +285,9 @@ export default function Players() {
     const matchesCategory = filterCategory === "alle" || player.category === filterCategory;
     const matchesPosition = filterPosition === "alle" || player.position === filterPosition;
     const matchesStatus = filterStatus === "alle" || player.status === filterStatus;
+    // Bei Favoriten-Filter: nur nicht-archivierte Spieler anzeigen
     const matchesFavorites = filterFavorites === "alle" || 
-                            (filterFavorites === "favoriten" && userFavorites.includes(player.id));
+                            (filterFavorites === "favoriten" && userFavorites.includes(player.id) && !player.archive_id);
     const matchesHasMatches = filterHasMatches === "alle" || 
                              (filterHasMatches === "mit_matches" && Array.isArray(player.favorite_matches) && player.favorite_matches.length > 0) ||
                              (filterHasMatches === "ohne_matches" && (!Array.isArray(player.favorite_matches) || player.favorite_matches.length === 0));
