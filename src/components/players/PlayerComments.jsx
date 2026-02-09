@@ -73,6 +73,26 @@ export default function PlayerComments({ playerId }) {
       
       return comment;
     },
+    onMutate: async (commentData) => {
+      await queryClient.cancelQueries({ queryKey: ['playerComments', playerId] });
+      const previousComments = queryClient.getQueryData(['playerComments', playerId]);
+      
+      const optimisticComment = {
+        id: 'temp-' + Date.now(),
+        ...commentData,
+        created_by: currentUser?.email,
+        created_date: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData(['playerComments', playerId], (old = []) => [optimisticComment, ...old]);
+      
+      return { previousComments };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousComments) {
+        queryClient.setQueryData(['playerComments', playerId], context.previousComments);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['playerComments', playerId] });
       setNewComment("");

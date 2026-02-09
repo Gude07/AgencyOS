@@ -68,6 +68,7 @@ import PlayerDetail from './pages/PlayerDetail';
 import Players from './pages/Players';
 import TaskDetail from './pages/TaskDetail';
 import Tasks from './pages/Tasks';
+import AccountSettings from './pages/AccountSettings';
 import __Layout from './Layout.jsx';
 
 
@@ -93,6 +94,7 @@ export const PAGES = {
     "Players": Players,
     "TaskDetail": TaskDetail,
     "Tasks": Tasks,
+    "AccountSettings": AccountSettings,
 }
 
 export const pagesConfig = {

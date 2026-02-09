@@ -91,6 +91,25 @@ export default function CommunicationHistory({ clubRequestId, players = [] }) {
       
       return comm;
     },
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ['communications', clubRequestId] });
+      const previousCommunications = queryClient.getQueryData(['communications', clubRequestId]);
+      
+      const optimisticComm = {
+        id: 'temp-' + Date.now(),
+        ...data,
+        created_date: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData(['communications', clubRequestId], (old = []) => [optimisticComm, ...old]);
+      
+      return { previousCommunications };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousCommunications) {
+        queryClient.setQueryData(['communications', clubRequestId], context.previousCommunications);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communications', clubRequestId] });
       queryClient.invalidateQueries({ queryKey: ['clubRequest', clubRequestId] });
