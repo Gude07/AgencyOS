@@ -71,6 +71,7 @@ export default function ClubRequests() {
   const [filterBudgetMax, setFilterBudgetMax] = useState(urlParams.get('budgetMax') || "");
   const [filterSalaryMin, setFilterSalaryMin] = useState(urlParams.get('salaryMin') || "");
   const [filterSalaryMax, setFilterSalaryMax] = useState(urlParams.get('salaryMax') || "");
+  const [filterTransferPeriod, setFilterTransferPeriod] = useState(urlParams.get('transferPeriod') || "alle");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filterArchive, setFilterArchive] = useState(urlParams.get('archive') || "active");
   const [selectionMode, setSelectionMode] = useState(false);
@@ -306,6 +307,7 @@ export default function ClubRequests() {
     if (filterBudgetMax) params.set('budgetMax', filterBudgetMax);
     if (filterSalaryMin) params.set('salaryMin', filterSalaryMin);
     if (filterSalaryMax) params.set('salaryMax', filterSalaryMax);
+    if (filterTransferPeriod !== 'alle') params.set('transferPeriod', filterTransferPeriod);
     if (filterArchive !== 'active') params.set('archive', filterArchive);
     
     const newSearch = params.toString();
@@ -314,7 +316,7 @@ export default function ClubRequests() {
     if (newSearch !== currentSearch) {
       window.history.replaceState(null, '', `?${newSearch}`);
     }
-  }, [searchTerm, searchRequirements, filterStatus, filterFavorites, filterPriority, filterCountry, filterPosition, filterShortlist, filterBudgetMin, filterBudgetMax, filterSalaryMin, filterSalaryMax, filterArchive]);
+  }, [searchTerm, searchRequirements, filterStatus, filterFavorites, filterPriority, filterCountry, filterPosition, filterShortlist, filterBudgetMin, filterBudgetMax, filterSalaryMin, filterSalaryMax, filterTransferPeriod, filterArchive]);
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.club_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -344,11 +346,13 @@ export default function ClubRequests() {
     const matchesSalary = (!filterSalaryMin || (request.salary_min && request.salary_min >= parseFloat(filterSalaryMin))) &&
                           (!filterSalaryMax || (request.salary_max && request.salary_max <= parseFloat(filterSalaryMax)));
 
+    const matchesTransferPeriod = filterTransferPeriod === "alle" || request.transfer_period === filterTransferPeriod;
+
     const matchesArchive = filterArchive === "active" ? !request.archive_id :
                           filterArchive === "alle_archiviert" ? !!request.archive_id :
                           request.archive_id === filterArchive;
 
-    return matchesSearch && matchesRequirements && matchesStatus && matchesFavorites && matchesPriority && matchesCountry && matchesPosition && matchesShortlist && matchesBudget && matchesSalary && matchesArchive;
+    return matchesSearch && matchesRequirements && matchesStatus && matchesFavorites && matchesPriority && matchesCountry && matchesPosition && matchesShortlist && matchesBudget && matchesSalary && matchesTransferPeriod && matchesArchive;
   });
 
   const activeRequests = requests.filter(r => !r.archive_id);
@@ -519,6 +523,16 @@ export default function ClubRequests() {
                 >
                   Abbrechen
                 </Button>
+                <Button
+                  onClick={() => {
+                    const allFilteredIds = new Set(filteredRequests.map(r => r.id));
+                    setSelectedRequests(allFilteredIds);
+                  }}
+                  variant="outline"
+                  className="bg-blue-50 border-blue-300 text-blue-900"
+                >
+                  Alle auswählen ({filteredRequests.length})
+                </Button>
                 {selectedRequests.size > 0 && (
                   <>
                     {filterArchive === "active" ? (
@@ -681,6 +695,18 @@ export default function ClubRequests() {
                 <SelectItem value="1-3">1-3 Spieler</SelectItem>
                 <SelectItem value="4-10">4-10 Spieler</SelectItem>
                 <SelectItem value="10+">10+ Spieler</SelectItem>
+              </SelectContent>
+              </Select>
+
+              <Select value={filterTransferPeriod} onValueChange={setFilterTransferPeriod}>
+              <SelectTrigger className="border-slate-200">
+                <SelectValue placeholder="Transferperiode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alle">Alle Perioden</SelectItem>
+                <SelectItem value="Winter 2025/26">Winter 2025/26</SelectItem>
+                <SelectItem value="Sommer 2026">Sommer 2026</SelectItem>
+                <SelectItem value="Winter 2026/27">Winter 2026/27</SelectItem>
               </SelectContent>
               </Select>
 
