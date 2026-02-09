@@ -99,8 +99,11 @@ export default function ClubRequests() {
     position_needed: "",
     league: "",
     country: "",
+    transfer_types: ["kauf"],
     budget_min: "",
     budget_max: "",
+    loan_fee_budget: "",
+    buy_option_budget: "",
     salary_min: "",
     salary_max: "",
     salary_period: "jährlich",
@@ -254,8 +257,11 @@ export default function ClubRequests() {
         position_needed: "",
         league: "",
         country: "",
+        transfer_types: ["kauf"],
         budget_min: "",
         budget_max: "",
+        loan_fee_budget: "",
+        buy_option_budget: "",
         salary_min: "",
         salary_max: "",
         salary_period: "jährlich",
@@ -274,6 +280,8 @@ export default function ClubRequests() {
       ...newRequest,
       budget_min: newRequest.budget_min ? parseFloat(newRequest.budget_min) : undefined,
       budget_max: newRequest.budget_max ? parseFloat(newRequest.budget_max) : undefined,
+      loan_fee_budget: newRequest.loan_fee_budget ? parseFloat(newRequest.loan_fee_budget) : undefined,
+      buy_option_budget: newRequest.buy_option_budget ? parseFloat(newRequest.buy_option_budget) : undefined,
       salary_min: newRequest.salary_min ? parseFloat(newRequest.salary_min) : undefined,
       salary_max: newRequest.salary_max ? parseFloat(newRequest.salary_max) : undefined,
       age_min: newRequest.age_min ? parseInt(newRequest.age_min) : undefined,
@@ -854,6 +862,16 @@ export default function ClubRequests() {
                       <p className="text-xs text-slate-600 mb-1">Gesuchte Position</p>
                       <p className="font-semibold text-slate-900">{request.position_needed}</p>
                     </div>
+
+                    {request.transfer_types && request.transfer_types.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {request.transfer_types.map(type => (
+                          <Badge key={type} variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 text-xs">
+                            {type === 'kauf' ? '💰 Kauf' : type === 'leihe' ? '🔄 Leihe' : '🔄💰 Leihe + Kaufoption'}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                     
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
@@ -1047,29 +1065,86 @@ export default function ClubRequests() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="budget_min">Min. Budget (€)</Label>
-                  <Input
-                    id="budget_min"
-                    type="number"
-                    value={newRequest.budget_min}
-                    onChange={(e) => setNewRequest({...newRequest, budget_min: e.target.value})}
-                    placeholder="500000"
-                    className="mt-1.5"
-                  />
+                <div className="col-span-2">
+                  <Label className="mb-3 block">Transfer-Art *</Label>
+                  <div className="flex flex-wrap gap-3">
+                    {['kauf', 'leihe', 'leihe_mit_kaufoption'].map(type => (
+                      <label key={type} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newRequest.transfer_types?.includes(type)}
+                          onChange={(e) => {
+                            const types = newRequest.transfer_types || [];
+                            const newTypes = e.target.checked
+                              ? [...types, type]
+                              : types.filter(t => t !== type);
+                            setNewRequest({...newRequest, transfer_types: newTypes});
+                          }}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm text-slate-700">
+                          {type === 'kauf' ? 'Kauf' : type === 'leihe' ? 'Leihe' : 'Leihe mit Kaufoption'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="budget_max">Max. Budget (€)</Label>
-                  <Input
-                    id="budget_max"
-                    type="number"
-                    value={newRequest.budget_max}
-                    onChange={(e) => setNewRequest({...newRequest, budget_max: e.target.value})}
-                    placeholder="2000000"
-                    className="mt-1.5"
-                  />
-                </div>
+                {newRequest.transfer_types?.includes('kauf') && (
+                  <>
+                    <div>
+                      <Label htmlFor="budget_min">Min. Budget Kauf (€)</Label>
+                      <Input
+                        id="budget_min"
+                        type="number"
+                        value={newRequest.budget_min}
+                        onChange={(e) => setNewRequest({...newRequest, budget_min: e.target.value})}
+                        placeholder="500000"
+                        className="mt-1.5"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="budget_max">Max. Budget Kauf (€)</Label>
+                      <Input
+                        id="budget_max"
+                        type="number"
+                        value={newRequest.budget_max}
+                        onChange={(e) => setNewRequest({...newRequest, budget_max: e.target.value})}
+                        placeholder="2000000"
+                        className="mt-1.5"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {newRequest.transfer_types?.includes('leihe') && (
+                  <div className="col-span-2">
+                    <Label htmlFor="loan_fee_budget">Leihgebühr Budget (€)</Label>
+                    <Input
+                      id="loan_fee_budget"
+                      type="number"
+                      value={newRequest.loan_fee_budget}
+                      onChange={(e) => setNewRequest({...newRequest, loan_fee_budget: e.target.value})}
+                      placeholder="100000"
+                      className="mt-1.5"
+                    />
+                  </div>
+                )}
+
+                {newRequest.transfer_types?.includes('leihe_mit_kaufoption') && (
+                  <div className="col-span-2">
+                    <Label htmlFor="buy_option_budget">Kaufoptions-Budget (€)</Label>
+                    <Input
+                      id="buy_option_budget"
+                      type="number"
+                      value={newRequest.buy_option_budget}
+                      onChange={(e) => setNewRequest({...newRequest, buy_option_budget: e.target.value})}
+                      placeholder="1500000"
+                      className="mt-1.5"
+                    />
+                  </div>
+                )}
 
                 <div className="col-span-2">
                   <Label htmlFor="salary_period">Gehaltszeitraum</Label>

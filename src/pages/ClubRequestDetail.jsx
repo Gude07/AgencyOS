@@ -663,29 +663,110 @@ export default function ClubRequestDetail() {
                   </div>
 
                   <div>
-                    <Label className="text-sm text-slate-600 mb-1.5 block">Budget</Label>
+                    <Label className="text-sm text-slate-600 mb-1.5 block">Transfer-Art</Label>
                     {editMode ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          type="number"
-                          placeholder="Min"
-                          value={editedRequest.budget_min || ""}
-                          onChange={(e) => setEditedRequest({...editedRequest, budget_min: e.target.value})}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Max"
-                          value={editedRequest.budget_max || ""}
-                          onChange={(e) => setEditedRequest({...editedRequest, budget_max: e.target.value})}
-                        />
+                      <div className="flex flex-wrap gap-3">
+                        {['kauf', 'leihe', 'leihe_mit_kaufoption'].map(type => (
+                          <label key={type} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={editedRequest.transfer_types?.includes(type)}
+                              onChange={(e) => {
+                                const types = editedRequest.transfer_types || [];
+                                const newTypes = e.target.checked
+                                  ? [...types, type]
+                                  : types.filter(t => t !== type);
+                                setEditedRequest({...editedRequest, transfer_types: newTypes});
+                              }}
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm text-slate-700">
+                              {type === 'kauf' ? 'Kauf' : type === 'leihe' ? 'Leihe' : 'Leihe mit Kaufoption'}
+                            </span>
+                          </label>
+                        ))}
                       </div>
                     ) : (
-                      <p className="font-semibold text-slate-900">
-                        {currentRequestData.budget_min ? `${(currentRequestData.budget_min / 1000000).toFixed(2).replace(/\.?0+$/, '')}M` : '?'} - 
-                        {currentRequestData.budget_max ? ` ${(currentRequestData.budget_max / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : ' ?'}
-                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {currentRequestData.transfer_types?.map(type => (
+                          <Badge key={type} variant="outline" className="border-blue-300 bg-blue-50 text-blue-900">
+                            {type === 'kauf' ? '💰 Kauf' : type === 'leihe' ? '🔄 Leihe' : '🔄💰 Leihe + Kaufoption'}
+                          </Badge>
+                        ))}
+                      </div>
                     )}
+                  </div>
+
+                  {(editMode ? editedRequest.transfer_types?.includes('kauf') : currentRequestData.transfer_types?.includes('kauf')) && (
+                    <div>
+                      <Label className="text-sm text-slate-600 mb-1.5 block">Budget Kauf</Label>
+                      {editMode ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Min"
+                            value={editedRequest.budget_min || ""}
+                            onChange={(e) => setEditedRequest({...editedRequest, budget_min: e.target.value})}
+                          />
+                          <Input
+                            type="number"
+                            placeholder="Max"
+                            value={editedRequest.budget_max || ""}
+                            onChange={(e) => setEditedRequest({...editedRequest, budget_max: e.target.value})}
+                          />
+                        </div>
+                      ) : (
+                        <p className="font-semibold text-slate-900">
+                          {currentRequestData.budget_min ? `${(currentRequestData.budget_min / 1000000).toFixed(2).replace(/\.?0+$/, '')}M` : '?'} - 
+                          {currentRequestData.budget_max ? ` ${(currentRequestData.budget_max / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : ' ?'}
+                        </p>
+                      )}
                     </div>
+                  )}
+
+                  {(editMode ? editedRequest.transfer_types?.includes('leihe') : currentRequestData.transfer_types?.includes('leihe')) && (
+                    <div>
+                      <Label className="text-sm text-slate-600 mb-1.5 block">Leihgebühr Budget</Label>
+                      {editMode ? (
+                        <Input
+                          type="number"
+                          placeholder="Leihgebühr"
+                          value={editedRequest.loan_fee_budget || ""}
+                          onChange={(e) => setEditedRequest({...editedRequest, loan_fee_budget: e.target.value})}
+                        />
+                      ) : (
+                        currentRequestData.loan_fee_budget ? (
+                          <p className="font-semibold text-slate-900">
+                            {(currentRequestData.loan_fee_budget / 1000).toFixed(0)}k €
+                          </p>
+                        ) : (
+                          <p className="text-sm text-slate-400 italic">Keine Angabe</p>
+                        )
+                      )}
+                    </div>
+                  )}
+
+                  {(editMode ? editedRequest.transfer_types?.includes('leihe_mit_kaufoption') : currentRequestData.transfer_types?.includes('leihe_mit_kaufoption')) && (
+                    <div>
+                      <Label className="text-sm text-slate-600 mb-1.5 block">Kaufoptions-Budget</Label>
+                      {editMode ? (
+                        <Input
+                          type="number"
+                          placeholder="Kaufoption"
+                          value={editedRequest.buy_option_budget || ""}
+                          onChange={(e) => setEditedRequest({...editedRequest, buy_option_budget: e.target.value})}
+                        />
+                      ) : (
+                        currentRequestData.buy_option_budget ? (
+                          <p className="font-semibold text-slate-900">
+                            {(currentRequestData.buy_option_budget / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €
+                          </p>
+                        ) : (
+                          <p className="text-sm text-slate-400 italic">Keine Angabe</p>
+                        )
+                      )}
+                    </div>
+                  )}
 
                   <div>
                     <Label className="text-sm text-slate-600 mb-1.5 block">Gehalt ({currentRequestData.salary_period || 'jährlich'})</Label>
