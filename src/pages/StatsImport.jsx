@@ -21,7 +21,7 @@ import {
 import { syncSinglePlayer, syncAllPlayers } from "../components/stats/playerStatsPipeline";
 import { formatInGermanTime } from "@/components/utils/dateUtils";
 
-const SEASONS = ["2024/25", "2023/24", "2022/23"];
+const SEASONS = ["2025/26", "2024/25", "2023/24", "2022/23"];
 
 const matchStatusColors = {
   confirmed: "bg-green-100 text-green-800 border-green-200",
@@ -48,7 +48,7 @@ export default function StatsImport() {
   // Single-Import State
   const [singleName, setSingleName] = useState("");
   const [singleClub, setSingleClub] = useState("");
-  const [singleSeason, setSingleSeason] = useState("2024/25");
+  const [singleSeason, setSingleSeason] = useState("2025/26");
   const [singleResult, setSingleResult] = useState(null);
 
   // Batch-Import State

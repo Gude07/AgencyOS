@@ -23,7 +23,7 @@ const getCurrentSeason = () => {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  const seasonStart = month >= 7 ? year : year - 1;
+  const seasonStart = month >= 6 ? year : year - 1;
   return `${seasonStart}/${String(seasonStart + 1).slice(2)}`;
 };
 
