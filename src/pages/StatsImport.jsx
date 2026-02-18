@@ -18,7 +18,7 @@ import {
   BarChart2, RefreshCw, PlayCircle, CheckCircle2, XCircle,
   AlertTriangle, Search, Trash2, ChevronDown, ChevronUp, Clock
 } from "lucide-react";
-import { syncSinglePlayer, syncAllPlayers } from "@/components/stats/playerStatsPipeline";
+import { syncSinglePlayer, syncAllPlayers } from "../components/stats/playerStatsPipeline";
 import { formatInGermanTime } from "@/components/utils/dateUtils";
 
 const SEASONS = ["2024/25", "2023/24", "2022/23"];
