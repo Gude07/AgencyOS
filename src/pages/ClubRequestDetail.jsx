@@ -262,6 +262,24 @@ export default function ClubRequestDetail() {
         case "height":
           matches = !!player.height;
           break;
+        case "speed":
+          matches = player.speed_rating >= 7;
+          break;
+        case "strength":
+          matches = player.strength_rating >= 7;
+          break;
+        case "stamina":
+          matches = player.stamina_rating >= 7;
+          break;
+        case "agility":
+          matches = player.agility_rating >= 7;
+          break;
+        case "personality":
+          matches = player.personality_traits?.length > 0;
+          break;
+        case "current_form":
+          matches = player.current_form === "ausgezeichnet" || player.current_form === "sehr_gut";
+          break;
         case "contract_until":
           matches = !!player.contract_until;
           break;
@@ -396,7 +414,39 @@ export default function ClubRequestDetail() {
               {player.market_value ? `${(player.market_value / 1000000).toFixed(1)}M €` : '-'}
             </p>
           </div>
+          {(player.height || player.speed_rating) && (
+            <div>
+              <p className="text-slate-600">Größe</p>
+              <p className="font-semibold text-slate-900">{player.height ? `${player.height} cm` : '-'}</p>
+            </div>
+          )}
+          {player.current_form && (
+            <div>
+              <p className="text-slate-600">Form</p>
+              <p className="font-semibold text-slate-900">
+                {{ausgezeichnet:'⭐ Ausgezeichnet', sehr_gut:'✅ Sehr gut', gut:'👍 Gut', befriedigend:'➖ Befriedigend', schwach:'⬇️ Schwach'}[player.current_form] || '-'}
+              </p>
+            </div>
+          )}
         </div>
+        {(player.speed_rating || player.strength_rating || player.stamina_rating || player.agility_rating) && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {player.speed_rating && <span className="text-xs px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-full text-amber-800">⚡ Tempo {player.speed_rating}/10</span>}
+            {player.strength_rating && <span className="text-xs px-2 py-0.5 bg-red-50 border border-red-200 rounded-full text-red-800">💪 Kraft {player.strength_rating}/10</span>}
+            {player.stamina_rating && <span className="text-xs px-2 py-0.5 bg-green-50 border border-green-200 rounded-full text-green-800">🏃 Ausdauer {player.stamina_rating}/10</span>}
+            {player.agility_rating && <span className="text-xs px-2 py-0.5 bg-purple-50 border border-purple-200 rounded-full text-purple-800">🤸 Agilität {player.agility_rating}/10</span>}
+          </div>
+        )}
+        {player.personality_traits?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {player.personality_traits.slice(0,3).map(trait => (
+              <span key={trait} className="text-xs px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-full text-slate-700">👤 {trait}</span>
+            ))}
+            {player.personality_traits.length > 3 && (
+              <span className="text-xs px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-full text-slate-500">+{player.personality_traits.length - 3}</span>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-2">
           <Button

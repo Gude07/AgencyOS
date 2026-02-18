@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AccountSettings from './pages/AccountSettings';
 import Archives from './pages/Archives';
 import Calendar from './pages/Calendar';
 import ClubRequestDetail from './pages/ClubRequestDetail';
@@ -68,11 +69,11 @@ import PlayerDetail from './pages/PlayerDetail';
 import Players from './pages/Players';
 import TaskDetail from './pages/TaskDetail';
 import Tasks from './pages/Tasks';
-import AccountSettings from './pages/AccountSettings';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AccountSettings": AccountSettings,
     "Archives": Archives,
     "Calendar": Calendar,
     "ClubRequestDetail": ClubRequestDetail,
@@ -94,7 +95,6 @@ export const PAGES = {
     "Players": Players,
     "TaskDetail": TaskDetail,
     "Tasks": Tasks,
-    "AccountSettings": AccountSettings,
 }
 
 export const pagesConfig = {
