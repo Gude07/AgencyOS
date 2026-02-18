@@ -137,6 +137,47 @@ export default function MatchScoreBreakdown({ player, request, matchScore }) {
             detail = player.height ? `${player.height} cm` : 'Größe nicht angegeben';
             break;
 
+          case "speed":
+            matches = player.speed_rating >= 7;
+            achieved = player.speed_rating ? Math.round((player.speed_rating / 10) * criterion.weight) : 0;
+            detail = player.speed_rating ? `⚡ Tempo: ${player.speed_rating}/10` : 'Tempo nicht bewertet';
+            break;
+
+          case "strength":
+            matches = player.strength_rating >= 7;
+            achieved = player.strength_rating ? Math.round((player.strength_rating / 10) * criterion.weight) : 0;
+            detail = player.strength_rating ? `💪 Stärke: ${player.strength_rating}/10` : 'Stärke nicht bewertet';
+            break;
+
+          case "stamina":
+            matches = player.stamina_rating >= 7;
+            achieved = player.stamina_rating ? Math.round((player.stamina_rating / 10) * criterion.weight) : 0;
+            detail = player.stamina_rating ? `🏃 Ausdauer: ${player.stamina_rating}/10` : 'Ausdauer nicht bewertet';
+            break;
+
+          case "agility":
+            matches = player.agility_rating >= 7;
+            achieved = player.agility_rating ? Math.round((player.agility_rating / 10) * criterion.weight) : 0;
+            detail = player.agility_rating ? `🤸 Agilität: ${player.agility_rating}/10` : 'Agilität nicht bewertet';
+            break;
+
+          case "personality":
+            matches = player.personality_traits?.length > 0;
+            achieved = matches ? criterion.weight : 0;
+            detail = matches 
+              ? `👤 ${player.personality_traits.join(', ')}` 
+              : 'Keine Charaktereigenschaften angegeben';
+            break;
+
+          case "current_form":
+            matches = player.current_form === "ausgezeichnet" || player.current_form === "sehr_gut";
+            const formScoreMap = { ausgezeichnet: 1, sehr_gut: 0.85, gut: 0.6, befriedigend: 0.3, schwach: 0.1 };
+            achieved = player.current_form ? Math.round((formScoreMap[player.current_form] || 0) * criterion.weight) : 0;
+            detail = player.current_form 
+              ? `📊 ${({ausgezeichnet:'Ausgezeichnet',sehr_gut:'Sehr gut',gut:'Gut',befriedigend:'Befriedigend',schwach:'Schwach'})[player.current_form]}`
+              : 'Form nicht angegeben';
+            break;
+
           case "contract_until":
             matches = !!player.contract_until;
             achieved = matches ? criterion.weight : 0;
@@ -178,6 +219,12 @@ export default function MatchScoreBreakdown({ player, request, matchScore }) {
       nationality: "Nationalität",
       foot: "Starker Fuß",
       height: "Größe",
+      speed: "⚡ Tempo",
+      strength: "💪 Stärke",
+      stamina: "🏃 Ausdauer",
+      agility: "🤸 Agilität",
+      personality: "👤 Persönlichkeit",
+      current_form: "📊 Aktuelle Form",
       contract_until: "Vertragsende",
       category: "Kategorie"
     };
