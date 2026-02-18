@@ -27,7 +27,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal, Trash2, IdCard } from "lucide-react";
+import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal, Trash2, IdCard, Zap, Dumbbell, Activity, Move } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, differenceInYears } from "date-fns";
@@ -694,6 +695,156 @@ export default function PlayerDetail() {
                         />
                       ) : (
                         <p className="text-slate-600">{currentPlayerData?.strengths || "Keine Angaben"}</p>
+                      )}
+                    </div>
+
+                    {/* Physische Attribute */}
+                    <div>
+                      <Label className="text-sm font-semibold text-slate-700 mb-3 block">⚡ Physische Attribute</Label>
+                      {editMode ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+                          {[
+                            { key: 'speed_rating', label: '⚡ Tempo', color: 'text-amber-700' },
+                            { key: 'strength_rating', label: '💪 Stärke', color: 'text-red-700' },
+                            { key: 'stamina_rating', label: '🏃 Ausdauer', color: 'text-green-700' },
+                            { key: 'agility_rating', label: '🤸 Agilität', color: 'text-purple-700' },
+                          ].map(attr => (
+                            <div key={attr.key}>
+                              <Label className={`text-sm mb-2 block ${attr.color}`}>
+                                {attr.label}: <strong>{editedPlayer?.[attr.key] || 0}/10</strong>
+                              </Label>
+                              <Slider
+                                value={[editedPlayer?.[attr.key] || 0]}
+                                onValueChange={(v) => setEditedPlayer({...editedPlayer, [attr.key]: v[0]})}
+                                min={0} max={10} step={1}
+                                className="w-full"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        (currentPlayerData?.speed_rating || currentPlayerData?.strength_rating || currentPlayerData?.stamina_rating || currentPlayerData?.agility_rating) ? (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {currentPlayerData?.speed_rating > 0 && (
+                              <div className="text-center p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div className="text-2xl font-bold text-amber-700">{currentPlayerData.speed_rating}</div>
+                                <div className="text-xs text-amber-600">⚡ Tempo</div>
+                                <div className="w-full bg-amber-100 rounded-full h-1.5 mt-1">
+                                  <div className="bg-amber-500 h-1.5 rounded-full" style={{width: `${currentPlayerData.speed_rating * 10}%`}} />
+                                </div>
+                              </div>
+                            )}
+                            {currentPlayerData?.strength_rating > 0 && (
+                              <div className="text-center p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <div className="text-2xl font-bold text-red-700">{currentPlayerData.strength_rating}</div>
+                                <div className="text-xs text-red-600">💪 Stärke</div>
+                                <div className="w-full bg-red-100 rounded-full h-1.5 mt-1">
+                                  <div className="bg-red-500 h-1.5 rounded-full" style={{width: `${currentPlayerData.strength_rating * 10}%`}} />
+                                </div>
+                              </div>
+                            )}
+                            {currentPlayerData?.stamina_rating > 0 && (
+                              <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="text-2xl font-bold text-green-700">{currentPlayerData.stamina_rating}</div>
+                                <div className="text-xs text-green-600">🏃 Ausdauer</div>
+                                <div className="w-full bg-green-100 rounded-full h-1.5 mt-1">
+                                  <div className="bg-green-500 h-1.5 rounded-full" style={{width: `${currentPlayerData.stamina_rating * 10}%`}} />
+                                </div>
+                              </div>
+                            )}
+                            {currentPlayerData?.agility_rating > 0 && (
+                              <div className="text-center p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                                <div className="text-2xl font-bold text-purple-700">{currentPlayerData.agility_rating}</div>
+                                <div className="text-xs text-purple-600">🤸 Agilität</div>
+                                <div className="w-full bg-purple-100 rounded-full h-1.5 mt-1">
+                                  <div className="bg-purple-500 h-1.5 rounded-full" style={{width: `${currentPlayerData.agility_rating * 10}%`}} />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-slate-400 italic text-sm">Keine physischen Attribute erfasst</p>
+                        )
+                      )}
+                    </div>
+
+                    {/* Persönlichkeit */}
+                    <div>
+                      <Label className="text-sm font-semibold text-slate-700 mb-2 block">👤 Persönlichkeit / Charakter</Label>
+                      {editMode ? (
+                        <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                          {["Führungsstärke","Teamplayer","Ehrgeiz","Mentalität","Disziplin","Kommunikation","Belastbarkeit","Lernbereitschaft","Kampfgeist","Kreativität"].map(trait => {
+                            const selected = editedPlayer?.personality_traits?.includes(trait);
+                            return (
+                              <button
+                                key={trait}
+                                type="button"
+                                onClick={() => {
+                                  const current = editedPlayer?.personality_traits || [];
+                                  setEditedPlayer({...editedPlayer, personality_traits: selected ? current.filter(t => t !== trait) : [...current, trait]});
+                                }}
+                                className={`px-3 py-1 rounded-full text-sm border transition-colors ${selected ? 'bg-blue-900 text-white border-blue-900' : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400'}`}
+                              >
+                                {trait}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        currentPlayerData?.personality_traits?.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {currentPlayerData.personality_traits.map(trait => (
+                              <Badge key={trait} variant="outline" className="border-slate-300 bg-slate-50">
+                                👤 {trait}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-slate-400 italic text-sm">Keine Charaktereigenschaften angegeben</p>
+                        )
+                      )}
+                    </div>
+
+                    {/* Aktuelle Form */}
+                    <div>
+                      <Label className="text-sm font-semibold text-slate-700 mb-2 block">📊 Aktuelle Form</Label>
+                      {editMode ? (
+                        <div className="space-y-2">
+                          <Select
+                            value={editedPlayer?.current_form || ""}
+                            onValueChange={(v) => setEditedPlayer({...editedPlayer, current_form: v})}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Form wählen..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ausgezeichnet">⭐ Ausgezeichnet</SelectItem>
+                              <SelectItem value="sehr_gut">✅ Sehr gut</SelectItem>
+                              <SelectItem value="gut">👍 Gut</SelectItem>
+                              <SelectItem value="befriedigend">➖ Befriedigend</SelectItem>
+                              <SelectItem value="schwach">⬇️ Schwach</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Textarea
+                            value={editedPlayer?.form_description || ""}
+                            onChange={(e) => setEditedPlayer({...editedPlayer, form_description: e.target.value})}
+                            placeholder="Weitere Details zur aktuellen Form..."
+                            className="h-20"
+                          />
+                        </div>
+                      ) : (
+                        currentPlayerData?.current_form ? (
+                          <div className="space-y-1">
+                            <Badge variant="outline" className={{ausgezeichnet:'border-green-500 bg-green-50 text-green-800',sehr_gut:'border-green-400 bg-green-50 text-green-700',gut:'border-blue-400 bg-blue-50 text-blue-700',befriedigend:'border-yellow-400 bg-yellow-50 text-yellow-700',schwach:'border-red-400 bg-red-50 text-red-700'}[currentPlayerData.current_form] || ''}>
+                              {({ausgezeichnet:'⭐ Ausgezeichnet',sehr_gut:'✅ Sehr gut',gut:'👍 Gut',befriedigend:'➖ Befriedigend',schwach:'⬇️ Schwach'})[currentPlayerData.current_form]}
+                            </Badge>
+                            {currentPlayerData?.form_description && (
+                              <p className="text-sm text-slate-600 mt-1">{currentPlayerData.form_description}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-slate-400 italic text-sm">Keine Formangabe</p>
+                        )
                       )}
                     </div>
 
