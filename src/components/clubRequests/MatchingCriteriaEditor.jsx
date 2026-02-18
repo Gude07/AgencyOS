@@ -14,14 +14,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Save } from "lucide-react";
 
 const availableCriteria = [
-  { value: "position", label: "Position" },
-  { value: "age", label: "Alter" },
-  { value: "market_value", label: "Marktwert" },
-  { value: "nationality", label: "Nationalität" },
-  { value: "foot", label: "Starker Fuß" },
-  { value: "height", label: "Größe" },
-  { value: "contract_until", label: "Vertragsende" },
-  { value: "category", label: "Kategorie" },
+  { value: "position", label: "Position", group: "Basis" },
+  { value: "age", label: "Alter", group: "Basis" },
+  { value: "market_value", label: "Marktwert", group: "Basis" },
+  { value: "nationality", label: "Nationalität", group: "Basis" },
+  { value: "foot", label: "Starker Fuß", group: "Basis" },
+  { value: "height", label: "Größe", group: "Physisch" },
+  { value: "speed", label: "⚡ Tempo", group: "Physisch" },
+  { value: "strength", label: "💪 Stärke", group: "Physisch" },
+  { value: "stamina", label: "🏃 Ausdauer", group: "Physisch" },
+  { value: "agility", label: "🤸 Agilität", group: "Physisch" },
+  { value: "personality", label: "👤 Persönlichkeit/Charakter", group: "Charakter & Form" },
+  { value: "current_form", label: "📊 Aktuelle Form", group: "Charakter & Form" },
+  { value: "contract_until", label: "Vertragsende", group: "Basis" },
+  { value: "category", label: "Kategorie", group: "Basis" },
 ];
 
 export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
