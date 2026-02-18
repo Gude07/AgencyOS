@@ -165,6 +165,13 @@ export default function PlayerDetail() {
       age: editedPlayer.date_of_birth ? calculateAge(editedPlayer.date_of_birth) : undefined,
       market_value: editedPlayer.market_value ? parseFloat(editedPlayer.market_value) : player.market_value,
       height: editedPlayer.height ? parseFloat(editedPlayer.height) : player.height,
+      speed_rating: editedPlayer.speed_rating ?? player.speed_rating,
+      strength_rating: editedPlayer.strength_rating ?? player.strength_rating,
+      stamina_rating: editedPlayer.stamina_rating ?? player.stamina_rating,
+      agility_rating: editedPlayer.agility_rating ?? player.agility_rating,
+      personality_traits: editedPlayer.personality_traits ?? player.personality_traits ?? [],
+      current_form: editedPlayer.current_form ?? player.current_form,
+      form_description: editedPlayer.form_description ?? player.form_description,
     };
     
     console.log("Final playerData to save:", playerData);
