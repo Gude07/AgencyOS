@@ -285,7 +285,7 @@ export default function StatsImport() {
                 <CardTitle className="text-slate-900 dark:text-white">Einzelnen Spieler importieren</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-4 gap-4">
                   <div>
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
                       Spielername *
