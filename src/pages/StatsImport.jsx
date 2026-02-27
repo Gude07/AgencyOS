@@ -180,6 +180,7 @@ export default function StatsImport() {
             <TabsTrigger value="overview">Übersicht</TabsTrigger>
             <TabsTrigger value="single">Einzelimport</TabsTrigger>
             <TabsTrigger value="sync">Vollsync</TabsTrigger>
+            <TabsTrigger value="config">Quellen</TabsTrigger>
             <TabsTrigger value="logs" className="relative">
               Logs
               {errorLogs.length > 0 && (
