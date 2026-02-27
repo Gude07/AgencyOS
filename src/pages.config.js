@@ -67,9 +67,9 @@ import Notifications from './pages/Notifications';
 import OrganizationalOverview from './pages/OrganizationalOverview';
 import PlayerDetail from './pages/PlayerDetail';
 import Players from './pages/Players';
+import StatsImport from './pages/StatsImport';
 import TaskDetail from './pages/TaskDetail';
 import Tasks from './pages/Tasks';
-import StatsImport from './pages/StatsImport';
 import __Layout from './Layout.jsx';
 
 
@@ -94,9 +94,9 @@ export const PAGES = {
     "OrganizationalOverview": OrganizationalOverview,
     "PlayerDetail": PlayerDetail,
     "Players": Players,
+    "StatsImport": StatsImport,
     "TaskDetail": TaskDetail,
     "Tasks": Tasks,
-    "StatsImport": StatsImport,
 }
 
 export const pagesConfig = {
