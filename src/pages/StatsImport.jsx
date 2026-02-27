@@ -79,10 +79,20 @@ export default function StatsImport() {
     queryFn: () => base44.entities.PlayerStatsLog.list("-created_date", 100),
   });
 
+  // Quellen-Konfiguration anwenden
+  const applyGlobalConfig = () => {
+    setGlobalConfig({ defaultSource: globalDefaultSource, aggregationMode: globalAggMode });
+  };
+
   // Single-Import Mutation
   const singleImportMutation = useMutation({
     mutationFn: () =>
-      syncSinglePlayer({ playerName: singleName, clubName: singleClub, season: singleSeason }),
+      syncSinglePlayer({
+        playerName: singleName,
+        clubName: singleClub,
+        season: singleSeason,
+        sourceOverride: singleSource !== "auto" ? singleSource : null,
+      }),
     onSuccess: (result) => {
       setSingleResult(result);
       queryClient.invalidateQueries({ queryKey: ["playerStats"] });
