@@ -275,23 +275,132 @@ registerSource({
   priority: 1,
 });
 
-// ── BEISPIEL: ZWEITE QUELLE (auskommentiert, als Vorlage) ─────────────────────
-//
-// registerSource({
-//   id: "whoscored",
-//   label: "WhoScored",
-//   fetcherFn: buildLLMFetcher(
-//     "https://www.whoscored.com",
-//     "WhoScored.com",
-//     "Focus on rating, key passes, dribbles and defensive stats."
-//   ),
-//   fieldMap: {
-//     ...SOCCERSTATS247_FIELD_MAP,  // Basis-Mapping wiederverwenden
-//     "rating": "additional_stats.rating",
-//     "key_passes": "additional_stats.key_passes",
-//   },
-//   priority: 2,
-// });
+// ── BUILT-IN: WHOSCORED ───────────────────────────────────────────────────────
+
+const WHOSCORED_FIELD_MAP = {
+  ...SOCCERSTATS247_FIELD_MAP,
+  // WhoScored-spezifische Felder
+  "rating": "additional_stats.rating",
+  "whoscored_rating": "additional_stats.rating",
+  "player_rating": "additional_stats.rating",
+  "key_passes": "additional_stats.key_passes",
+  "key passes": "additional_stats.key_passes",
+  "dribbles_won": "additional_stats.dribbles",
+  "successful_dribbles": "additional_stats.dribbles",
+  "aerials_won": "additional_stats.aerials_won",
+  "aerials won": "additional_stats.aerials_won",
+  "dispossessed": "additional_stats.dispossessed",
+  "was_fouled": "additional_stats.fouls_drawn",
+  "offsides": "additional_stats.offsides",
+  "big_chances_created": "additional_stats.big_chances_created",
+  "big chances created": "additional_stats.big_chances_created",
+  "through_balls": "additional_stats.through_balls",
+  "crosses": "additional_stats.crosses",
+  "long_balls": "additional_stats.long_balls",
+  "tackles_won": "additional_stats.tackles",
+  "clearances": "additional_stats.clearances",
+  "blocked": "additional_stats.blocked_shots",
+};
+
+const WHOSCORED_EXTRA_INSTRUCTIONS = `
+Focus on extracting the WhoScored player rating (1-10 scale) as well as advanced metrics like:
+key passes, successful dribbles, aerial duels won, big chances created, clearances, and crosses.
+Also extract the standard stats: appearances, goals, assists, cards, minutes.
+Look for the player's season statistics table on their profile page.
+`;
+
+registerSource({
+  id: "whoscored",
+  label: "WhoScored",
+  fetcherFn: async (playerName, clubName, season) => {
+    const prompt = `
+Search WhoScored.com for player statistics.
+
+Player to find:
+- Name: "${playerName}"
+- Club: "${clubName || "unknown"}"
+- Season: "${season}"
+
+Instructions:
+1. Search https://www.whoscored.com for this player
+2. Find their player profile/statistics page
+3. Extract ALL available statistics for the season ${season}
+${WHOSCORED_EXTRA_INSTRUCTIONS}
+
+Return a JSON object with these fields (use null if not available):
+{
+  "full_name": "exact player name from site",
+  "club": "team name",
+  "competition": "league/competition name",
+  "season": "season string",
+  "position": "player position",
+  "appearances": number,
+  "starts": number,
+  "minutes_played": number,
+  "goals": number,
+  "assists": number,
+  "yellow_cards": number,
+  "red_cards": number,
+  "rating": number,
+  "shots": number,
+  "shots_on_target": number,
+  "key_passes": number,
+  "dribbles_won": number,
+  "aerials_won": number,
+  "tackles_won": number,
+  "interceptions": number,
+  "clearances": number,
+  "crosses": number,
+  "big_chances_created": number,
+  "pass_accuracy": number,
+  "clean_sheets": number,
+  "source_url": "exact URL of player page"
+}
+
+If player not found, return: {"error": "player_not_found"}
+`;
+    return base44.integrations.Core.InvokeLLM({
+      prompt,
+      add_context_from_internet: true,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          error: { type: "string" },
+          full_name: { type: "string" },
+          club: { type: "string" },
+          competition: { type: "string" },
+          season: { type: "string" },
+          position: { type: "string" },
+          appearances: { type: "number" },
+          starts: { type: "number" },
+          minutes_played: { type: "number" },
+          goals: { type: "number" },
+          assists: { type: "number" },
+          yellow_cards: { type: "number" },
+          red_cards: { type: "number" },
+          rating: { type: "number" },
+          shots: { type: "number" },
+          shots_on_target: { type: "number" },
+          key_passes: { type: "number" },
+          dribbles_won: { type: "number" },
+          aerials_won: { type: "number" },
+          tackles_won: { type: "number" },
+          interceptions: { type: "number" },
+          clearances: { type: "number" },
+          crosses: { type: "number" },
+          big_chances_created: { type: "number" },
+          pass_accuracy: { type: "number" },
+          clean_sheets: { type: "number" },
+          source_url: { type: "string" },
+        },
+      },
+    });
+  },
+  fieldMap: WHOSCORED_FIELD_MAP,
+  priority: 2,
+});
+
+// ── BEISPIEL: SOFASCORE (auskommentiert, als Vorlage) ──────────────────────────
 //
 // registerSource({
 //   id: "sofascore",
