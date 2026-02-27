@@ -1,25 +1,34 @@
 /**
- * PlayerStats Pipeline – Haupt-Orchestrator
- * ------------------------------------------
- * Modulare 6-Stufen-Pipeline:
- *   1. FETCH     – LLM+Internet-Scraping von soccerstats247.com
- *   2. PARSE     – Datenextraktion aus LLM-Antwort
- *   3. NORMALIZE – Feldnamen & Typen standardisieren
+ * PlayerStats Pipeline – Modularer Multi-Source-Orchestrator
+ * -----------------------------------------------------------
+ * 6-Stufen-Pipeline mit Plugin-fähigem Quellen-System:
+ *   1. FETCH     – Über registrierte fetcherFn abrufen (inkl. Fallback & Multi-Source)
+ *   2. PARSE     – Datenextraktion aus Fetcher-Antwort
+ *   3. NORMALIZE – Feldnamen & Typen standardisieren (quellen-spezifisches Mapping)
  *   4. VALIDATE  – Pflichtfelder & Plausibilität prüfen
  *   5. MATCH     – Externe → interne Player-Entity
  *   6. PERSIST   – Erstellen / inkrementelles Update
  *
- * Erweiterbar für neue Quellen: Neuen `fetcherFn` implementieren, 
- * Rest der Pipeline bleibt unverändert.
+ * Neue Quelle hinzufügen:
+ *   import { registerSource } from "./playerStatsSourceRegistry";
+ *   registerSource({ id: "whoscored", label: "WhoScored", fetcherFn, fieldMap, priority: 2 });
  */
 
 import { base44 } from "@/api/base44Client";
 import { normalizePlayerStats, validatePlayerStats } from "./playerStatsNormalizer";
 import { matchPlayerToInternal, checkForDuplicate } from "./playerStatsMatcher";
+import {
+  getAllSources,
+  getSource,
+  resolveSourcesForPlayer,
+  mergeStats,
+  compareStats,
+  getGlobalConfig,
+} from "./playerStatsSourceRegistry";
 
-const SOURCE_ID = "soccerstats247";
+// ── HILFSFUNKTIONEN ───────────────────────────────────────────────────────────
 
-const getCurrentSeason = () => {
+export const getCurrentSeason = () => {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -27,7 +36,7 @@ const getCurrentSeason = () => {
   return `${seasonStart}/${String(seasonStart + 1).slice(2)}`;
 };
 
-// ── LOGGING ─────────────────────────────────────────────────────────────────
+// ── LOGGING ───────────────────────────────────────────────────────────────────
 
 const pipelineLog = async (level, stage, message, details = {}) => {
   try {
@@ -48,84 +57,74 @@ const pipelineLog = async (level, stage, message, details = {}) => {
   );
 };
 
-// ── STAGE 1: FETCH via InvokeLLM + Internet ──────────────────────────────────
+// ── STAGE 1: FETCH (multi-source-fähig) ───────────────────────────────────────
 
-const fetchPlayerStatsFromSource = async (playerName, clubName, targetSeason) => {
-  const prompt = `
-Search soccerstats247.com for player statistics.
+/**
+ * Ruft Daten von einer einzelnen Quelle ab.
+ * @returns {{ rawData, source, fieldMap } | null}
+ */
+const fetchFromSource = async (sourceId, playerName, clubName, season) => {
+  const src = getSource(sourceId);
+  if (!src) {
+    await pipelineLog("warning", "fetch", `Unbekannte Quelle: ${sourceId}`, { playerName });
+    return null;
+  }
+  const rawData = await src.fetcherFn(playerName, clubName, season);
+  if (rawData?.error) return null;
+  return { rawData, source: sourceId, fieldMap: src.fieldMap };
+};
 
-Player to find:
-- Name: "${playerName}"
-- Club: "${clubName || "unknown"}"
-- Season: "${targetSeason}"
+/**
+ * Haupt-Fetch-Strategie: primär, mit optionalem Fallback und Multi-Source.
+ * @param {string[]} sourceIds
+ * @param {string} aggregationMode
+ * @param {{ playerName, clubName, season }}
+ * @returns {Promise<{ fetchedItems: Array, usedSources: string[] }>}
+ */
+const fetchFromSources = async (sourceIds, aggregationMode, { playerName, clubName, season }) => {
+  const fetchedItems = [];
 
-Instructions:
-1. Search https://www.soccerstats247.com for this player
-2. Find their player profile/statistics page
-3. Extract ALL available statistics for the season ${targetSeason}
+  if (aggregationMode === "primary" || aggregationMode === "compare") {
+    // Sequentiell: primäre Quelle zuerst, Fallback wenn gewünscht
+    const cfg = getGlobalConfig();
+    for (const sourceId of sourceIds) {
+      const result = await fetchFromSource(sourceId, playerName, clubName, season);
+      if (result) {
+        fetchedItems.push(result);
+        // Im Primär-Modus: nur erste erfolgreiche Quelle, außer autoFallback ist aktiv
+        if (aggregationMode === "primary" && !cfg.autoFallback) break;
+        if (aggregationMode === "primary" && fetchedItems.length >= 1) break;
+      } else if (cfg.autoFallback && aggregationMode === "primary") {
+        await pipelineLog("info", "fetch",
+          `Quelle ${sourceId} fehlgeschlagen, Fallback aktiv`, { playerName });
+      }
+    }
+  } else if (aggregationMode === "merge") {
+    // Parallel: alle Quellen gleichzeitig abrufen
+    const results = await Promise.all(
+      sourceIds.map((sid) => fetchFromSource(sid, playerName, clubName, season))
+    );
+    fetchedItems.push(...results.filter(Boolean));
+  }
 
-Return a JSON object with these fields (use null if not available):
-{
-  "full_name": "exact player name from site",
-  "club": "team name",
-  "competition": "league/competition name",
-  "season": "season string",
-  "position": "player position",
-  "appearances": number,
-  "starts": number,
-  "minutes_played": number,
-  "goals": number,
-  "assists": number,
-  "yellow_cards": number,
-  "red_cards": number,
-  "shots": number,
-  "shots_on_target": number,
-  "pass_accuracy": number,
-  "clean_sheets": number,
-  "tackles": number,
-  "interceptions": number,
-  "source_url": "exact URL of player page"
-}
-
-If player not found, return: {"error": "player_not_found"}
-`;
-
-  return base44.integrations.Core.InvokeLLM({
-    prompt,
-    add_context_from_internet: true,
-    response_json_schema: {
-      type: "object",
-      properties: {
-        error: { type: "string" },
-        full_name: { type: "string" },
-        club: { type: "string" },
-        competition: { type: "string" },
-        season: { type: "string" },
-        position: { type: "string" },
-        appearances: { type: "number" },
-        starts: { type: "number" },
-        minutes_played: { type: "number" },
-        goals: { type: "number" },
-        assists: { type: "number" },
-        yellow_cards: { type: "number" },
-        red_cards: { type: "number" },
-        shots: { type: "number" },
-        shots_on_target: { type: "number" },
-        pass_accuracy: { type: "number" },
-        clean_sheets: { type: "number" },
-        tackles: { type: "number" },
-        interceptions: { type: "number" },
-        source_url: { type: "string" },
-      },
-    },
-  });
+  return {
+    fetchedItems,
+    usedSources: fetchedItems.map((f) => f.source),
+  };
 };
 
 // ── HAUPT-PIPELINE: EINZELNER SPIELER ────────────────────────────────────────
 
 /**
  * Führt die vollständige Pipeline für einen Spieler durch.
- * @param {{ playerName, clubName?, season?, internalPlayerId? }} params
+ * @param {{
+ *   playerName: string,
+ *   clubName?: string,
+ *   season?: string,
+ *   internalPlayerId?: string,
+ *   sourceOverride?: string | string[],  // Überschreibt globale/Spieler-Config
+ *   aggregationModeOverride?: string,
+ * }} params
  * @returns {Promise<PipelineResult>}
  */
 export const syncSinglePlayer = async ({
@@ -133,6 +132,8 @@ export const syncSinglePlayer = async ({
   clubName = "",
   season = null,
   internalPlayerId = null,
+  sourceOverride = null,
+  aggregationModeOverride = null,
 }) => {
   const targetSeason = season || getCurrentSeason();
   const result = {
@@ -145,32 +146,80 @@ export const syncSinglePlayer = async ({
     skipped: false,
     warnings: [],
     errors: [],
+    usedSources: [],
+    aggregationMode: null,
   };
 
   try {
+    // Quellen-Konfiguration auflösen
+    const { sources, aggregationMode } = sourceOverride
+      ? {
+          sources: Array.isArray(sourceOverride) ? sourceOverride : [sourceOverride],
+          aggregationMode: aggregationModeOverride || getGlobalConfig().aggregationMode,
+        }
+      : resolveSourcesForPlayer(internalPlayerId);
+
+    result.aggregationMode = aggregationModeOverride || aggregationMode;
+
     // ── 1. FETCH ──────────────────────────────────────────
     result.stage = "fetch";
-    const rawData = await fetchPlayerStatsFromSource(playerName, clubName, targetSeason);
+    const { fetchedItems, usedSources } = await fetchFromSources(
+      sources,
+      result.aggregationMode,
+      { playerName, clubName, season: targetSeason }
+    );
 
-    if (rawData?.error) {
-      result.errors.push(`Spieler nicht gefunden auf soccerstats247: "${playerName}"`);
-      await pipelineLog("warning", "fetch", `Nicht gefunden: ${playerName}`, { playerName });
+    result.usedSources = usedSources;
+
+    if (!fetchedItems.length) {
+      result.errors.push(`Spieler nicht gefunden in Quellen [${sources.join(", ")}]: "${playerName}"`);
+      await pipelineLog("warning", "fetch", `Nicht gefunden: ${playerName}`, {
+        playerName, sources,
+      });
       return result;
     }
 
-    const sourceUrl = rawData.source_url || "https://www.soccerstats247.com";
-    await pipelineLog("info", "fetch", `Daten abgerufen: ${playerName}`, { playerName, sourceUrl });
+    await pipelineLog("info", "fetch",
+      `Daten abgerufen von [${usedSources.join(", ")}]: ${playerName}`,
+      { playerName, usedSources }
+    );
 
     // ── 2+3. PARSE + NORMALIZE ────────────────────────────
     result.stage = "normalize";
-    const { normalized, warnings: normWarnings } = normalizePlayerStats(rawData, SOURCE_ID);
-    normalized.source_url = sourceUrl;
-    normalized.raw_data = JSON.stringify(rawData);
-    result.warnings.push(...normWarnings);
+
+    const normalizedItems = fetchedItems.map(({ rawData, source, fieldMap }) => {
+      const { normalized, warnings: normWarnings } = normalizePlayerStats(rawData, source, fieldMap);
+      normalized.source_url = rawData.source_url || "";
+      normalized.raw_data = JSON.stringify(rawData);
+      result.warnings.push(...normWarnings);
+      return normalized;
+    });
+
+    // ── AGGREGATION ───────────────────────────────────────
+    let finalNormalized;
+
+    if (result.aggregationMode === "merge" && normalizedItems.length > 1) {
+      finalNormalized = mergeStats(normalizedItems);
+      await pipelineLog("info", "normalize",
+        `Merge von ${normalizedItems.length} Quellen: ${playerName}`, { playerName, usedSources });
+
+    } else if (result.aggregationMode === "compare" && normalizedItems.length > 1) {
+      finalNormalized = normalizedItems[0]; // Primärdaten
+      const { diffs, hasDifferences } = compareStats(normalizedItems[0], normalizedItems[1]);
+      if (hasDifferences) {
+        result.warnings.push(`Unterschiede zwischen Quellen: ${diffs.map(d => d.field).join(", ")}`);
+        await pipelineLog("warning", "normalize",
+          `Quelldaten weichen ab (${diffs.length} Felder): ${playerName}`,
+          { playerName, diffs }
+        );
+      }
+    } else {
+      finalNormalized = normalizedItems[0];
+    }
 
     // ── 4. VALIDATE ───────────────────────────────────────
     result.stage = "validate";
-    const { valid, errors: valErrors, warnings: valWarnings } = validatePlayerStats(normalized);
+    const { valid, errors: valErrors, warnings: valWarnings } = validatePlayerStats(finalNormalized);
     result.warnings.push(...valWarnings);
 
     if (!valid) {
@@ -189,32 +238,33 @@ export const syncSinglePlayer = async ({
 
     if (!internalPlayerId) {
       const allPlayers = await base44.entities.Player.list();
-      const matchResult = matchPlayerToInternal(normalized, allPlayers);
+      const matchResult = matchPlayerToInternal(finalNormalized, allPlayers);
       matchedId = matchResult.player_id;
       confidence = matchResult.confidence;
       matchStatus = matchResult.match_status;
 
       if (matchStatus === "unmatched") {
         await pipelineLog("warning", "match", `Kein Match: ${playerName}`, {
-          playerName, extClub: normalized.club, candidates: matchResult.candidates,
+          playerName, extClub: finalNormalized.club, candidates: matchResult.candidates,
         });
       } else if (matchStatus === "needs_review") {
-        await pipelineLog("warning", "match", `Unsicheres Matching (${confidence}%): ${playerName}`, {
-          playerName, matchedId, confidence, candidates: matchResult.candidates,
-        });
+        await pipelineLog("warning", "match",
+          `Unsicheres Matching (${confidence}%): ${playerName}`,
+          { playerName, matchedId, confidence, candidates: matchResult.candidates }
+        );
       }
     }
 
-    normalized.player_id = matchedId || null;
-    normalized.match_confidence = confidence;
-    normalized.match_status = matchStatus;
+    finalNormalized.player_id = matchedId || null;
+    finalNormalized.match_confidence = confidence;
+    finalNormalized.match_status = matchStatus;
     result.matchedPlayerId = matchedId;
     result.matchConfidence = confidence;
 
     // ── 6. PERSIST ────────────────────────────────────────
     result.stage = "persist";
     const existingStats = await base44.entities.PlayerStats.list();
-    const { exists, existingId, needsUpdate } = checkForDuplicate(normalized, existingStats);
+    const { exists, existingId, needsUpdate } = checkForDuplicate(finalNormalized, existingStats);
 
     if (exists && !needsUpdate) {
       result.playerStatsId = existingId;
@@ -226,13 +276,13 @@ export const syncSinglePlayer = async ({
 
     if (exists && needsUpdate) {
       await base44.entities.PlayerStats.update(existingId, {
-        ...normalized,
+        ...finalNormalized,
         last_updated: new Date().toISOString(),
       });
       result.playerStatsId = existingId;
       await pipelineLog("info", "persist", `Aktualisiert: ${playerName}`, { playerName, existingId });
     } else {
-      const created = await base44.entities.PlayerStats.create(normalized);
+      const created = await base44.entities.PlayerStats.create(finalNormalized);
       result.playerStatsId = created.id;
       await pipelineLog("info", "persist", `Neu erstellt: ${playerName}`, { playerName, id: created.id });
     }
@@ -252,7 +302,7 @@ export const syncSinglePlayer = async ({
 // ── BATCH-PIPELINE ────────────────────────────────────────────────────────────
 
 /**
- * Verarbeitet eine Liste von Spielern sequentiell (cron-fähig).
+ * Verarbeitet eine Liste von Spielern sequentiell.
  * @param {Array} playerList
  * @param {Function} [onProgress] - (completed, total, result) => void
  * @returns {Promise<BatchResult>}
@@ -301,11 +351,12 @@ export const runImportPipeline = async (playerList, onProgress = null) => {
 // ── SYNC ALLE AKTIVEN SPIELER ─────────────────────────────────────────────────
 
 /**
- * Synchronisiert alle aktiven (nicht-archivierten) Spieler im System.
+ * Synchronisiert alle aktiven Spieler im System.
  * @param {string} [season]
  * @param {Function} [onProgress]
+ * @param {{ sourceOverride?, aggregationModeOverride? }} [options]
  */
-export const syncAllPlayers = async (season = null, onProgress = null) => {
+export const syncAllPlayers = async (season = null, onProgress = null, options = {}) => {
   const allPlayers = await base44.entities.Player.list();
   const active = allPlayers.filter((p) => !p.archive_id && p.status !== "abgeschlossen");
 
@@ -314,7 +365,14 @@ export const syncAllPlayers = async (season = null, onProgress = null) => {
     clubName: p.current_club || "",
     season: season || getCurrentSeason(),
     internalPlayerId: p.id,
+    ...options,
   }));
 
   return runImportPipeline(playerList, onProgress);
 };
+
+// ── HILFSFUNKTIONEN FÜR UI ────────────────────────────────────────────────────
+
+/** Gibt alle verfügbaren Quellen für die UI zurück */
+export const getAvailableSources = () =>
+  getAllSources().map(({ id, label, priority }) => ({ id, label, priority }));
