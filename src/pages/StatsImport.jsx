@@ -446,6 +446,76 @@ export default function StatsImport() {
             </Card>
           </TabsContent>
 
+          {/* QUELLEN-KONFIGURATION */}
+          <TabsContent value="config" className="space-y-4">
+            <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800">
+                <CardTitle className="text-slate-900 dark:text-white">Globale Quellen-Konfiguration</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Standard-Datenquelle
+                    </label>
+                    <Select value={globalDefaultSource} onValueChange={setGlobalDefaultSource}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableSources.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>{s.label} (Priorität {s.priority})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-400 mt-1">Wird für alle Spieler ohne individuelle Konfiguration verwendet</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                      Aggregations-Modus
+                    </label>
+                    <Select value={globalAggMode} onValueChange={setGlobalAggMode}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="primary">Primary – Erste verfügbare Quelle</SelectItem>
+                        <SelectItem value="merge">Merge – Daten kombinieren</SelectItem>
+                        <SelectItem value="compare">Compare – Abweichungen prüfen</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {globalAggMode === "merge" && "Fehlende Felder werden aus Sekundärquellen ergänzt"}
+                      {globalAggMode === "compare" && "Unterschiede zwischen Quellen werden als Warnungen geloggt"}
+                      {globalAggMode === "primary" && "Nur die primäre Quelle wird verwendet, Fallback bei Fehler"}
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={applyGlobalConfig} className="bg-blue-900 hover:bg-blue-800">
+                  Konfiguration speichern
+                </Button>
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                  <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Registrierte Datenquellen</h3>
+                  <div className="space-y-2">
+                    {availableSources.map((src) => (
+                      <div key={src.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                        <div>
+                          <span className="font-medium text-slate-900 dark:text-white">{src.label}</span>
+                          <span className="ml-2 text-xs font-mono text-slate-500">{src.id}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">Priorität {src.priority}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-3">
+                    Weitere Quellen können in <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">playerStatsSourceRegistry.js</code> registriert werden.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* LOGS */}
           <TabsContent value="logs" className="space-y-4">
             <div className="flex items-center justify-between">
