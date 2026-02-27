@@ -361,6 +361,11 @@ export default function StatsImport() {
                         : <><XCircle className="w-4 h-4 text-red-600" />Import fehlgeschlagen</>
                       }
                     </div>
+                    {singleResult.usedSources?.length > 0 && (
+                      <p className="text-slate-600">📡 Quellen: <strong>{singleResult.usedSources.join(", ")}</strong>
+                        {singleResult.aggregationMode && ` (${singleResult.aggregationMode})`}
+                      </p>
+                    )}
                     {singleResult.matchedPlayerId && (
                       <p>🔗 Verknüpft mit: <strong>{getPlayerName(singleResult.matchedPlayerId)}</strong> ({singleResult.matchConfidence}% Konfidenz)</p>
                     )}
