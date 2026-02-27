@@ -51,11 +51,18 @@ export default function StatsImport() {
   const [singleClub, setSingleClub] = useState("");
   const [singleSeason, setSingleSeason] = useState("2025/26");
   const [singleResult, setSingleResult] = useState(null);
+  const [singleSource, setSingleSource] = useState("soccerstats247");
 
   // Batch-Import State
   const [batchProgress, setBatchProgress] = useState(null);
   const [expandedLog, setExpandedLog] = useState(null);
   const [showClearLogsDialog, setShowClearLogsDialog] = useState(false);
+
+  // Quellen-Konfiguration State
+  const [globalAggMode, setGlobalAggMode] = useState(getGlobalConfig().aggregationMode);
+  const [globalDefaultSource, setGlobalDefaultSource] = useState(getGlobalConfig().defaultSource);
+
+  const availableSources = getAvailableSources();
 
   const { data: allStats = [] } = useQuery({
     queryKey: ["playerStats"],
