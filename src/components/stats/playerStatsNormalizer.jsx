@@ -2,58 +2,11 @@
  * PlayerStats Normalizer
  * ----------------------
  * Verantwortlich für:
- * - Standardisierung von Feldnamen (extern → intern)
+ * - Standardisierung von Feldnamen (extern → intern) via Source-spezifischem fieldMap
  * - Datentyp-Konvertierung (Strings → Numbers)
  * - Berechnung abgeleiteter Metriken (Goals/90, etc.)
  * - Saison-Format-Normalisierung
- *
- * Erweiterbar: Für neue Datenquellen einfach ein neues Mapping-Objekt hinzufügen.
  */
-
-/** Feldname-Mapping von soccerstats247 → internes Schema */
-const SOCCERSTATS247_FIELD_MAP = {
-  "name": "player_name_external",
-  "full name": "player_name_external",
-  "full_name": "player_name_external",
-  "player": "player_name_external",
-  "club": "club",
-  "team": "club",
-  "league": "competition",
-  "competition": "competition",
-  "season": "season",
-  "position": "position",
-  "pos": "position",
-  "appearances": "appearances",
-  "apps": "appearances",
-  "matches": "appearances",
-  "starts": "starts",
-  "started": "starts",
-  "minutes": "minutes_played",
-  "minutes_played": "minutes_played",
-  "mins": "minutes_played",
-  "goals": "goals",
-  "assists": "assists",
-  "yellow_cards": "yellow_cards",
-  "yellow cards": "yellow_cards",
-  "yellows": "yellow_cards",
-  "red_cards": "red_cards",
-  "red cards": "red_cards",
-  "reds": "red_cards",
-  "shots": "additional_stats.shots",
-  "shots_on_target": "additional_stats.shots_on_target",
-  "shots on target": "additional_stats.shots_on_target",
-  "pass_accuracy": "additional_stats.pass_accuracy",
-  "pass accuracy": "additional_stats.pass_accuracy",
-  "clean_sheets": "additional_stats.clean_sheets",
-  "clean sheets": "additional_stats.clean_sheets",
-  "tackles": "additional_stats.tackles",
-  "interceptions": "additional_stats.interceptions",
-  "dribbles": "additional_stats.dribbles",
-  "fouls_committed": "additional_stats.fouls_committed",
-  "fouls committed": "additional_stats.fouls_committed",
-  "fouls_drawn": "additional_stats.fouls_drawn",
-  "fouls drawn": "additional_stats.fouls_drawn",
-};
 
 const NUMERIC_FIELDS = [
   "appearances", "starts", "minutes_played", "goals",
@@ -99,11 +52,14 @@ const computeDerivedMetrics = (stats) => {
 
 /**
  * Normalisiert rohe Spielerdaten zu internem Schema.
+ * Verwendet das quellen-spezifische fieldMap aus der Source-Registry.
+ *
  * @param {Object} rawData
- * @param {string} source
+ * @param {string} source - Quellen-ID (z.B. "soccerstats247")
+ * @param {Object} [fieldMapOverride] - Optionales benutzerdefiniertes Mapping
  * @returns {{ normalized: Object, warnings: string[] }}
  */
-export const normalizePlayerStats = (rawData, source = "soccerstats247") => {
+export const normalizePlayerStats = (rawData, source = "soccerstats247", fieldMapOverride = null) => {
   const warnings = [];
   const normalized = {
     source,
@@ -111,9 +67,21 @@ export const normalizePlayerStats = (rawData, source = "soccerstats247") => {
     last_updated: new Date().toISOString(),
   };
 
+  // Quellen-spezifisches Mapping laden
+  let fieldMap = fieldMapOverride;
+  if (!fieldMap) {
+    try {
+      const { getSource } = require("./playerStatsSourceRegistry");
+      const sourceObj = getSource(source);
+      fieldMap = sourceObj?.fieldMap || {};
+    } catch {
+      fieldMap = {};
+    }
+  }
+
   for (const [rawKey, rawValue] of Object.entries(rawData)) {
     const lowerKey = rawKey.toLowerCase().trim();
-    const mappedKey = SOCCERSTATS247_FIELD_MAP[lowerKey];
+    const mappedKey = fieldMap[lowerKey];
     if (!mappedKey) {
       if (rawKey !== "error" && rawKey !== "source_url") {
         warnings.push(`Unbekanntes Feld ignoriert: "${rawKey}"`);
