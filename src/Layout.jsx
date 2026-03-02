@@ -83,11 +83,7 @@ const transferItems = [
     url: createPageUrl("Archives"),
     icon: Inbox,
   },
-  {
-    title: "Statistik-Import",
-    url: createPageUrl("StatsImport"),
-    icon: TrendingUp,
-  },
+
 ];
 
 function SidebarNav({ onNavClick }) {
