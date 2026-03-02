@@ -37,6 +37,7 @@ import PlayerPreferences from "../components/players/PlayerPreferences";
 import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
 import PlayerComments from "../components/players/PlayerComments";
 import PlayerMatchesDragDrop from "../components/players/PlayerMatchesDragDrop";
+import PlayerCareerStats from "../components/players/PlayerCareerStats";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
