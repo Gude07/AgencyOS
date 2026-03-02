@@ -993,6 +993,10 @@ export default function PlayerDetail() {
             </div>
           </TabsContent>
 
+          <TabsContent value="career">
+            <PlayerCareerStats playerId={playerId} />
+          </TabsContent>
+
           <TabsContent value="preferences">
             <PlayerPreferences 
               preferences={player.preferences || {}}
