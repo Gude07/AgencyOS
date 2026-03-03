@@ -362,7 +362,28 @@ export default function PlayerCareerStats({ playerId, playerPosition }) {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis dataKey="season" tick={{ fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (!active) return null;
+                          return (
+                            <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-xs">
+                              <p className="font-semibold text-slate-900 mb-2">{label}</p>
+                              {payload?.map(p => (
+                                <div key={p.dataKey} className="flex items-center gap-2 mb-1">
+                                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: p.fill || p.color }} />
+                                  <span className="text-slate-600">{p.dataKey}:</span>
+                                  <span className="font-semibold text-slate-900">{p.value}</span>
+                                </div>
+                              ))}
+                              <div className="border-t border-slate-100 mt-2 pt-2 space-y-1 text-slate-500">
+                                <div>Ø {mainKey1}: <strong>{avgMain1.toFixed(1)}</strong></div>
+                                <div>Ø {mainKey2}: <strong>{avgMain2.toFixed(1)}</strong></div>
+                                <div>Ø Startelf: <strong>{avgStarts.toFixed(1)}</strong></div>
+                              </div>
+                            </div>
+                          );
+                        }}
+                      />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
                       <Bar dataKey={mainKey1} fill={isGoalkeeper ? "#dc2626" : "#16a34a"} radius={[3, 3, 0, 0]} />
                       <Bar dataKey={mainKey2} fill={isGoalkeeper ? "#16a34a" : "#7c3aed"} radius={[3, 3, 0, 0]} />
