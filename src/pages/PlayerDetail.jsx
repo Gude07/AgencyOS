@@ -994,7 +994,7 @@ export default function PlayerDetail() {
           </TabsContent>
 
           <TabsContent value="career">
-            <PlayerCareerStats playerId={playerId} />
+            <PlayerCareerStats playerId={playerId} playerPosition={player?.position} />
           </TabsContent>
 
           <TabsContent value="preferences">
