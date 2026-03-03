@@ -999,6 +999,10 @@ export default function PlayerDetail() {
             <PlayerCareerStats playerId={playerId} playerPosition={player?.position} />
           </TabsContent>
 
+          <TabsContent value="scouting">
+            <PlayerScoutingReports playerId={playerId} />
+          </TabsContent>
+
           <TabsContent value="preferences">
             <PlayerPreferences 
               preferences={player.preferences || {}}
