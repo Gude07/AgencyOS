@@ -417,9 +417,10 @@ export default function PlayerDetail() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="info">Spielerinfo</TabsTrigger>
             <TabsTrigger value="career">Karriere</TabsTrigger>
+            <TabsTrigger value="scouting">Scouting</TabsTrigger>
             <TabsTrigger value="preferences" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Präferenzen
