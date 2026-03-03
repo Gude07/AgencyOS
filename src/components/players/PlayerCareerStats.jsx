@@ -369,9 +369,9 @@ export default function PlayerCareerStats({ playerId, playerPosition }) {
                       <Bar dataKey="Einsätze" fill="#1e3a8a" radius={[3, 3, 0, 0]} />
                       <Bar dataKey="Startelf" fill="#6366f1" radius={[3, 3, 0, 0]} />
                       {/* Mittelwert-Linien */}
-                      <ReferenceLine y={avgMain1} stroke={isGoalkeeper ? "#dc2626" : "#16a34a"} strokeDasharray="4 2" label={{ value: `Ø ${mainKey1}`, position: "insideTopRight", fontSize: 10, fill: isGoalkeeper ? "#dc2626" : "#16a34a" }} />
-                      <ReferenceLine y={avgMain2} stroke={isGoalkeeper ? "#16a34a" : "#7c3aed"} strokeDasharray="4 2" label={{ value: `Ø ${mainKey2}`, position: "insideTopLeft", fontSize: 10, fill: isGoalkeeper ? "#16a34a" : "#7c3aed" }} />
-                      <ReferenceLine y={avgStarts} stroke="#6366f1" strokeDasharray="4 2" label={{ value: `Ø Startelf`, position: "insideBottomRight", fontSize: 10, fill: "#6366f1" }} />
+                      <ReferenceLine y={avgMain1} stroke={isGoalkeeper ? "#dc2626" : "#16a34a"} strokeDasharray="4 2" label={{ value: `Ø ${mainKey1}: ${avgMain1.toFixed(1)}`, position: "insideTopRight", fontSize: 10, fill: isGoalkeeper ? "#dc2626" : "#16a34a" }} />
+                      <ReferenceLine y={avgMain2} stroke={isGoalkeeper ? "#16a34a" : "#7c3aed"} strokeDasharray="4 2" label={{ value: `Ø ${mainKey2}: ${avgMain2.toFixed(1)}`, position: "insideTopLeft", fontSize: 10, fill: isGoalkeeper ? "#16a34a" : "#7c3aed" }} />
+                      <ReferenceLine y={avgStarts} stroke="#6366f1" strokeDasharray="4 2" label={{ value: `Ø Startelf: ${avgStarts.toFixed(1)}`, position: "insideBottomRight", fontSize: 10, fill: "#6366f1" }} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </CardContent>
