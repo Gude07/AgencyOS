@@ -172,9 +172,14 @@ export default function ClubRequests() {
 
   const archiveRequestsMutation = useMutation({
     mutationFn: async ({ requestIds, archiveId }) => {
-      // Sequential to avoid race conditions with large selections
-      for (const id of requestIds) {
-        await base44.entities.ClubRequest.update(id, { archive_id: archiveId });
+      // Process in batches of 5 with a small delay to avoid rate limiting
+      const batchSize = 5;
+      for (let i = 0; i < requestIds.length; i += batchSize) {
+        const batch = requestIds.slice(i, i + batchSize);
+        await Promise.all(batch.map(id => base44.entities.ClubRequest.update(id, { archive_id: archiveId })));
+        if (i + batchSize < requestIds.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
     },
     onSuccess: () => {
@@ -187,8 +192,13 @@ export default function ClubRequests() {
 
   const unarchiveRequestsMutation = useMutation({
     mutationFn: async (requestIds) => {
-      for (const id of requestIds) {
-        await base44.entities.ClubRequest.update(id, { archive_id: null });
+      const batchSize = 5;
+      for (let i = 0; i < requestIds.length; i += batchSize) {
+        const batch = requestIds.slice(i, i + batchSize);
+        await Promise.all(batch.map(id => base44.entities.ClubRequest.update(id, { archive_id: null })));
+        if (i + batchSize < requestIds.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
     },
     onSuccess: () => {
