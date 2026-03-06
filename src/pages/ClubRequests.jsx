@@ -120,25 +120,25 @@ export default function ClubRequests() {
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['clubRequests'],
     queryFn: () => base44.entities.ClubRequest.list('-created_date'),
-    refetchInterval: 3000, // Automatisches Update alle 3 Sekunden
+    refetchInterval: 60000,
   });
 
   const { data: allCommunications = [] } = useQuery({
     queryKey: ['communications'],
     queryFn: () => base44.entities.Communication.list(),
-    refetchInterval: 5000,
+    refetchInterval: 60000,
   });
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    refetchInterval: 10000,
+    refetchInterval: 60000,
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
-    refetchInterval: 10000,
+    refetchInterval: 60000,
   });
 
   const { data: archives = [] } = useQuery({
@@ -147,7 +147,7 @@ export default function ClubRequests() {
       const allArchives = await base44.entities.Archive.list();
       return allArchives.filter(a => a.type === 'club');
     },
-    refetchInterval: 5000,
+    refetchInterval: 60000,
   });
 
   const toggleFavoriteMutation = useMutation({
