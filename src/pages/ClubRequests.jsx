@@ -1019,15 +1019,36 @@ export default function ClubRequests() {
             
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+                <div className="col-span-2 relative">
                   <Label htmlFor="club_name">Vereinsname *</Label>
                   <Input
                     id="club_name"
                     value={newRequest.club_name}
-                    onChange={(e) => setNewRequest({...newRequest, club_name: e.target.value})}
+                    onChange={(e) => { setClubSuggestionApplied(false); handleClubNameChange(e.target.value); }}
                     placeholder="z.B. FC Beispiel"
                     className="mt-1.5"
+                    autoComplete="off"
                   />
+                  {clubSuggestionApplied && (
+                    <p className="text-xs text-green-700 mt-1 flex items-center gap-1">
+                      ✅ Bekannter Verein – Liga, Land & Kontaktdaten wurden automatisch ergänzt
+                    </p>
+                  )}
+                  {clubNameSuggestions.length > 0 && !clubSuggestionApplied && (
+                    <div className="absolute z-50 bg-white border border-slate-200 rounded-lg shadow-lg mt-1 w-full">
+                      {clubNameSuggestions.map(r => (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => handleClubNameChange(r.club_name)}
+                          className="w-full text-left px-3 py-2 hover:bg-slate-50 text-sm flex items-center justify-between gap-2 first:rounded-t-lg last:rounded-b-lg"
+                        >
+                          <span className="font-medium text-slate-900">{r.club_name}</span>
+                          <span className="text-xs text-slate-500">{r.league} · {r.country}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
