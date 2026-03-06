@@ -275,6 +275,7 @@ export default function ClubRequests() {
         priority: "mittel",
         status: "offen",
       });
+      setClubSuggestionApplied(false);
     },
   });
 
