@@ -978,10 +978,14 @@ export default function ClubRequestDetail() {
 
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsList className="grid w-full grid-cols-5 mb-6">
                 <TabsTrigger value="matched" className="flex items-center gap-2">
                   <Star className="w-4 h-4" />
                   Matches ({filteredMatchingPlayers.length})
+                </TabsTrigger>
+                <TabsTrigger value="ai_matching" className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  KI-Analyse
                 </TabsTrigger>
                 <TabsTrigger value="shortlist" className="flex items-center gap-2">
                   <ListChecks className="w-4 h-4" />
