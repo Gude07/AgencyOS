@@ -1102,6 +1102,10 @@ export default function ClubRequestDetail() {
                 )}
               </TabsContent>
 
+              <TabsContent value="ai_matching">
+                <AIMatchingAnalysis request={request} matchingPlayers={matchingPlayers} />
+              </TabsContent>
+
               <TabsContent value="shortlist" className="space-y-4">
                 {shortlistPlayers.length === 0 ? (
                   <Card className="border-slate-200 bg-white">
