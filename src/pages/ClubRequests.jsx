@@ -77,6 +77,7 @@ export default function ClubRequests() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedRequests, setSelectedRequests] = useState(new Set());
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [clubSuggestionApplied, setClubSuggestionApplied] = useState(false);
   const [archiveAction, setArchiveAction] = useState(null);
   const [newArchiveName, setNewArchiveName] = useState("");
   const [showManageArchivesDialog, setShowManageArchivesDialog] = useState(false);
@@ -276,6 +277,37 @@ export default function ClubRequests() {
       });
     },
   });
+
+  // Smart club auto-fill: find known info from previous requests with same club name
+  const handleClubNameChange = (clubName) => {
+    setNewRequest(prev => ({ ...prev, club_name: clubName }));
+    if (clubName.length < 2) return;
+    // Find the most recent request with this club name (case-insensitive)
+    const match = requests
+      .filter(r => r.club_name?.toLowerCase() === clubName.toLowerCase())
+      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+    if (match) {
+      setNewRequest(prev => ({
+        ...prev,
+        club_name: clubName,
+        league: prev.league || match.league || "",
+        country: prev.country || match.country || "",
+        contact_person: prev.contact_person || match.contact_person || "",
+        contact_email: prev.contact_email || match.contact_email || "",
+        contact_phone: prev.contact_phone || match.contact_phone || "",
+      }));
+      setClubSuggestionApplied(true);
+    } else {
+      setClubSuggestionApplied(false);
+    }
+  };
+
+  // Partial match suggestions for autocomplete
+  const clubNameSuggestions = newRequest.club_name.length >= 2
+    ? [...new Map(requests.map(r => [r.club_name?.toLowerCase(), r])).values()]
+        .filter(r => r.club_name?.toLowerCase().includes(newRequest.club_name.toLowerCase()) && r.club_name?.toLowerCase() !== newRequest.club_name.toLowerCase())
+        .slice(0, 5)
+    : [];
 
   const handleCreateRequest = () => {
     const requestData = {
