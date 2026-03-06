@@ -171,9 +171,10 @@ export default function ClubRequests() {
 
   const archiveRequestsMutation = useMutation({
     mutationFn: async ({ requestIds, archiveId }) => {
-      await Promise.all(
-        requestIds.map(id => base44.entities.ClubRequest.update(id, { archive_id: archiveId }))
-      );
+      // Sequential to avoid race conditions with large selections
+      for (const id of requestIds) {
+        await base44.entities.ClubRequest.update(id, { archive_id: archiveId });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clubRequests'] });

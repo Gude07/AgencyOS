@@ -37,9 +37,9 @@ export default function AssignmentOverview() {
     queryFn: () => base44.entities.User.list(),
   });
 
-  // Nur Anfragen mit Status in_bearbeitung oder angebote_gesendet
+  // Nur Anfragen mit Status in_bearbeitung oder angebote_gesendet, keine archivierten
   const activeRequests = requests.filter(r => 
-    r.status === 'in_bearbeitung' || r.status === 'angebote_gesendet'
+    (r.status === 'in_bearbeitung' || r.status === 'angebote_gesendet') && !r.archive_id
   );
 
   // Gruppiere nach zuständiger Person
