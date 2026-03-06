@@ -27,7 +27,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock, Sparkles } from "lucide-react";
+import AIMatchingAnalysis from "../components/clubRequests/AIMatchingAnalysis";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
