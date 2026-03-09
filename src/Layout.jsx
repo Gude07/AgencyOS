@@ -83,7 +83,11 @@ const transferItems = [
     url: createPageUrl("Archives"),
     icon: Inbox,
   },
-
+  {
+    title: "KI Scout Assistant",
+    url: createPageUrl("ScoutingAssistant"),
+    icon: Sparkles,
+  },
 ];
 
 function SidebarNav({ onNavClick }) {
