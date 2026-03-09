@@ -69,6 +69,7 @@ import PlayerDetail from './pages/PlayerDetail';
 import Players from './pages/Players';
 import TaskDetail from './pages/TaskDetail';
 import Tasks from './pages/Tasks';
+import ScoutingAssistant from './pages/ScoutingAssistant';
 import __Layout from './Layout.jsx';
 
 
@@ -95,6 +96,7 @@ export const PAGES = {
     "Players": Players,
     "TaskDetail": TaskDetail,
     "Tasks": Tasks,
+    "ScoutingAssistant": ScoutingAssistant,
 }
 
 export const pagesConfig = {
