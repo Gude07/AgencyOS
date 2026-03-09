@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -8,7 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
-import { Sparkles, Loader2, RefreshCw, ChevronRight, CheckCircle2, AlertTriangle, TrendingUp, User, Euro, Target, Shield } from "lucide-react";
+import {
+  Sparkles, Loader2, RefreshCw, ChevronRight, CheckCircle2, AlertTriangle,
+  TrendingUp, User, Euro, Target, Shield, ThumbsUp, ThumbsDown, GitCompare,
+  X, Building2, Search
+} from "lucide-react";
+import PlayerCompareModal from "@/components/scouting/PlayerCompareModal";
 
 const POSITIONS = [
   { group: "Torwart", items: ["Torwart"] },
@@ -31,6 +36,68 @@ const difficultyConfig = {
   sehr_schwierig: { label: "Sehr schwierig", color: "bg-red-100 text-red-800" },
 };
 
+// Searchable request picker component
+function RequestSearchPicker({ clubRequests, onSelect }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  const filtered = clubRequests
+    .filter(r => r.status === "offen" || r.status === "in_bearbeitung")
+    .filter(r =>
+      !query ||
+      r.club_name?.toLowerCase().includes(query.toLowerCase()) ||
+      r.position_needed?.toLowerCase().includes(query.toLowerCase())
+    )
+    .slice(0, 8);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+        <Input
+          placeholder="Verein suchen..."
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          className="pl-8 text-sm"
+        />
+      </div>
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden">
+          {filtered.map(r => (
+            <button
+              key={r.id}
+              className="w-full text-left px-3 py-2.5 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
+              onMouseDown={() => {
+                onSelect(r);
+                setQuery("");
+                setOpen(false);
+              }}
+            >
+              <p className="text-sm font-semibold text-slate-800">{r.club_name}</p>
+              <p className="text-xs text-slate-500">{r.position_needed} • {r.league || r.country || "–"}</p>
+            </button>
+          ))}
+        </div>
+      )}
+      {open && query && filtered.length === 0 && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-xs text-slate-400 text-center">
+          Keine Anfragen gefunden
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ScoutingAssistant() {
   const [profile, setProfile] = useState({
     club_name: "",
@@ -42,9 +109,14 @@ export default function ScoutingAssistant() {
     transfer_type: "kauf",
     preferred_leagues: "",
     special_requirements: "",
+    free_context: "",
   });
+  const [linkedRequest, setLinkedRequest] = useState(null);
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [feedback, setFeedback] = useState({}); // { playerId: "up" | "down" }
+  const [compareIds, setCompareIds] = useState([]); // up to 3 player IDs for comparison
+  const [showCompare, setShowCompare] = useState(false);
 
   const { data: players = [] } = useQuery({
     queryKey: ["players"],
@@ -66,20 +138,43 @@ export default function ScoutingAssistant() {
     queryFn: () => base44.entities.ClubRequest.list(),
   });
 
+  const handleImportRequest = (req) => {
+    setLinkedRequest(req);
+    setProfile(prev => ({
+      ...prev,
+      club_name: req.club_name || prev.club_name,
+      position: req.position_needed || prev.position,
+      age_min: req.age_min?.toString() || prev.age_min,
+      age_max: req.age_max?.toString() || prev.age_max,
+      budget_max: req.budget_max?.toString() || prev.budget_max,
+      loan_fee_max: req.loan_fee_budget?.toString() || prev.loan_fee_max,
+      transfer_type: req.transfer_types?.[0] || prev.transfer_type,
+      preferred_leagues: req.league ? `${req.league}${req.country ? ", " + req.country : ""}` : prev.preferred_leagues,
+      special_requirements: req.requirements || prev.special_requirements,
+    }));
+  };
+
+  const toggleCompare = (playerId) => {
+    setCompareIds(prev =>
+      prev.includes(playerId)
+        ? prev.filter(id => id !== playerId)
+        : prev.length < 3 ? [...prev, playerId] : prev
+    );
+  };
+
   const runScouting = async () => {
     setIsLoading(true);
     setResult(null);
+    setFeedback({});
+    setCompareIds([]);
 
-    // Filter active (non-archived) players
     const activePlayers = players.filter(p => !p.archive_id);
 
-    // Build enriched player profiles for the AI
     const enrichedPlayers = activePlayers.map(p => {
       const age = p.date_of_birth
         ? Math.floor((new Date() - new Date(p.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000))
         : p.age;
 
-      // Latest scouting reports for this player (max 2)
       const reports = scoutingReports
         .filter(r => r.player_id === p.id)
         .slice(0, 2)
@@ -93,7 +188,6 @@ export default function ScoutingAssistant() {
           potential: r.potential,
         }));
 
-      // Latest career stats (max 2 seasons)
       const stats = careerStats
         .filter(s => s.player_id === p.id)
         .slice(0, 2)
@@ -134,7 +228,6 @@ export default function ScoutingAssistant() {
       };
     });
 
-    // Summarize open club requests for context
     const openRequests = clubRequests
       .filter(r => r.status === "offen" || r.status === "in_bearbeitung")
       .slice(0, 10)
@@ -157,18 +250,25 @@ SUCHPROFIL:
 - Transferart: ${profile.transfer_type}
 - Bevorzugte Ligen/Länder: ${profile.preferred_leagues || "Keine Präferenz"}
 - Spezielle Anforderungen: ${profile.special_requirements || "Keine"}
+${profile.free_context ? `\nZUSÄTZLICHER KONTEXT (sehr wichtig, unbedingt berücksichtigen):\n${profile.free_context}` : ""}
+${linkedRequest ? `\nVERKNÜPFTE VEREINSANFRAGE (Originalanfrage aus dem System):
+- Liga: ${linkedRequest.league || "-"}
+- Land: ${linkedRequest.country || "-"}
+- Priorität: ${linkedRequest.priority || "-"}
+- Anforderungen: ${linkedRequest.requirements || "-"}` : ""}
 
 VERFÜGBARE SPIELER MIT PROFILEN (${enrichedPlayers.length} Spieler):
 ${JSON.stringify(enrichedPlayers.slice(0, 30), null, 2)}
 
-AKTUELLE OFFENE VEREINSANFRAGEN IM SYSTEM (zur Kontextualisierung der Nachfrage):
+AKTUELLE OFFENE VEREINSANFRAGEN IM SYSTEM:
 ${JSON.stringify(openRequests, null, 2)}
 
 Deine Aufgabe:
 1. Identifiziere die TOP 6 geeignetsten Spieler für das Suchprofil
-2. Berücksichtige dabei: Position (Haupt- und Nebenposition), Alter, Marktwert, Scoutingberichte, Karrierestatistiken, aktuelle Form, Persönlichkeitsmerkmale
-3. Wenn keine Berichte oder Stats vorhanden sind, schätze anhand der verfügbaren Profilfelder
-4. Gib konkrete, handlungsrelevante Empfehlungen
+2. Berücksichtige Position (Haupt- und Nebenposition), Alter, Marktwert, Scoutingberichte, Karrierestatistiken, aktuelle Form, Persönlichkeitsmerkmale
+3. Berechne für jeden Spieler eine realistische finanzielle Gesamtübersicht (Ablöse + geschätztes Jahresgehalt + Gesamtkosten über 3 Jahre)
+4. Wenn freier Kontext angegeben wurde, priorisiere diesen bei der Bewertung
+5. Gib konkrete, handlungsrelevante Empfehlungen
 
 Antworte ausschließlich im vorgegebenen JSON-Format.`;
 
@@ -178,18 +278,9 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
       response_json_schema: {
         type: "object",
         properties: {
-          market_assessment: {
-            type: "string",
-            description: "Markteinschätzung: Wie realistisch ist es, den gewünschten Spielertyp zu finden? (2-3 Sätze)"
-          },
-          market_difficulty: {
-            type: "string",
-            enum: ["einfach", "mittel", "schwierig", "sehr_schwierig"]
-          },
-          search_summary: {
-            type: "string",
-            description: "Kurze Zusammenfassung der Analysegrundlage (wie viele Spieler, Datenlage etc.)"
-          },
+          market_assessment: { type: "string" },
+          market_difficulty: { type: "string", enum: ["einfach", "mittel", "schwierig", "sehr_schwierig"] },
+          search_summary: { type: "string" },
           top_targets: {
             type: "array",
             items: {
@@ -200,10 +291,7 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
                 current_club: { type: "string" },
                 age: { type: "number" },
                 position: { type: "string" },
-                recommendation: {
-                  type: "string",
-                  enum: ["sehr_empfehlenswert", "empfehlenswert", "bedingt_empfehlenswert", "beobachten"]
-                },
+                recommendation: { type: "string", enum: ["sehr_empfehlenswert", "empfehlenswert", "bedingt_empfehlenswert", "beobachten"] },
                 fit_score: { type: "number", minimum: 0, maximum: 100 },
                 profile_match: {
                   type: "object",
@@ -213,24 +301,19 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
                     budget_fit: { type: "string", enum: ["im_budget", "grenzwertig", "über_budget", "unbekannt"] }
                   }
                 },
-                why_suitable: { type: "string", description: "Warum ist dieser Spieler geeignet? (2-3 Sätze)" },
-                key_strengths: { type: "array", items: { type: "string" }, description: "3-4 Hauptstärken" },
-                concerns: { type: "array", items: { type: "string" }, description: "1-3 Bedenken oder Risiken" },
-                scout_insight: { type: "string", description: "Konkreter Hinweis basierend auf Scoutingberichten/Stats (falls vorhanden)" },
-                transfer_approach: { type: "string", description: "Empfohlener Transferansatz (wie vorgehen?)" },
-                estimated_fee: { type: "string", description: "Geschätzte Ablösesumme oder Leihgebühr basierend auf Marktwert" }
+                why_suitable: { type: "string" },
+                key_strengths: { type: "array", items: { type: "string" } },
+                concerns: { type: "array", items: { type: "string" } },
+                scout_insight: { type: "string" },
+                transfer_approach: { type: "string" },
+                estimated_fee: { type: "string" },
+                estimated_annual_salary: { type: "string", description: "Geschätztes Jahresgehalt (z.B. '350k €/Jahr')" },
+                estimated_total_cost_3yr: { type: "string", description: "Gesamtkosten über 3 Jahre (Ablöse + Gehalt)" },
               }
             }
           },
-          alternative_approach: {
-            type: "string",
-            description: "Falls das Budget zu eng oder kein perfekter Match: alternativer Ansatz (1-2 Sätze)"
-          },
-          scout_recommendations: {
-            type: "array",
-            items: { type: "string" },
-            description: "4-5 strategische Empfehlungen für den Scouting-Prozess"
-          }
+          alternative_approach: { type: "string" },
+          scout_recommendations: { type: "array", items: { type: "string" } }
         }
       }
     });
@@ -239,7 +322,7 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
     setIsLoading(false);
   };
 
-  const isFormValid = profile.position;
+  const compareTargets = result?.top_targets?.filter(t => compareIds.includes(t.player_id)) || [];
 
   return (
     <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
@@ -256,7 +339,7 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left: Search Profile Form */}
+          {/* Left: Form */}
           <div className="lg:col-span-1 space-y-4">
             <Card className="border-slate-200 bg-white sticky top-4">
               <CardHeader className="border-b border-slate-100 pb-4">
@@ -266,6 +349,27 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-5 space-y-4">
+
+                {/* Import from existing request */}
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
+                  <p className="text-xs font-semibold text-purple-800 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5" />
+                    Aus vorhandener Anfrage importieren
+                  </p>
+                  <RequestSearchPicker clubRequests={clubRequests} onSelect={handleImportRequest} />
+                  {linkedRequest && (
+                    <div className="flex items-center justify-between bg-white border border-purple-200 rounded-lg px-3 py-2">
+                      <div>
+                        <p className="text-xs font-semibold text-purple-900">{linkedRequest.club_name}</p>
+                        <p className="text-xs text-purple-600">{linkedRequest.position_needed}</p>
+                      </div>
+                      <button onClick={() => setLinkedRequest(null)} className="text-purple-400 hover:text-purple-700">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Anfragender Verein</Label>
                   <Input
@@ -308,9 +412,7 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
                 <div>
                   <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Transferart</Label>
                   <Select value={profile.transfer_type} onValueChange={v => setProfile({ ...profile, transfer_type: v })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="kauf">Kauf</SelectItem>
                       <SelectItem value="leihe">Leihe</SelectItem>
@@ -346,8 +448,22 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
                     placeholder="z.B. Linksfuß, starke Zweikampfwerte, Führungsspieler, EU-Pass..."
                     value={profile.special_requirements}
                     onChange={e => setProfile({ ...profile, special_requirements: e.target.value })}
-                    className="h-20 text-sm"
+                    className="h-16 text-sm"
                   />
+                </div>
+
+                {/* Free context field */}
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+                  <Label className="text-xs font-semibold text-amber-800 block flex items-center gap-1.5">
+                    ✍️ Freier Zusatz-Kontext (KI berücksichtigt dies bevorzugt)
+                  </Label>
+                  <Textarea
+                    placeholder="z.B. Der Spieler soll taktisch flexibel sein und gut in ein pressingintensives System passen. Erfahrung in englischen Ligen wäre von Vorteil. Wir suchen jemanden mit Ausstrahlung im Umkleideraum..."
+                    value={profile.free_context}
+                    onChange={e => setProfile({ ...profile, free_context: e.target.value })}
+                    className="h-24 text-sm bg-white"
+                  />
+                  <p className="text-xs text-amber-700">Dieser Text wird zusätzlich zu allen anderen Profilfeldern ausgewertet.</p>
                 </div>
 
                 {/* Data summary */}
@@ -360,7 +476,7 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
 
                 <Button
                   onClick={runScouting}
-                  disabled={!isFormValid || isLoading}
+                  disabled={!profile.position || isLoading}
                   className="w-full bg-purple-700 hover:bg-purple-800 text-white"
                 >
                   {isLoading ? (
@@ -377,7 +493,6 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
 
           {/* Right: Results */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Loading */}
             {isLoading && (
               <Card className="border-slate-200 bg-white">
                 <CardContent className="p-12 text-center">
@@ -391,7 +506,6 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
               </Card>
             )}
 
-            {/* Empty State */}
             {!result && !isLoading && (
               <Card className="border-dashed border-2 border-slate-200 bg-white">
                 <CardContent className="p-12 text-center">
@@ -402,13 +516,12 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
               </Card>
             )}
 
-            {/* Results */}
             {result && !isLoading && (
               <>
                 {/* Market Overview */}
                 <Card className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50">
                   <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <TrendingUp className="w-4 h-4 text-indigo-700" />
@@ -428,11 +541,40 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
                   </CardContent>
                 </Card>
 
+                {/* Compare bar */}
+                {compareIds.length > 0 && (
+                  <div className="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <p className="text-sm text-purple-800 font-medium">
+                      {compareIds.length} Spieler ausgewählt zum Vergleich
+                      {compareIds.length < 2 && <span className="text-purple-500 ml-1">(mindestens 2 wählen)</span>}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCompareIds([])}
+                        className="text-xs text-purple-700 border-purple-300"
+                      >
+                        <X className="w-3 h-3 mr-1" /> Reset
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={compareIds.length < 2}
+                        onClick={() => setShowCompare(true)}
+                        className="text-xs bg-purple-700 hover:bg-purple-800 text-white"
+                      >
+                        <GitCompare className="w-3 h-3 mr-1" /> Vergleichen
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Top Targets */}
                 <div className="space-y-3">
                   <h2 className="font-bold text-slate-800 flex items-center gap-2">
                     <Target className="w-5 h-5 text-purple-700" />
                     Top Transfer-Targets ({result.top_targets?.length})
+                    <span className="text-xs font-normal text-slate-400 ml-1">— bis zu 3 für Vergleich auswählen</span>
                   </h2>
 
                   {result.top_targets?.map((target, idx) => {
@@ -444,8 +586,14 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
                       unbekannt: "text-slate-500 bg-slate-50"
                     }[target.profile_match?.budget_fit] || "text-slate-500 bg-slate-50";
 
+                    const isCompared = compareIds.includes(target.player_id);
+                    const myFeedback = feedback[target.player_id];
+
                     return (
-                      <Card key={target.player_id || idx} className="border-slate-200 bg-white overflow-hidden">
+                      <Card
+                        key={target.player_id || idx}
+                        className={`border-slate-200 bg-white overflow-hidden transition-all ${isCompared ? "ring-2 ring-purple-400" : ""}`}
+                      >
                         <CardContent className="p-0">
                           <div className="flex items-stretch">
                             {/* Rank strip */}
@@ -468,12 +616,28 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
                                     {target.position} • {target.current_club} • {target.age} Jahre
                                   </p>
                                 </div>
-                                {target.estimated_fee && (
-                                  <div className="text-right shrink-0">
-                                    <p className="text-xs text-slate-500">Geschätzte Ablöse</p>
-                                    <p className="font-bold text-slate-800">{target.estimated_fee}</p>
-                                  </div>
-                                )}
+                                {/* Actions: compare + feedback */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <button
+                                    onClick={() => toggleCompare(target.player_id)}
+                                    title="Zum Vergleich hinzufügen"
+                                    className={`p-1.5 rounded-lg border transition-colors ${isCompared ? "bg-purple-100 border-purple-300 text-purple-700" : "border-slate-200 text-slate-400 hover:border-purple-300 hover:text-purple-600"}`}
+                                  >
+                                    <GitCompare className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => setFeedback(f => ({ ...f, [target.player_id]: f[target.player_id] === "up" ? null : "up" }))}
+                                    className={`p-1.5 rounded-lg border transition-colors ${myFeedback === "up" ? "bg-green-100 border-green-300 text-green-700" : "border-slate-200 text-slate-400 hover:text-green-600"}`}
+                                  >
+                                    <ThumbsUp className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => setFeedback(f => ({ ...f, [target.player_id]: f[target.player_id] === "down" ? null : "down" }))}
+                                    className={`p-1.5 rounded-lg border transition-colors ${myFeedback === "down" ? "bg-red-100 border-red-300 text-red-700" : "border-slate-200 text-slate-400 hover:text-red-600"}`}
+                                  >
+                                    <ThumbsDown className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
 
                               {/* Profile match badges */}
@@ -497,7 +661,6 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
                                 </div>
                               )}
 
-                              {/* Why suitable */}
                               <p className="text-sm text-slate-700 leading-relaxed">{target.why_suitable}</p>
 
                               {/* Strengths & Concerns */}
@@ -531,6 +694,35 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
                                   </div>
                                 )}
                               </div>
+
+                              {/* Financial overview */}
+                              {(target.estimated_fee || target.estimated_annual_salary || target.estimated_total_cost_3yr) && (
+                                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                                  <p className="text-xs font-semibold text-slate-600 mb-2 flex items-center gap-1">
+                                    <Euro className="w-3 h-3" /> Finanzielle Gesamtübersicht
+                                  </p>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    {target.estimated_fee && (
+                                      <div className="text-center">
+                                        <p className="text-xs text-slate-500">Ablöse</p>
+                                        <p className="text-xs font-bold text-slate-800">{target.estimated_fee}</p>
+                                      </div>
+                                    )}
+                                    {target.estimated_annual_salary && (
+                                      <div className="text-center">
+                                        <p className="text-xs text-slate-500">Jahresgehalt</p>
+                                        <p className="text-xs font-bold text-slate-800">{target.estimated_annual_salary}</p>
+                                      </div>
+                                    )}
+                                    {target.estimated_total_cost_3yr && (
+                                      <div className="text-center bg-purple-50 rounded-lg p-1.5">
+                                        <p className="text-xs text-purple-600">Gesamt (3 J.)</p>
+                                        <p className="text-xs font-bold text-purple-800">{target.estimated_total_cost_3yr}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
 
                               {/* Scout Insight */}
                               {target.scout_insight && (
@@ -597,6 +789,14 @@ Antworte ausschließlich im vorgegebenen JSON-Format.`;
           </div>
         </div>
       </div>
+
+      {/* Compare Modal */}
+      {showCompare && compareTargets.length >= 2 && (
+        <PlayerCompareModal
+          targets={compareTargets}
+          onClose={() => setShowCompare(false)}
+        />
+      )}
     </div>
   );
 }
