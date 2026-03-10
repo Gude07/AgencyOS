@@ -94,10 +94,18 @@ const transferItems = [
 function SidebarNav({ onNavClick }) {
   const location = useLocation();
   const [user, setUser] = React.useState(null);
+  const [agency, setAgency] = React.useState(null);
   const [darkMode, setDarkMode] = React.useState(false);
 
   React.useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    base44.auth.me().then(async (u) => {
+      setUser(u);
+      if (u.agency_id) {
+        const agencies = await base44.entities.Agency.list();
+        const userAgency = agencies.find(a => a.id === u.agency_id);
+        setAgency(userAgency);
+      }
+    }).catch(() => {});
     const isDark = localStorage.getItem('darkMode') === 'true';
     setDarkMode(isDark);
     if (isDark) {
@@ -125,14 +133,18 @@ function SidebarNav({ onNavClick }) {
       <div className="border-b border-slate-100 dark:border-slate-800 p-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden bg-white dark:bg-slate-800">
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69175f86bfb516d23d496067/a03e36395_0a2a8123-bc63-4947-9283-2f5b930988cb.jpg" 
-              alt="STS Sports Logo"
-              className="w-full h-full object-contain"
-            />
+            {agency?.logo_url ? (
+              <img 
+                src={agency.logo_url} 
+                alt={agency.name}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <Building2 className="w-5 h-5 text-slate-400" />
+            )}
           </div>
           <div>
-            <h2 className="font-bold text-slate-900 dark:text-white text-lg">STS Sports</h2>
+            <h2 className="font-bold text-slate-900 dark:text-white text-lg">{agency?.name || "Agentur"}</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">Spieleragentur</p>
           </div>
         </div>
@@ -203,6 +215,28 @@ function SidebarNav({ onNavClick }) {
           </div>
         </div>
 
+        {user?.role === "admin" && (
+          <div className="mb-4">
+            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-2">
+              Administration
+            </div>
+            <div className="space-y-1">
+              <Link
+                to={createPageUrl("AgencyManagement")}
+                onClick={onNavClick}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                  location.pathname === createPageUrl("AgencyManagement")
+                    ? 'bg-blue-900 dark:bg-blue-700 text-white' 
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Building2 className={`w-5 h-5 ${location.pathname === createPageUrl("AgencyManagement") ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span className="font-medium">Agenturen</span>
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="hidden lg:block">
           <OnlineUsers />
         </div>
@@ -258,14 +292,10 @@ export default function Layout({ children, currentPageName }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white dark:bg-slate-800">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69175f86bfb516d23d496067/a03e36395_0a2a8123-bc63-4947-9283-2f5b930988cb.jpg" 
-                alt="STS Sports Logo"
-                className="w-full h-full object-contain"
-              />
+              <Building2 className="w-4 h-4 text-slate-400" />
             </div>
             <div>
-              <h2 className="font-bold text-slate-900 dark:text-white text-sm">STS Sports</h2>
+              <h2 className="font-bold text-slate-900 dark:text-white text-sm">Agentur</h2>
             </div>
           </div>
           <div className="flex items-center gap-2">
