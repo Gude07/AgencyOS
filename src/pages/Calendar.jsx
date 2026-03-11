@@ -567,6 +567,8 @@ export default function Calendar() {
                       onClick={() => {
                         if (event.type === 'task') {
                           navigate(createPageUrl("TaskDetail") + "?id=" + event.id);
+                        } else if (event.type === 'meeting') {
+                          navigate(createPageUrl("MeetingDetail") + "?id=" + event.id);
                         }
                       }}
                     >
