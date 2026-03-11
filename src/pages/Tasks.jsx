@@ -20,9 +20,10 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, Calendar as CalendarIcon } from "lucide-react";
 import TaskCard from "../components/tasks/TaskCard";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
+import CreateMeetingDialog from "../components/tasks/CreateMeetingDialog";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -30,6 +31,7 @@ export default function Tasks() {
   const urlParams = new URLSearchParams(window.location.search);
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showCreateMeetingDialog, setShowCreateMeetingDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [filterPriority, setFilterPriority] = useState(urlParams.get('priority') || "alle");
   const [filterStatus, setFilterStatus] = useState(urlParams.get('status') || "alle");
@@ -194,16 +196,26 @@ export default function Tasks() {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Aufgaben</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Aufgaben & Termine</h1>
             <p className="text-slate-600 mt-1">{filteredAndSortedTasks.length} Aufgaben</p>
           </div>
-          <Button 
-            onClick={() => setShowCreateDialog(true)}
-            className="bg-blue-900 hover:bg-blue-800"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Neue Aufgabe
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowCreateDialog(true)}
+              className="bg-blue-900 hover:bg-blue-800"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Neue Aufgabe
+            </Button>
+            <Button 
+              onClick={() => setShowCreateMeetingDialog(true)}
+              variant="outline"
+              className="border-blue-900 text-blue-900 hover:bg-blue-50"
+            >
+              <CalendarIcon className="w-4 h-4 mr-2" />
+              Neuer Termin
+            </Button>
+          </div>
         </div>
 
         <Card className="border-slate-200 bg-white">
@@ -300,6 +312,11 @@ export default function Tasks() {
             </CardContent>
           </Card>
         )}
+
+        <CreateMeetingDialog
+          open={showCreateMeetingDialog}
+          onOpenChange={setShowCreateMeetingDialog}
+        />
 
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogContent className="max-w-2xl">
