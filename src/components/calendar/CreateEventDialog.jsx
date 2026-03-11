@@ -21,6 +21,8 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import MultiUserSelect from "../tasks/MultiUserSelect";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 
 export default function CreateEventDialog({ open, onOpenChange, initialDate }) {
   const queryClient = useQueryClient();
@@ -45,6 +47,8 @@ export default function CreateEventDialog({ open, onOpenChange, initialDate }) {
     location: "",
     participants: [],
   });
+
+  const [addToOutlook, setAddToOutlook] = useState(true);
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
@@ -77,7 +81,26 @@ export default function CreateEventDialog({ open, onOpenChange, initialDate }) {
   const createMeetingMutation = useMutation({
     mutationFn: async (data) => {
       const user = await base44.auth.me();
-      return base44.entities.Meeting.create({ ...data, agency_id: user.agency_id });
+      const meeting = await base44.entities.Meeting.create({ ...data, agency_id: user.agency_id });
+      
+      // Add to Outlook if checkbox is checked
+      if (addToOutlook) {
+        try {
+          await base44.functions.invoke('createOutlookEvent', {
+            title: data.title,
+            start_date: data.start_date,
+            end_date: data.end_date || data.start_date,
+            location: data.location,
+            description: data.description
+          });
+          toast.success('Termin in App und Outlook erstellt');
+        } catch (error) {
+          console.error('Error creating Outlook event:', error);
+          toast.warning('Termin in App erstellt, aber Outlook-Sync fehlgeschlagen');
+        }
+      }
+      
+      return meeting;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
@@ -305,6 +328,19 @@ export default function CreateEventDialog({ open, onOpenChange, initialDate }) {
                     users={users}
                     onChange={(selected) => setMeetingData({...meetingData, participants: selected})}
                   />
+                </div>
+              </div>
+
+              <div className="col-span-2">
+                <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Checkbox
+                    id="add-to-outlook"
+                    checked={addToOutlook}
+                    onCheckedChange={setAddToOutlook}
+                  />
+                  <Label htmlFor="add-to-outlook" className="text-sm font-medium cursor-pointer">
+                    Auch in Outlook-Kalender hinzufügen
+                  </Label>
                 </div>
               </div>
             </div>

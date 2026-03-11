@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, Edit2, Trash2, Plus, Clock, DollarSign, User, Building2, FileText, TrendingUp, ExternalLink, Send } from "lucide-react";
 import SendEmailDialog from "../components/outlook/SendEmailDialog";
+import DocumentManager from "../components/documents/DocumentManager";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { formatInGermanTime } from "@/components/utils/dateUtils";
@@ -251,9 +252,10 @@ export default function DealDetail() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Übersicht</TabsTrigger>
             <TabsTrigger value="finances">Finanzen</TabsTrigger>
+            <TabsTrigger value="documents">Dokumente</TabsTrigger>
             <TabsTrigger value="timeline">Timeline ({updates.length})</TabsTrigger>
           </TabsList>
 
@@ -612,6 +614,10 @@ export default function DealDetail() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <DocumentManager entityType="Deal" entityId={dealId} />
           </TabsContent>
 
           <TabsContent value="timeline" className="space-y-6">

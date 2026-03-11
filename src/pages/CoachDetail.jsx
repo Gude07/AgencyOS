@@ -29,6 +29,8 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, differenceInYears } from "date-fns";
 import LanguagesEditor from "../components/coaches/LanguagesEditor";
+import DocumentManager from "../components/documents/DocumentManager";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -159,8 +161,15 @@ export default function CoachDetail() {
           )}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <Tabs defaultValue="info" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="info">Trainerinfo</TabsTrigger>
+            <TabsTrigger value="documents">Dokumente</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="info">
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
             <Card className="border-slate-200 bg-white">
               <CardHeader className="border-b border-slate-100">
                 <div className="space-y-3">
@@ -513,8 +522,14 @@ export default function CoachDetail() {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <DocumentManager entityType="Coach" entityId={coachId} />
+          </TabsContent>
+        </Tabs>
 
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent>
