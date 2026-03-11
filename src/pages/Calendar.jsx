@@ -46,6 +46,7 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [view, setView] = useState("month"); // month, week, day
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showTeamsMeetingDialog, setShowTeamsMeetingDialog] = useState(false);
   const [createDialogDate, setCreateDialogDate] = useState(null);
 
   const { data: tasks = [] } = useQuery({
@@ -487,6 +488,13 @@ export default function Calendar() {
                 >
                   Heute
                 </Button>
+                <Button
+                  onClick={() => setShowCreateDialog(true)}
+                  className="bg-blue-900 hover:bg-blue-800"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Termin erstellen
+                </Button>
                 <div className="flex border border-slate-200 rounded-lg overflow-hidden">
                   <Button
                     variant={view === "month" ? "default" : "ghost"}
@@ -602,9 +610,13 @@ export default function Calendar() {
       </div>
 
       <CreateEventDialog
-        open={showCreateDialog}
+        open={showCreateDialog && !showTeamsMeetingDialog}
         onOpenChange={setShowCreateDialog}
         initialDate={createDialogDate}
+      />
+      <CreateTeamsMeetingDialog
+        open={showTeamsMeetingDialog}
+        onOpenChange={setShowTeamsMeetingDialog}
       />
     </div>
   );
