@@ -70,7 +70,26 @@ export default function CreateEventDialog({ open, onOpenChange, initialDate }) {
   const createTaskMutation = useMutation({
     mutationFn: async (data) => {
       const user = await base44.auth.me();
-      return base44.entities.Task.create({ ...data, agency_id: user.agency_id });
+      const task = await base44.entities.Task.create({ ...data, agency_id: user.agency_id });
+      
+      // Add to Outlook if checkbox is checked and deadline exists
+      if (addToOutlook && data.deadline) {
+        try {
+          await base44.functions.invoke('createOutlookEvent', {
+            title: `Deadline: ${data.title}`,
+            start_date: `${data.deadline}T09:00`,
+            end_date: `${data.deadline}T10:00`,
+            description: data.description || '',
+            location: ''
+          });
+          toast.success('Aufgabe in App und Outlook-Kalender erstellt');
+        } catch (error) {
+          console.error('Error creating Outlook event:', error);
+          toast.warning('Aufgabe erstellt, aber Outlook-Sync fehlgeschlagen');
+        }
+      }
+      
+      return task;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -231,6 +250,21 @@ export default function CreateEventDialog({ open, onOpenChange, initialDate }) {
                   />
                 </div>
               </div>
+
+              {taskData.deadline && (
+                <div className="col-span-2">
+                  <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <Checkbox
+                      id="add-task-to-outlook"
+                      checked={addToOutlook}
+                      onCheckedChange={setAddToOutlook}
+                    />
+                    <Label htmlFor="add-task-to-outlook" className="text-sm font-medium cursor-pointer">
+                      Deadline auch in Outlook-Kalender hinzufügen
+                    </Label>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
