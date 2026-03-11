@@ -41,6 +41,7 @@ import PlayerCareerStats from "../components/players/PlayerCareerStats";
 import PlayerScoutingReports from "../components/players/PlayerScoutingReports";
 import PlayerAIAnalysis from "../components/players/PlayerAIAnalysis";
 import DocumentManager from "../components/documents/DocumentManager";
+import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -1006,7 +1007,10 @@ export default function PlayerDetail() {
           </TabsContent>
 
           <TabsContent value="documents">
-            <DocumentManager entityType="Player" entityId={playerId} />
+            <div className="space-y-6">
+              <DocumentManager entityType="Player" entityId={playerId} />
+              <DropboxDocumentManager entityType="Player" entityId={playerId} />
+            </div>
           </TabsContent>
 
           <TabsContent value="preferences">

@@ -30,6 +30,7 @@ import { createPageUrl } from "@/utils";
 import { format, differenceInYears } from "date-fns";
 import LanguagesEditor from "../components/coaches/LanguagesEditor";
 import DocumentManager from "../components/documents/DocumentManager";
+import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const calculateAge = (dateOfBirth) => {
@@ -527,7 +528,10 @@ export default function CoachDetail() {
           </TabsContent>
 
           <TabsContent value="documents">
-            <DocumentManager entityType="Coach" entityId={coachId} />
+            <div className="space-y-6">
+              <DocumentManager entityType="Coach" entityId={coachId} />
+              <DropboxDocumentManager entityType="Coach" entityId={coachId} />
+            </div>
           </TabsContent>
         </Tabs>
 
