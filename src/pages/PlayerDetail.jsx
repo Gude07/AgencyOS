@@ -1007,10 +1007,7 @@ export default function PlayerDetail() {
           </TabsContent>
 
           <TabsContent value="documents">
-            <div className="space-y-6">
-              <DocumentManager entityType="Player" entityId={playerId} />
-              <DropboxDocumentManager entityType="Player" entityId={playerId} />
-            </div>
+            <DropboxDocumentManager entityType="Player" entityId={playerId} />
           </TabsContent>
 
           <TabsContent value="preferences">

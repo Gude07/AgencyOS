@@ -61,6 +61,7 @@ import Dashboard from './pages/Dashboard';
 import DealDetail from './pages/DealDetail';
 import Deals from './pages/Deals';
 import Home from './pages/Home';
+import MeetingDetail from './pages/MeetingDetail';
 import MyActivity from './pages/MyActivity';
 import NoteDetail from './pages/NoteDetail';
 import NotificationSettings from './pages/NotificationSettings';
@@ -70,7 +71,6 @@ import PlayerDetail from './pages/PlayerDetail';
 import Players from './pages/Players';
 import TaskDetail from './pages/TaskDetail';
 import Tasks from './pages/Tasks';
-import MeetingDetail from './pages/MeetingDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -89,6 +89,7 @@ export const PAGES = {
     "DealDetail": DealDetail,
     "Deals": Deals,
     "Home": Home,
+    "MeetingDetail": MeetingDetail,
     "MyActivity": MyActivity,
     "NoteDetail": NoteDetail,
     "NotificationSettings": NotificationSettings,
@@ -98,7 +99,6 @@ export const PAGES = {
     "Players": Players,
     "TaskDetail": TaskDetail,
     "Tasks": Tasks,
-    "MeetingDetail": MeetingDetail,
 }
 
 export const pagesConfig = {
