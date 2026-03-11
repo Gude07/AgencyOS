@@ -39,6 +39,8 @@ import PlayerComments from "../components/players/PlayerComments";
 import PlayerMatchesDragDrop from "../components/players/PlayerMatchesDragDrop";
 import PlayerCareerStats from "../components/players/PlayerCareerStats";
 import PlayerScoutingReports from "../components/players/PlayerScoutingReports";
+import PlayerAIAnalysis from "../components/players/PlayerAIAnalysis";
+import DocumentManager from "../components/documents/DocumentManager";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -417,19 +419,15 @@ export default function PlayerDetail() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6 mb-6">
-            <TabsTrigger value="info">Spielerinfo</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-8 mb-6">
+            <TabsTrigger value="info">Info</TabsTrigger>
+            <TabsTrigger value="ai">KI-Analyse</TabsTrigger>
             <TabsTrigger value="career">Karriere</TabsTrigger>
             <TabsTrigger value="scouting">Scouting</TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Präferenzen
-            </TabsTrigger>
-            <TabsTrigger value="matches" className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              Matches ({filteredMatchingRequests.length})
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="flex items-center gap-2">
+            <TabsTrigger value="documents">Dokumente</TabsTrigger>
+            <TabsTrigger value="preferences">Präferenzen</TabsTrigger>
+            <TabsTrigger value="matches">Matches ({filteredMatchingRequests.length})</TabsTrigger>
+            <TabsTrigger value="comments">
               Kommentare
               {newCommentsCount > 0 && (
                 <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
@@ -995,12 +993,20 @@ export default function PlayerDetail() {
             </div>
           </TabsContent>
 
+          <TabsContent value="ai">
+            <PlayerAIAnalysis playerId={playerId} playerName={player?.name} />
+          </TabsContent>
+
           <TabsContent value="career">
             <PlayerCareerStats playerId={playerId} playerPosition={player?.position} />
           </TabsContent>
 
           <TabsContent value="scouting">
             <PlayerScoutingReports playerId={playerId} />
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <DocumentManager entityType="Player" entityId={playerId} />
           </TabsContent>
 
           <TabsContent value="preferences">

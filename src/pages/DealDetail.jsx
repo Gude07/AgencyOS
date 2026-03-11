@@ -31,7 +31,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Edit2, Trash2, Plus, Clock, DollarSign, User, Building2, FileText, TrendingUp, ExternalLink } from "lucide-react";
+import { ArrowLeft, Edit2, Trash2, Plus, Clock, DollarSign, User, Building2, FileText, TrendingUp, ExternalLink, Send } from "lucide-react";
+import SendEmailDialog from "../components/outlook/SendEmailDialog";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { formatInGermanTime } from "@/components/utils/dateUtils";
@@ -65,6 +66,7 @@ export default function DealDetail() {
   const [editedDeal, setEditedDeal] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [newUpdate, setNewUpdate] = useState({
     update_type: "note",
     title: "",
@@ -219,6 +221,14 @@ export default function DealDetail() {
           </div>
           {!editMode ? (
             <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowEmailDialog(true)} 
+                variant="outline"
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                E-Mail
+              </Button>
               <Button onClick={() => setShowDeleteDialog(true)} variant="outline" className="text-red-600 hover:text-red-700">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Löschen
@@ -729,6 +739,14 @@ export default function DealDetail() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <SendEmailDialog
+          open={showEmailDialog}
+          onOpenChange={setShowEmailDialog}
+          defaultTo=""
+          defaultSubject={`Deal Update: ${deal.title}`}
+          dealId={dealId}
+        />
       </div>
     </div>
   );

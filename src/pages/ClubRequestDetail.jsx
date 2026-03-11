@@ -27,7 +27,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock, Sparkles } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock, Sparkles, Send } from "lucide-react";
+import SendEmailDialog from "../components/outlook/SendEmailDialog";
 import AIMatchingAnalysis from "../components/clubRequests/AIMatchingAnalysis";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
 import { useNavigate } from "react-router-dom";
@@ -63,6 +64,7 @@ export default function ClubRequestDetail() {
   const [editedRequest, setEditedRequest] = useState(null);
   const [activeTab, setActiveTab] = useState(urlParams.get('tab') || "matched");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
   
   const [matchFilters, setMatchFilters] = useState({
     search: "",
@@ -489,6 +491,16 @@ export default function ClubRequestDetail() {
               >
                 <Star className={`w-5 h-5 ${isFavorite ? 'fill-yellow-400' : ''}`} />
               </Button>
+              {request.contact_email && (
+                <Button 
+                  onClick={() => setShowEmailDialog(true)} 
+                  variant="outline"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  E-Mail
+                </Button>
+              )}
               <Button onClick={() => setShowDeleteDialog(true)} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Löschen
@@ -1157,6 +1169,14 @@ export default function ClubRequestDetail() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <SendEmailDialog
+          open={showEmailDialog}
+          onOpenChange={setShowEmailDialog}
+          defaultTo={request.contact_email || ""}
+          defaultSubject={`Spielervorschlag für ${request.club_name} - ${request.position_needed}`}
+          clubRequestId={requestId}
+        />
       </div>
     </div>
   );
