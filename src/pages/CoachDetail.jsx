@@ -528,10 +528,7 @@ export default function CoachDetail() {
           </TabsContent>
 
           <TabsContent value="documents">
-            <div className="space-y-6">
-              <DocumentManager entityType="Coach" entityId={coachId} />
-              <DropboxDocumentManager entityType="Coach" entityId={coachId} />
-            </div>
+            <DropboxDocumentManager entityType="Coach" entityId={coachId} />
           </TabsContent>
         </Tabs>
 
