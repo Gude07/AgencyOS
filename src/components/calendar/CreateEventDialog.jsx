@@ -64,7 +64,10 @@ export default function CreateEventDialog({ open, onOpenChange, initialDate }) {
   }, [initialDate, open]);
 
   const createTaskMutation = useMutation({
-    mutationFn: (data) => base44.entities.Task.create(data),
+    mutationFn: async (data) => {
+      const user = await base44.auth.me();
+      return base44.entities.Task.create({ ...data, agency_id: user.agency_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       handleClose();
@@ -72,7 +75,10 @@ export default function CreateEventDialog({ open, onOpenChange, initialDate }) {
   });
 
   const createMeetingMutation = useMutation({
-    mutationFn: (data) => base44.entities.Meeting.create(data),
+    mutationFn: async (data) => {
+      const user = await base44.auth.me();
+      return base44.entities.Meeting.create({ ...data, agency_id: user.agency_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       handleClose();
