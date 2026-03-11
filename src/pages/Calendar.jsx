@@ -222,6 +222,8 @@ export default function Calendar() {
                                 e.stopPropagation();
                                 if (event.type === 'task') {
                                   navigate(createPageUrl("TaskDetail") + "?id=" + event.id);
+                                } else if (event.type === 'meeting') {
+                                  navigate(createPageUrl("MeetingDetail") + "?id=" + event.id);
                                 }
                               }}
                             >
@@ -307,6 +309,8 @@ export default function Calendar() {
                                 e.stopPropagation();
                                 if (event.type === 'task') {
                                   navigate(createPageUrl("TaskDetail") + "?id=" + event.id);
+                                } else if (event.type === 'meeting') {
+                                  navigate(createPageUrl("MeetingDetail") + "?id=" + event.id);
                                 }
                               }}
                             >
