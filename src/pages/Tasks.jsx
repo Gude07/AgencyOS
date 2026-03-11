@@ -19,9 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import TaskCard from "../components/tasks/TaskCard";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
+import { toast } from "sonner";
 
 export default function Tasks() {
   const queryClient = useQueryClient();
@@ -53,6 +55,8 @@ export default function Tasks() {
     progress: 0,
   });
 
+  const [addToOutlook, setAddToOutlook] = useState(true);
+
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
     queryFn: async () => {
@@ -70,6 +74,23 @@ export default function Tasks() {
   const createTaskMutation = useMutation({
     mutationFn: async (taskData) => {
       const task = await base44.entities.Task.create(taskData);
+      
+      // Add to Outlook if checkbox is checked and deadline exists
+      if (addToOutlook && taskData.deadline) {
+        try {
+          await base44.functions.invoke('createOutlookEvent', {
+            title: `Deadline: ${taskData.title}`,
+            start_date: `${taskData.deadline}T09:00`,
+            end_date: `${taskData.deadline}T10:00`,
+            description: taskData.description || '',
+            location: ''
+          });
+          toast.success('Aufgabe in App und Outlook-Kalender erstellt');
+        } catch (error) {
+          console.error('Error creating Outlook event:', error);
+          toast.warning('Aufgabe erstellt, aber Outlook-Sync fehlgeschlagen');
+        }
+      }
       
       // Benachrichtigung an zugewiesene Benutzer
       if (taskData.assigned_to && taskData.assigned_to.length > 0) {
@@ -364,6 +385,21 @@ export default function Tasks() {
                     />
                   </div>
                 </div>
+
+                {newTask.deadline && (
+                  <div className="col-span-2">
+                    <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Checkbox
+                        id="add-task-to-outlook"
+                        checked={addToOutlook}
+                        onCheckedChange={setAddToOutlook}
+                      />
+                      <Label htmlFor="add-task-to-outlook" className="text-sm font-medium cursor-pointer">
+                        Deadline auch in Outlook-Kalender hinzufügen
+                      </Label>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
