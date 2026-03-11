@@ -72,7 +72,11 @@ export default function Deals() {
   // Daten laden
   const { data: deals = [], isLoading } = useQuery({
     queryKey: ['deals'],
-    queryFn: () => base44.entities.Deal.list('-created_date'),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Deal.list('-created_date');
+      return all.filter(d => d.agency_id === user.agency_id);
+    },
     refetchInterval: 10000,
   });
 
@@ -83,12 +87,19 @@ export default function Deals() {
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list(),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Player.list();
+      return all.filter(p => p.agency_id === user.agency_id);
+    },
   });
 
   // Mutations
   const createDealMutation = useMutation({
-    mutationFn: (data) => base44.entities.Deal.create(data),
+    mutationFn: async (data) => {
+      const user = await base44.auth.me();
+      return base44.entities.Deal.create({ ...data, agency_id: user.agency_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       setShowCreateDialog(false);
