@@ -86,7 +86,11 @@ export default function Coaches() {
 
   const { data: coaches = [], isLoading } = useQuery({
     queryKey: ['coaches'],
-    queryFn: () => base44.entities.Coach.list('-created_date'),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Coach.list('-created_date');
+      return all.filter(c => c.agency_id === user.agency_id);
+    },
   });
 
   const createCoachMutation = useMutation({
@@ -120,8 +124,10 @@ export default function Coaches() {
     },
   });
 
-  const handleCreateCoach = () => {
+  const handleCreateCoach = async () => {
+    const user = await base44.auth.me();
     const coachData = {
+      agency_id: user.agency_id,
       name: newCoach.name,
       specialization: newCoach.specialization,
       date_of_birth: newCoach.date_of_birth || undefined,

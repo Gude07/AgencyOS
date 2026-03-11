@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import OnlineUsers from "@/components/OnlineUsers";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
+import AgencySwitcher from "@/components/AgencySwitcher";
 import { motion } from "framer-motion";
 
 const navigationItems = [
@@ -83,11 +84,6 @@ const transferItems = [
     title: "Archive",
     url: createPageUrl("Archives"),
     icon: Inbox,
-  },
-  {
-    title: "KI Scout Assistant",
-    url: createPageUrl("ScoutingAssistant"),
-    icon: Sparkles,
   },
 ];
 
@@ -150,7 +146,8 @@ function SidebarNav({ onNavClick }) {
         </div>
       </div>
 
-      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 space-y-2">
+        <AgencySwitcher />
         <Button
           variant="ghost"
           size="sm"

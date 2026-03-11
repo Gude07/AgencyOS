@@ -48,6 +48,7 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import AccountSettings from './pages/AccountSettings';
+import AgencyManagement from './pages/AgencyManagement';
 import Archives from './pages/Archives';
 import Calendar from './pages/Calendar';
 import ClubRequestDetail from './pages/ClubRequestDetail';
@@ -67,15 +68,14 @@ import Notifications from './pages/Notifications';
 import OrganizationalOverview from './pages/OrganizationalOverview';
 import PlayerDetail from './pages/PlayerDetail';
 import Players from './pages/Players';
-import ScoutingAssistant from './pages/ScoutingAssistant';
 import TaskDetail from './pages/TaskDetail';
 import Tasks from './pages/Tasks';
-import AgencyManagement from './pages/AgencyManagement';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AccountSettings": AccountSettings,
+    "AgencyManagement": AgencyManagement,
     "Archives": Archives,
     "Calendar": Calendar,
     "ClubRequestDetail": ClubRequestDetail,
@@ -95,10 +95,8 @@ export const PAGES = {
     "OrganizationalOverview": OrganizationalOverview,
     "PlayerDetail": PlayerDetail,
     "Players": Players,
-    "ScoutingAssistant": ScoutingAssistant,
     "TaskDetail": TaskDetail,
     "Tasks": Tasks,
-    "AgencyManagement": AgencyManagement,
 }
 
 export const pagesConfig = {

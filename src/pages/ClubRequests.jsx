@@ -119,7 +119,11 @@ export default function ClubRequests() {
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['clubRequests'],
-    queryFn: () => base44.entities.ClubRequest.list('-created_date'),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.ClubRequest.list('-created_date');
+      return all.filter(r => r.agency_id === user.agency_id);
+    },
     refetchInterval: 60000,
   });
 
@@ -144,8 +148,9 @@ export default function ClubRequests() {
   const { data: archives = [] } = useQuery({
     queryKey: ['archives', 'club'],
     queryFn: async () => {
+      const user = await base44.auth.me();
       const allArchives = await base44.entities.Archive.list();
-      return allArchives.filter(a => a.type === 'club');
+      return allArchives.filter(a => a.type === 'club' && a.agency_id === user.agency_id);
     },
     refetchInterval: 60000,
   });
@@ -164,7 +169,10 @@ export default function ClubRequests() {
   });
 
   const createArchiveMutation = useMutation({
-    mutationFn: (archiveData) => base44.entities.Archive.create(archiveData),
+    mutationFn: async (archiveData) => {
+      const user = await base44.auth.me();
+      return base44.entities.Archive.create({ ...archiveData, agency_id: user.agency_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['archives'] });
     },
@@ -320,9 +328,11 @@ export default function ClubRequests() {
         .slice(0, 5)
     : [];
 
-  const handleCreateRequest = () => {
+  const handleCreateRequest = async () => {
+    const user = await base44.auth.me();
     const requestData = {
       ...newRequest,
+      agency_id: user.agency_id,
       budget_min: newRequest.budget_min ? parseFloat(newRequest.budget_min) : undefined,
       budget_max: newRequest.budget_max ? parseFloat(newRequest.budget_max) : undefined,
       loan_fee_budget: newRequest.loan_fee_budget ? parseFloat(newRequest.loan_fee_budget) : undefined,

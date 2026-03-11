@@ -109,8 +109,12 @@ export default function Players() {
 
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list('-created_date'),
-    refetchInterval: 3000, // Automatisches Update alle 3 Sekunden
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Player.list('-created_date');
+      return all.filter(p => p.agency_id === user.agency_id);
+    },
+    refetchInterval: 3000,
   });
 
   const { data: allComments = [] } = useQuery({
@@ -128,8 +132,9 @@ export default function Players() {
   const { data: archives = [] } = useQuery({
     queryKey: ['archives', 'player'],
     queryFn: async () => {
+      const user = await base44.auth.me();
       const allArchives = await base44.entities.Archive.list();
-      return allArchives.filter(a => a.type === 'player');
+      return allArchives.filter(a => a.type === 'player' && a.agency_id === user.agency_id);
     },
     refetchInterval: 5000,
   });
@@ -148,7 +153,10 @@ export default function Players() {
   });
 
   const createArchiveMutation = useMutation({
-    mutationFn: (archiveData) => base44.entities.Archive.create(archiveData),
+    mutationFn: async (archiveData) => {
+      const user = await base44.auth.me();
+      return base44.entities.Archive.create({ ...archiveData, agency_id: user.agency_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['archives'] });
     },
@@ -235,8 +243,10 @@ export default function Players() {
     },
   });
 
-  const handleCreatePlayer = () => {
+  const handleCreatePlayer = async () => {
+    const user = await base44.auth.me();
     const playerData = {
+      agency_id: user.agency_id,
       name: newPlayer.name,
       position: newPlayer.position,
       secondary_positions: Array.isArray(newPlayer.secondary_positions) ? newPlayer.secondary_positions : [],

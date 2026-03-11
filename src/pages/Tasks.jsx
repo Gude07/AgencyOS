@@ -55,7 +55,11 @@ export default function Tasks() {
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list('-created_date'),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Task.list('-created_date');
+      return all.filter(t => t.agency_id === user.agency_id);
+    },
   });
 
   const { data: users = [] } = useQuery({
@@ -103,8 +107,9 @@ export default function Tasks() {
     },
   });
 
-  const handleCreateTask = () => {
-    createTaskMutation.mutate(newTask);
+  const handleCreateTask = async () => {
+    const user = await base44.auth.me();
+    createTaskMutation.mutate({ ...newTask, agency_id: user.agency_id });
   };
 
   React.useEffect(() => {
