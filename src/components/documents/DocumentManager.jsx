@@ -37,7 +37,10 @@ export default function DocumentManager({ entityType, entityId }) {
     mutationFn: ({ data }) => base44.entities[entityType].update(entityId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [entityType, entityId] });
-      queryClient.invalidateQueries({ queryKey: [entityType.toLowerCase() + 's'] });
+      queryClient.invalidateQueries({ queryKey: ['players'] });
+      queryClient.invalidateQueries({ queryKey: ['coaches'] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
     },
   });
 
