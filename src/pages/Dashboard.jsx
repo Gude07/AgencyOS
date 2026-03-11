@@ -23,7 +23,11 @@ export default function Dashboard() {
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list('-created_date'),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Task.list('-created_date');
+      return all.filter(t => t.agency_id === user.agency_id);
+    },
   });
 
   const { data: user } = useQuery({

@@ -57,17 +57,29 @@ export default function Archives() {
   // Daten laden
   const { data: archives = [] } = useQuery({
     queryKey: ['archives'],
-    queryFn: () => base44.entities.Archive.list('-created_date'),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Archive.list('-created_date');
+      return all.filter(a => a.agency_id === user.agency_id);
+    },
   });
 
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list(),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Player.list();
+      return all.filter(p => p.agency_id === user.agency_id);
+    },
   });
 
   const { data: clubRequests = [] } = useQuery({
     queryKey: ['clubRequests'],
-    queryFn: () => base44.entities.ClubRequest.list('-created_date'),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.ClubRequest.list('-created_date');
+      return all.filter(r => r.agency_id === user.agency_id);
+    },
   });
 
   const playerArchives = archives.filter(a => a.type === 'player');

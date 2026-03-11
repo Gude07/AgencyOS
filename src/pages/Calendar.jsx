@@ -49,12 +49,20 @@ export default function Calendar() {
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Task.list();
+      return all.filter(t => t.agency_id === user.agency_id);
+    },
   });
 
   const { data: meetings = [] } = useQuery({
     queryKey: ['meetings'],
-    queryFn: () => base44.entities.Meeting.list(),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Meeting.list();
+      return all.filter(m => m.agency_id === user.agency_id);
+    },
   });
 
   const updateTaskMutation = useMutation({

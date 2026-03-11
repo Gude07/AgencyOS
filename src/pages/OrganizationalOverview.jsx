@@ -74,13 +74,21 @@ export default function OrganizationalOverview() {
 
   const { data: notes = [] } = useQuery({
     queryKey: ['internalNotes'],
-    queryFn: () => base44.entities.InternalNote.list('-created_date'),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.InternalNote.list('-created_date');
+      return all.filter(n => n.agency_id === user.agency_id);
+    },
     refetchInterval: 3000,
   });
 
   const { data: folders = [] } = useQuery({
     queryKey: ['folders'],
-    queryFn: () => base44.entities.Folder.list('-created_date'),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Folder.list('-created_date');
+      return all.filter(f => f.agency_id === user.agency_id);
+    },
   });
 
   const { data: allNoteComments = [] } = useQuery({
@@ -95,7 +103,10 @@ export default function OrganizationalOverview() {
   });
 
   const createNoteMutation = useMutation({
-    mutationFn: (noteData) => base44.entities.InternalNote.create(noteData),
+    mutationFn: async (noteData) => {
+      const user = await base44.auth.me();
+      return base44.entities.InternalNote.create({ ...noteData, agency_id: user.agency_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['internalNotes'] });
       setShowCreateDialog(false);
@@ -112,7 +123,10 @@ export default function OrganizationalOverview() {
   });
 
   const createFolderMutation = useMutation({
-    mutationFn: (folderData) => base44.entities.Folder.create(folderData),
+    mutationFn: async (folderData) => {
+      const user = await base44.auth.me();
+      return base44.entities.Folder.create({ ...folderData, agency_id: user.agency_id });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folders'] });
       setShowFolderDialog(false);
