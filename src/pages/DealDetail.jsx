@@ -34,6 +34,7 @@ import {
 import { ArrowLeft, Edit2, Trash2, Plus, Clock, DollarSign, User, Building2, FileText, TrendingUp, ExternalLink, Send } from "lucide-react";
 import SendEmailDialog from "../components/outlook/SendEmailDialog";
 import DocumentManager from "../components/documents/DocumentManager";
+import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { formatInGermanTime } from "@/components/utils/dateUtils";
@@ -617,7 +618,10 @@ export default function DealDetail() {
           </TabsContent>
 
           <TabsContent value="documents">
-            <DocumentManager entityType="Deal" entityId={dealId} />
+            <div className="space-y-6">
+              <DocumentManager entityType="Deal" entityId={dealId} />
+              <DropboxDocumentManager entityType="Deal" entityId={dealId} />
+            </div>
           </TabsContent>
 
           <TabsContent value="timeline" className="space-y-6">

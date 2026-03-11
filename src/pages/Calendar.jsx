@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import CreateEventDialog from "../components/calendar/CreateEventDialog";
+import CreateTeamsMeetingDialog from "../components/meetings/CreateTeamsMeetingDialog";
 
 const priorityColors = {
   niedrig: "bg-emerald-100 text-emerald-800 border-emerald-200",
