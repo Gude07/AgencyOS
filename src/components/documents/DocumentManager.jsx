@@ -36,7 +36,9 @@ export default function DocumentManager({ entityType, entityId }) {
   const updateEntityMutation = useMutation({
     mutationFn: ({ data }) => base44.entities[entityType].update(entityId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [entityType, entityId] });
+      // Invalidate with lowercase for detail pages
+      queryClient.invalidateQueries({ queryKey: [entityType.toLowerCase(), entityId] });
+      // Invalidate list queries
       queryClient.invalidateQueries({ queryKey: ['players'] });
       queryClient.invalidateQueries({ queryKey: ['coaches'] });
       queryClient.invalidateQueries({ queryKey: ['deals'] });
