@@ -919,12 +919,12 @@ export default function PlayerDetail() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-4">
-                    {(currentPlayerData?.offered_to_requests?.length > 0) ? (
-                      <div className="space-y-2">
-                        {currentPlayerData.offered_to_requests.map((requestId) => {
-                          const request = clubRequests.find(r => r.id === requestId);
-                          if (!request) return null;
-                          return (
+                   {(currentPlayerData?.offered_to_requests?.length > 0) ? (
+                     <div className="space-y-2">
+                       {currentPlayerData.offered_to_requests.map((requestId) => {
+                         const request = clubRequests.find(r => r.id === requestId);
+                         if (!request || request.archive_id) return null;
+                         return (
                             <div 
                               key={requestId}
                               onClick={() => {

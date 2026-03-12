@@ -330,6 +330,17 @@ export default function ClubRequestDetail() {
     .filter(player => player.matchScore > 0)
     .sort((a, b) => b.matchScore - a.matchScore);
 
+  const archivedMatchingPlayers = players
+    .filter(player => player.archive_id)  // Nur archivierte Spieler
+    .map(player => ({
+      ...player,
+      matchScore: calculateMatchScore(player),
+      positionMatch: player.position === request.position_needed ? 'main' : 
+                     (player.secondary_positions?.includes(request.position_needed) ? 'secondary' : 'none')
+    }))
+    .filter(player => player.matchScore > 0)
+    .sort((a, b) => b.matchScore - a.matchScore);
+
   const filteredMatchingPlayers = matchingPlayers.filter(player => {
     const matchesSearch = matchFilters.search === "" || 
       player.name?.toLowerCase().includes(matchFilters.search.toLowerCase()) ||
@@ -1013,12 +1024,12 @@ export default function ClubRequestDetail() {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="matched" className="space-y-4">
+              <TabsContent value="matched" className="space-y-6">
                 <Card className="border-slate-200 bg-white">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <SlidersHorizontal className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm font-semibold text-slate-700">Filter</span>
+                      <span className="text-sm font-semibold text-slate-700">Filter (Aktive Spieler)</span>
                     </div>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                       <div className="relative lg:col-span-2">
@@ -1111,6 +1122,30 @@ export default function ClubRequestDetail() {
                   <div className="grid md:grid-cols-2 gap-4">
                     {filteredMatchingPlayers.map(player => renderPlayerCard(player, true))}
                   </div>
+                )}
+
+                {/* Archivierte Spieler separat anzeigen */}
+                {archivedMatchingPlayers.length > 0 && (
+                  <Card className="border-amber-200 bg-amber-50/30">
+                    <CardHeader className="border-b border-amber-200 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-5 h-5 text-amber-700" />
+                        <CardTitle className="text-lg text-amber-900">Archivierte Matches ({archivedMatchingPlayers.length})</CardTitle>
+                      </div>
+                      <p className="text-sm text-amber-700 mt-1">
+                        Diese Spieler befinden sich im Archiv, könnten aber trotzdem passen
+                      </p>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {archivedMatchingPlayers.map(player => (
+                          <div key={player.id} className="opacity-75">
+                            {renderPlayerCard(player, true)}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
               </TabsContent>
 
