@@ -42,6 +42,7 @@ import PlayerScoutingReports from "../components/players/PlayerScoutingReports";
 import PlayerAIAnalysis from "../components/players/PlayerAIAnalysis";
 import DocumentManager from "../components/documents/DocumentManager";
 import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
+import PlayerApiIdSuggestions from "../components/players/PlayerApiIdSuggestions";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -1013,39 +1014,50 @@ export default function PlayerDetail() {
           </TabsContent>
 
           <TabsContent value="api-stats">
-            <Card className="border-slate-200 bg-white">
-              <CardHeader className="border-b border-slate-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl">API-Football Statistiken</CardTitle>
-                    <p className="text-sm text-slate-600 mt-1">Automatisch synchronisierte Statistiken</p>
-                  </div>
-                  {editMode && (
-                    <div className="flex items-center gap-2">
-                      <Label className="text-sm text-slate-600">API-Football ID:</Label>
-                      <Input
-                        type="number"
-                        value={editedPlayer?.player_api_id || ""}
-                        onChange={(e) => setEditedPlayer({...editedPlayer, player_api_id: e.target.value ? parseInt(e.target.value) : null})}
-                        placeholder="z.B. 276"
-                        className="w-32"
-                      />
+            <div className="space-y-6">
+              {!player?.player_api_id && (
+                <PlayerApiIdSuggestions 
+                  player={player}
+                  onApiIdSelected={async (apiId) => {
+                    await updatePlayerMutation.mutateAsync({
+                      id: playerId,
+                      data: { player_api_id: apiId }
+                    });
+                  }}
+                />
+              )}
+
+              <Card className="border-slate-200 bg-white">
+                <CardHeader className="border-b border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-xl">API-Football Statistiken</CardTitle>
+                      <p className="text-sm text-slate-600 mt-1">Automatisch synchronisierte Statistiken</p>
                     </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                {!player?.player_api_id ? (
-                  <div className="text-center py-12">
-                    <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-600 font-medium mb-2">Keine API-Football ID hinterlegt</p>
-                    <p className="text-sm text-slate-500">
-                      {editMode 
-                        ? "Geben Sie oben die API-Football Spieler-ID ein, um automatische Updates zu aktivieren"
-                        : "Bearbeiten Sie den Spieler, um eine API-Football ID hinzuzufügen"}
-                    </p>
+                    {editMode && (
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm text-slate-600">API-Football ID:</Label>
+                        <Input
+                          type="number"
+                          value={editedPlayer?.player_api_id || ""}
+                          onChange={(e) => setEditedPlayer({...editedPlayer, player_api_id: e.target.value ? parseInt(e.target.value) : null})}
+                          placeholder="z.B. 276"
+                          className="w-32"
+                        />
+                      </div>
+                    )}
                   </div>
-                ) : playerStats.length === 0 ? (
+                </CardHeader>
+                <CardContent className="p-6">
+                  {!player?.player_api_id ? (
+                    <div className="text-center py-12">
+                      <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-600 font-medium mb-2">Keine API-Football ID hinterlegt</p>
+                      <p className="text-sm text-slate-500">
+                        Nutzen Sie die Suchfunktion oben, um automatisch die passende ID zu finden
+                      </p>
+                    </div>
+                  ) : playerStats.length === 0 ? (
                   <div className="text-center py-12">
                     <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                     <p className="text-slate-600 font-medium mb-2">Noch keine Statistiken verfügbar</p>
@@ -1130,9 +1142,10 @@ export default function PlayerDetail() {
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </CardContent>
+                </Card>
+                </div>
+                </TabsContent>
 
           <TabsContent value="scouting">
             <PlayerScoutingReports playerId={playerId} />
