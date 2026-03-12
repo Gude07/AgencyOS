@@ -3,13 +3,16 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Check, X, Loader2, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Search, Check, X, Loader2, AlertCircle, Edit } from "lucide-react";
 
 export default function PlayerApiIdSuggestions({ player, onApiIdSelected }) {
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [error, setError] = useState(null);
   const [searched, setSearched] = useState(false);
+  const [manualId, setManualId] = useState("");
 
   const handleSearch = async () => {
     setLoading(true);
@@ -45,33 +48,64 @@ export default function PlayerApiIdSuggestions({ player, onApiIdSelected }) {
     setSearched(false);
   };
 
+  const handleManualSubmit = async () => {
+    const id = parseInt(manualId);
+    if (id && id > 0) {
+      await onApiIdSelected(id);
+      setManualId("");
+    }
+  };
+
   return (
     <Card className="border-blue-200 bg-blue-50/50">
       <CardHeader className="border-b border-blue-200">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1">
             <CardTitle className="text-lg text-blue-900">API-Football ID finden</CardTitle>
             <p className="text-sm text-blue-700 mt-1">
-              Suchen Sie automatisch nach dem Spieler in der API-Football Datenbank
+              Suchen Sie automatisch nach dem Spieler oder geben Sie die ID manuell ein
             </p>
           </div>
-          <Button
-            onClick={handleSearch}
-            disabled={loading}
-            className="bg-blue-900 hover:bg-blue-800"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Suche läuft...
-              </>
-            ) : (
-              <>
-                <Search className="w-4 h-4 mr-2" />
-                Jetzt suchen
-              </>
-            )}
-          </Button>
+          <div className="flex items-end gap-3">
+            <div>
+              <Label className="text-xs text-blue-700 mb-1.5 block">Manuelle ID-Eingabe</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="z.B. 276"
+                  value={manualId}
+                  onChange={(e) => setManualId(e.target.value)}
+                  className="w-32"
+                  onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
+                />
+                <Button
+                  onClick={handleManualSubmit}
+                  disabled={!manualId || parseInt(manualId) <= 0}
+                  variant="outline"
+                  className="border-blue-400 text-blue-900 hover:bg-blue-100"
+                >
+                  <Check className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <Button
+              onClick={handleSearch}
+              disabled={loading}
+              className="bg-blue-900 hover:bg-blue-800"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Suche läuft...
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4 mr-2" />
+                  Jetzt suchen
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-4">
