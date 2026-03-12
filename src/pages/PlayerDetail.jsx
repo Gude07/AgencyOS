@@ -99,6 +99,15 @@ export default function PlayerDetail() {
     enabled: !!playerId,
   });
 
+  const { data: playerStats = [] } = useQuery({
+    queryKey: ['playerStats', playerId],
+    queryFn: async () => {
+      const stats = await base44.entities.PlayerStats.filter({ player_id: playerId });
+      return stats.filter(s => s.source === 'api_football').sort((a, b) => b.season.localeCompare(a.season));
+    },
+    enabled: !!playerId,
+  });
+
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -420,10 +429,11 @@ export default function PlayerDetail() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-8 mb-6">
+          <TabsList className="grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="info">Info</TabsTrigger>
             <TabsTrigger value="ai">KI-Analyse</TabsTrigger>
             <TabsTrigger value="career">Karriere</TabsTrigger>
+            <TabsTrigger value="api-stats">API Stats</TabsTrigger>
             <TabsTrigger value="scouting">Scouting</TabsTrigger>
             <TabsTrigger value="documents">Dokumente</TabsTrigger>
             <TabsTrigger value="preferences">Präferenzen</TabsTrigger>
@@ -1000,6 +1010,128 @@ export default function PlayerDetail() {
 
           <TabsContent value="career">
             <PlayerCareerStats playerId={playerId} playerPosition={player?.position} />
+          </TabsContent>
+
+          <TabsContent value="api-stats">
+            <Card className="border-slate-200 bg-white">
+              <CardHeader className="border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl">API-Football Statistiken</CardTitle>
+                    <p className="text-sm text-slate-600 mt-1">Automatisch synchronisierte Statistiken</p>
+                  </div>
+                  {editMode && (
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm text-slate-600">API-Football ID:</Label>
+                      <Input
+                        type="number"
+                        value={editedPlayer?.player_api_id || ""}
+                        onChange={(e) => setEditedPlayer({...editedPlayer, player_api_id: e.target.value ? parseInt(e.target.value) : null})}
+                        placeholder="z.B. 276"
+                        className="w-32"
+                      />
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                {!player?.player_api_id ? (
+                  <div className="text-center py-12">
+                    <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-600 font-medium mb-2">Keine API-Football ID hinterlegt</p>
+                    <p className="text-sm text-slate-500">
+                      {editMode 
+                        ? "Geben Sie oben die API-Football Spieler-ID ein, um automatische Updates zu aktivieren"
+                        : "Bearbeiten Sie den Spieler, um eine API-Football ID hinzuzufügen"}
+                    </p>
+                  </div>
+                ) : playerStats.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-600 font-medium mb-2">Noch keine Statistiken verfügbar</p>
+                    <p className="text-sm text-slate-500">
+                      Die Daten werden täglich um 3 Uhr morgens automatisch abgerufen
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {playerStats.map((stat) => (
+                      <div key={stat.id} className="border border-slate-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="text-lg font-bold text-slate-900">Saison {stat.season}</h3>
+                            {stat.competition && (
+                              <p className="text-sm text-slate-600">{stat.competition} • {stat.club}</p>
+                            )}
+                          </div>
+                          {stat.last_updated && (
+                            <Badge variant="outline" className="border-slate-300">
+                              Aktualisiert: {format(new Date(stat.last_updated), "dd.MM.yyyy HH:mm")}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {stat.data_status === 'no_api_data_found' ? (
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+                            <p className="text-amber-800 font-medium">
+                              Statistiken aktuell nicht verfügbar vom Datenanbieter
+                            </p>
+                            {stat.data_note && (
+                              <p className="text-sm text-amber-700 mt-1">{stat.data_note}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {stat.appearances !== null && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-blue-900">{stat.appearances}</div>
+                                <div className="text-xs text-blue-700 mt-1">Einsätze</div>
+                              </div>
+                            )}
+                            {stat.starts !== null && (
+                              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-purple-900">{stat.starts}</div>
+                                <div className="text-xs text-purple-700 mt-1">Startelf</div>
+                              </div>
+                            )}
+                            {stat.goals !== null && (
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-green-900">{stat.goals}</div>
+                                <div className="text-xs text-green-700 mt-1">Tore</div>
+                              </div>
+                            )}
+                            {stat.assists !== null && (
+                              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-indigo-900">{stat.assists}</div>
+                                <div className="text-xs text-indigo-700 mt-1">Vorlagen</div>
+                              </div>
+                            )}
+                            {stat.minutes_played !== null && (
+                              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-slate-900">{stat.minutes_played}</div>
+                                <div className="text-xs text-slate-700 mt-1">Minuten</div>
+                              </div>
+                            )}
+                            {stat.yellow_cards !== null && (
+                              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-yellow-900">{stat.yellow_cards}</div>
+                                <div className="text-xs text-yellow-700 mt-1">Gelbe Karten</div>
+                              </div>
+                            )}
+                            {stat.red_cards !== null && (
+                              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-red-900">{stat.red_cards}</div>
+                                <div className="text-xs text-red-700 mt-1">Rote Karten</div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="scouting">
