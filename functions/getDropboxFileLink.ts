@@ -31,59 +31,29 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // Versuche zuerst, existierende Links abzurufen
-    const listLinksResponse = await fetch('https://api.dropboxapi.com/2/sharing/list_shared_links', {
+    // Temporären Download-Link erstellen (gültig für 4 Stunden)
+    const downloadResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        path: filePath,
-        direct_only: true
+        path: filePath
       })
     });
 
-    let sharedLink = null;
-
-    if (listLinksResponse.ok) {
-      const linksResult = await listLinksResponse.json();
-      if (linksResult.links && linksResult.links.length > 0) {
-        // Existierenden Link verwenden
-        sharedLink = linksResult.links[0].url.replace('?dl=0', '?dl=1');
-      }
+    if (!downloadResponse.ok) {
+      const errorText = await downloadResponse.text();
+      throw new Error(`Download-Link-Erstellung fehlgeschlagen: ${errorText}`);
     }
 
-    // Falls kein Link existiert, neuen erstellen
-    if (!sharedLink) {
-      const createLinkResponse = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          path: filePath,
-          settings: {
-            requested_visibility: 'public',
-            audience: 'public',
-            access: 'viewer'
-          }
-        })
-      });
-
-      if (createLinkResponse.ok) {
-        const linkResult = await createLinkResponse.json();
-        sharedLink = linkResult.url.replace('?dl=0', '?dl=1');
-      } else {
-        const errorText = await createLinkResponse.text();
-        throw new Error(`Link-Erstellung fehlgeschlagen: ${errorText}`);
-      }
-    }
+    const downloadResult = await downloadResponse.json();
 
     return Response.json({
       success: true,
-      url: sharedLink
+      url: downloadResult.link,
+      metadata: downloadResult.metadata
     });
 
   } catch (error) {
