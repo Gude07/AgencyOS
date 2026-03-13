@@ -26,31 +26,34 @@ import {
   Loader2
 } from "lucide-react";
 import { format, differenceInYears } from "date-fns";
+import AnalysisDocumentSaver from "../analysis/AnalysisDocumentSaver";
 
-export default function PlayerComparisonTool({ open, onOpenChange, initialPlayerIds = [] }) {
+export default function PlayerComparisonTool({ open, onOpenChange, initialPlayerIds = [], entityType = "Player" }) {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState(initialPlayerIds);
   const [requirement, setRequirement] = useState("");
   const [aiRecommendation, setAiRecommendation] = useState(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const { data: allPlayers = [] } = useQuery({
-    queryKey: ['players'],
-    queryFn: () => base44.entities.Player.list(),
+    queryKey: [entityType === "Player" ? 'players' : 'coaches'],
+    queryFn: () => entityType === "Player" ? base44.entities.Player.list() : base44.entities.Coach.list(),
   });
 
   const { data: playerStats = [] } = useQuery({
     queryKey: ['playerStats'],
     queryFn: () => base44.entities.PlayerStats.list(),
+    enabled: entityType === "Player",
   });
 
   const { data: scoutingReports = [] } = useQuery({
     queryKey: ['scoutingReports'],
     queryFn: () => base44.entities.ScoutingReport.list(),
+    enabled: entityType === "Player",
   });
 
   const { data: playerComments = [] } = useQuery({
-    queryKey: ['playerComments'],
-    queryFn: () => base44.entities.PlayerComment.list(),
+    queryKey: entityType === "Player" ? ['playerComments'] : ['coachComments'],
+    queryFn: () => entityType === "Player" ? base44.entities.PlayerComment.list() : Promise.resolve([]),
   });
 
   const selectedPlayers = allPlayers.filter(p => selectedPlayerIds.includes(p.id));
@@ -184,7 +187,7 @@ Sei konkret, sachlich und fundiert. Nutze die verfügbaren Daten (Statistiken, S
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Spieler-Vergleich
+            {entityType === "Player" ? "Spieler" : "Trainer"}-Vergleich
           </DialogTitle>
         </DialogHeader>
 
@@ -214,7 +217,7 @@ Sei konkret, sachlich und fundiert. Nutze die verfügbaren Daten (Statistiken, S
                     <SelectContent>
                       {availablePlayers.map(player => (
                         <SelectItem key={player.id} value={player.id}>
-                          {player.name} - {player.position} ({player.current_club})
+                          {player.name} - {entityType === "Player" ? player.position : player.specialization} ({player.current_club})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -265,10 +268,21 @@ Sei konkret, sachlich und fundiert. Nutze die verfügbaren Daten (Statistiken, S
           {aiRecommendation && (
             <Card className="border-purple-200 bg-purple-50/30">
               <CardHeader className="border-b border-purple-200">
-                <CardTitle className="text-lg flex items-center gap-2 text-purple-900">
-                  <Sparkles className="w-5 h-5" />
-                  KI-Empfehlung
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2 text-purple-900">
+                    <Sparkles className="w-5 h-5" />
+                    KI-Empfehlung
+                  </CardTitle>
+                  {selectedPlayerIds.length > 0 && (
+                    <AnalysisDocumentSaver
+                      analysisContent={aiRecommendation}
+                      analysisType={`${entityType}-Vergleich`}
+                      entityType={entityType}
+                      entityId={selectedPlayerIds[0]}
+                      defaultFileName={`Vergleich_${selectedPlayers.map(p => p.name).join('_vs_')}_${new Date().toISOString().split('T')[0]}`}
+                    />
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="p-4">
                 <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap">
@@ -615,7 +629,7 @@ Sei konkret, sachlich und fundiert. Nutze die verfügbaren Daten (Statistiken, S
               <CardContent className="p-8 text-center">
                 <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <p className="text-slate-600">
-                  Wählen Sie mindestens 2 Spieler aus, um den Vergleich zu starten
+                  Wählen Sie mindestens 2 {entityType === "Player" ? "Spieler" : "Trainer"} aus, um den Vergleich zu starten
                 </p>
               </CardContent>
             </Card>
