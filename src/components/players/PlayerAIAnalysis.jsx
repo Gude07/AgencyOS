@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, RefreshCw, Loader2, TrendingUp, AlertTriangle, CheckCircle2, Target, Lightbulb } from "lucide-react";
+import AnalysisDocumentSaver from "../analysis/AnalysisDocumentSaver";
 
 export default function PlayerAIAnalysis({ playerId, playerName }) {
   const [analysis, setAnalysis] = useState(null);
@@ -51,28 +52,39 @@ export default function PlayerAIAnalysis({ playerId, playerName }) {
                 </p>
               </div>
             </div>
-            <Button
-              onClick={runAnalysis}
-              disabled={isLoading}
-              className="bg-purple-700 hover:bg-purple-800 text-white shrink-0"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analysiere...
-                </>
-              ) : analysis ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Neu analysieren
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  KI-Analyse starten
-                </>
+            <div className="flex gap-2 shrink-0">
+              {analysis && (
+                <AnalysisDocumentSaver
+                  analysisContent={JSON.stringify(analysis, null, 2)}
+                  analysisType="KI-Spieleranalyse"
+                  entityType="Player"
+                  entityId={playerId}
+                  defaultFileName={`KI_Analyse_${playerName}_${new Date().toISOString().split('T')[0]}`}
+                />
               )}
-            </Button>
+              <Button
+                onClick={runAnalysis}
+                disabled={isLoading}
+                className="bg-purple-700 hover:bg-purple-800 text-white"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analysiere...
+                  </>
+                ) : analysis ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Neu analysieren
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    KI-Analyse starten
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

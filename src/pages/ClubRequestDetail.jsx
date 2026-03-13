@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock, Sparkles, Send } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock, Sparkles, Send, FileText } from "lucide-react";
 import SendEmailDialog from "../components/outlook/SendEmailDialog";
 import AIMatchingAnalysis from "../components/clubRequests/AIMatchingAnalysis";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
@@ -38,6 +38,7 @@ import MatchingCriteriaEditor from "../components/clubRequests/MatchingCriteriaE
 import CommunicationHistory from "../components/clubRequests/CommunicationHistory";
 import MatchScoreBreakdown from "../components/clubRequests/MatchScoreBreakdown";
 import EmailDraftGenerator from "../components/ai/EmailDraftGenerator";
+import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
 
 const priorityColors = {
   niedrig: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -1040,6 +1041,12 @@ export default function ClubRequestDetail() {
                         Kriterien
                       </div>
                     </SelectItem>
+                    <SelectItem value="documents">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Dokumente
+                      </div>
+                    </SelectItem>
                     <SelectItem value="communication">
                       <div className="flex items-center gap-2">
                         <MessageSquare className="w-4 h-4" />
@@ -1051,7 +1058,7 @@ export default function ClubRequestDetail() {
               </div>
 
               {/* Desktop only: Full Tabs */}
-              <TabsList className="hidden xl:grid w-full grid-cols-5 mb-6">
+              <TabsList className="hidden xl:grid w-full grid-cols-6 mb-6">
                 <TabsTrigger value="matched" className="flex items-center gap-2">
                   <Star className="w-4 h-4" />
                   Matches ({filteredMatchingPlayers.length})
@@ -1067,6 +1074,10 @@ export default function ClubRequestDetail() {
                 <TabsTrigger value="criteria" className="flex items-center gap-2">
                   <Settings className="w-4 h-4" />
                   Kriterien
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Dokumente
                 </TabsTrigger>
                 <TabsTrigger value="communication" className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
@@ -1226,6 +1237,10 @@ export default function ClubRequestDetail() {
                   criteria={request.matching_criteria || []}
                   onSave={handleSaveMatchingCriteria}
                 />
+              </TabsContent>
+
+              <TabsContent value="documents">
+                <DropboxDocumentManager entityType="ClubRequest" entityId={requestId} />
               </TabsContent>
 
               <TabsContent value="communication">

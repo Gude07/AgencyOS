@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import AnalysisDocumentSaver from "../analysis/AnalysisDocumentSaver";
 
 export default function MarketTrendAnalysis({ player }) {
   const [open, setOpen] = useState(false);
@@ -47,7 +48,18 @@ export default function MarketTrendAnalysis({ player }) {
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Markttrend-Analyse für {player.name}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Markttrend-Analyse für {player.name}</DialogTitle>
+            {analysis && (
+              <AnalysisDocumentSaver
+                analysisContent={JSON.stringify(analysis, null, 2)}
+                analysisType="Markttrend-Analyse"
+                entityType="Player"
+                entityId={player.id}
+                defaultFileName={`Marktanalyse_${player.name}_${new Date().toISOString().split('T')[0]}`}
+              />
+            )}
+          </div>
         </DialogHeader>
 
         {!analysis ? (
