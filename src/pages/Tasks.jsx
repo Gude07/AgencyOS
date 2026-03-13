@@ -192,12 +192,12 @@ export default function Tasks() {
   }, [tasks, searchTerm, filterPriority, filterStatus, filterCategory, sortBy]);
 
   return (
-    <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Aufgaben & Termine</h1>
-            <p className="text-slate-600 mt-1">{filteredAndSortedTasks.length} Aufgaben</p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Aufgaben & Termine</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">{filteredAndSortedTasks.length} Aufgaben</p>
           </div>
           <div className="flex gap-2">
             <Button 
@@ -222,7 +222,7 @@ export default function Tasks() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <SlidersHorizontal className="w-4 h-4 text-slate-500" />
-              <span className="text-sm font-semibold text-slate-700">Filter & Sortierung</span>
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Filter & Sortierung</span>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -306,7 +306,7 @@ export default function Tasks() {
         {filteredAndSortedTasks.length === 0 && !isLoading && (
           <Card className="border-slate-200 bg-white">
             <CardContent className="p-8 text-center">
-              <p className="text-slate-600">
+              <p className="text-slate-600 dark:text-slate-400">
                 {tasks.length === 0 ? "Noch keine Aufgaben erstellt" : "Keine Aufgaben gefunden"}
               </p>
             </CardContent>

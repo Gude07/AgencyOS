@@ -120,7 +120,7 @@ export default function CoachDetail() {
   const currentCoachData = editMode ? editedCoach : coach;
 
   return (
-    <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <Button
@@ -132,7 +132,7 @@ export default function CoachDetail() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-slate-900">Trainerdetails</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Trainerdetails</h1>
           </div>
           {!editMode ? (
             <div className="flex gap-2">
@@ -183,7 +183,7 @@ export default function CoachDetail() {
                           className="text-2xl font-bold mb-2"
                         />
                       ) : (
-                        <CardTitle className="text-2xl">{currentCoachData?.name}</CardTitle>
+                        <CardTitle className="text-2xl dark:text-white">{currentCoachData?.name}</CardTitle>
                       )}
                       {editMode ? (
                         <Input
@@ -193,7 +193,7 @@ export default function CoachDetail() {
                           className="mt-2"
                         />
                       ) : (
-                        <p className="text-slate-600 mt-1">{currentCoachData?.current_club || "Vereinslos"}</p>
+                        <p className="text-slate-600 dark:text-slate-400 mt-1">{currentCoachData?.current_club || "Vereinslos"}</p>
                       )}
                       </div>
                       {currentCoachData?.experience_years && (
@@ -377,7 +377,7 @@ export default function CoachDetail() {
                       placeholder="z.B. 4-3-3, 4-2-3-1"
                     />
                   ) : (
-                    <p className="text-slate-600">{currentCoachData?.preferred_formation || "Keine Angabe"}</p>
+                    <p className="text-slate-600 dark:text-slate-400">{currentCoachData?.preferred_formation || "Keine Angabe"}</p>
                   )}
                 </div>
 
@@ -391,7 +391,7 @@ export default function CoachDetail() {
                       placeholder="Spielstil, Philosophie..."
                     />
                   ) : (
-                    <p className="text-slate-600">{currentCoachData?.coaching_philosophy || "Keine Angabe"}</p>
+                    <p className="text-slate-600 dark:text-slate-400">{currentCoachData?.coaching_philosophy || "Keine Angabe"}</p>
                   )}
                 </div>
 
@@ -405,7 +405,7 @@ export default function CoachDetail() {
                       placeholder="Titel, Auszeichnungen..."
                     />
                   ) : (
-                    <p className="text-slate-600">{currentCoachData?.achievements || "Keine Angabe"}</p>
+                    <p className="text-slate-600 dark:text-slate-400">{currentCoachData?.achievements || "Keine Angabe"}</p>
                   )}
                 </div>
 
@@ -441,7 +441,7 @@ export default function CoachDetail() {
                       className="h-32"
                     />
                   ) : (
-                    <p className="text-slate-600">{currentCoachData?.notes || "Keine Notizen"}</p>
+                    <p className="text-slate-600 dark:text-slate-400">{currentCoachData?.notes || "Keine Notizen"}</p>
                   )}
                 </div>
               </CardContent>

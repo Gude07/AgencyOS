@@ -144,12 +144,12 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-            <p className="text-slate-600 mt-1">Willkommen zurück, {user?.full_name}</p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">Willkommen zurück, {user?.full_name}</p>
           </div>
           <div className="flex gap-3">
             <a 
@@ -180,12 +180,12 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="border-slate-200 bg-white">
+              <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-600">{stat.title}</p>
-                      <p className="text-3xl font-bold text-slate-900 mt-2">{stat.value}</p>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{stat.title}</p>
+                      <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{stat.value}</p>
                     </div>
                     <div className={`p-3 rounded-xl ${stat.color} bg-opacity-10`}>
                       <stat.icon className={`w-6 h-6 ${stat.textColor}`} />

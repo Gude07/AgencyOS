@@ -534,12 +534,12 @@ export default function ClubRequests() {
   };
 
   return (
-    <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Vereinsanfragen</h1>
-            <p className="text-slate-600 mt-1">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Vereinsanfragen</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">
               {filteredRequests.length} Anfragen {selectionMode && `(${selectedRequests.size} ausgewählt)`}
             </p>
           </div>
@@ -626,20 +626,20 @@ export default function ClubRequests() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="border-slate-200 bg-white">
+              <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                 <CardContent className="p-4">
-                  <p className="text-sm text-slate-600 mb-1">{stat.label}</p>
-                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">{stat.label}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
                 </CardContent>
               </Card>
             </motion.div>
           ))}
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-4">
           <div className="flex items-center justify-between">
             <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
-              <TabsList className="bg-slate-100">
+              <TabsList className="bg-slate-100 dark:bg-slate-800">
                 <TabsTrigger value="alle">Alle</TabsTrigger>
                 <TabsTrigger value="favoriten" className="flex items-center gap-2">
                   <Star className="w-4 h-4" />
@@ -869,10 +869,10 @@ export default function ClubRequests() {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <Card 
-                  className={`hover:shadow-md transition-all duration-200 border bg-white relative ${
+                  className={`hover:shadow-md transition-all duration-200 border bg-white dark:bg-slate-900 relative ${
                     selectionMode && selectedRequests.has(request.id) 
                       ? 'border-blue-500 ring-2 ring-blue-200' 
-                      : 'border-slate-200'
+                      : 'border-slate-200 dark:border-slate-800'
                   }`}
                 >
                   {selectionMode ? (
@@ -923,9 +923,9 @@ export default function ClubRequests() {
                       <div className="flex-1 min-w-0 pr-8">
                         <div className="flex items-center gap-2 mb-2">
                           <Building2 className="w-5 h-5 text-blue-900 flex-shrink-0" />
-                          <h3 className="font-bold text-lg text-slate-900 truncate">{request.club_name}</h3>
+                          <h3 className="font-bold text-lg text-slate-900 dark:text-white truncate">{request.club_name}</h3>
                         </div>
-                        <p className="text-sm text-slate-600">{request.league} • {request.country}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">{request.league} • {request.country}</p>
                         <div className="flex flex-wrap gap-2 mt-3">
                           <Badge variant="secondary" className={priorityColors[request.priority] + " border"}>
                             {request.priority}
@@ -939,8 +939,8 @@ export default function ClubRequests() {
                       </CardHeader>
                       <CardContent className="pt-0 space-y-3">
                     <div className="p-3 bg-slate-50 rounded-lg">
-                      <p className="text-xs text-slate-600 mb-1">Gesuchte Position</p>
-                      <p className="font-semibold text-slate-900">{request.position_needed}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Gesuchte Position</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">{request.position_needed}</p>
                     </div>
 
                     {request.transfer_types && request.transfer_types.length > 0 && (
@@ -955,15 +955,15 @@ export default function ClubRequests() {
                     
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <p className="text-slate-600">Budget</p>
-                        <p className="font-semibold text-slate-900">
+                        <p className="text-slate-600 dark:text-slate-400">Budget</p>
+                        <p className="font-semibold text-slate-900 dark:text-white">
                           {request.budget_min ? `${(request.budget_min / 1000000).toFixed(2).replace(/\.?0+$/, '')}M` : '?'} - 
                           {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : ' ?'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-slate-600">Alter</p>
-                        <p className="font-semibold text-slate-900">
+                        <p className="text-slate-600 dark:text-slate-400">Alter</p>
+                        <p className="font-semibold text-slate-900 dark:text-white">
                           {request.age_min || '?'} - {request.age_max || '?'} Jahre
                         </p>
                       </div>
@@ -1028,7 +1028,7 @@ export default function ClubRequests() {
         {filteredRequests.length === 0 && !isLoading && (
           <div className="text-center py-16">
             <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-600 text-lg">Keine Anfragen gefunden</p>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Anfragen gefunden</p>
           </div>
         )}
 

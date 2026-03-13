@@ -386,7 +386,7 @@ export default function PlayerDetail() {
     : allComments.length;
 
   return (
-    <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <Button
@@ -398,7 +398,7 @@ export default function PlayerDetail() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-slate-900">Spielerdetails</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Spielerdetails</h1>
           </div>
           {!editMode ? (
             <div className="flex gap-2">
@@ -489,7 +489,7 @@ export default function PlayerDetail() {
                               className="text-2xl font-bold mb-2"
                             />
                           ) : (
-                            <CardTitle className="text-2xl">{currentPlayerData?.name}</CardTitle>
+                            <CardTitle className="text-2xl dark:text-white">{currentPlayerData?.name}</CardTitle>
                           )}
                           {editMode ? (
                             <Input
@@ -499,7 +499,7 @@ export default function PlayerDetail() {
                               className="mt-2"
                             />
                           ) : (
-                            <p className="text-slate-600 mt-1">{currentPlayerData?.current_club}</p>
+                            <p className="text-slate-600 dark:text-slate-400 mt-1">{currentPlayerData?.current_club}</p>
                           )}
                         </div>
                         {currentPlayerData?.transfermarkt_url && (
