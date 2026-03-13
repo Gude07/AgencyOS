@@ -432,7 +432,30 @@ export default function PlayerDetail() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-9 mb-6">
+          {/* Mobile: Dropdown */}
+          <div className="lg:hidden mb-6">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="info">Info</SelectItem>
+                <SelectItem value="ai">KI-Analyse</SelectItem>
+                <SelectItem value="career">Karriere</SelectItem>
+                <SelectItem value="api-stats">API Stats</SelectItem>
+                <SelectItem value="scouting">Scouting</SelectItem>
+                <SelectItem value="documents">Dokumente</SelectItem>
+                <SelectItem value="preferences">Präferenzen</SelectItem>
+                <SelectItem value="matches">Matches ({filteredMatchingRequests.length})</SelectItem>
+                <SelectItem value="comments">
+                  Kommentare {newCommentsCount > 0 ? `(${newCommentsCount})` : ''}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Desktop: Tabs */}
+          <TabsList className="hidden lg:grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="info">Info</TabsTrigger>
             <TabsTrigger value="ai">KI-Analyse</TabsTrigger>
             <TabsTrigger value="career">Karriere</TabsTrigger>

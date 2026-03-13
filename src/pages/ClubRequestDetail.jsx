@@ -1009,26 +1009,68 @@ export default function ClubRequestDetail() {
 
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-5 mb-6">
+              {/* Mobile: Dropdown */}
+              <div className="lg:hidden mb-6">
+                <Select value={activeTab} onValueChange={setActiveTab}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="matched">
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4" />
+                        Matches ({filteredMatchingPlayers.length})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="ai_matching">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        KI-Analyse
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="shortlist">
+                      <div className="flex items-center gap-2">
+                        <ListChecks className="w-4 h-4" />
+                        Shortlist ({shortlistPlayers.length})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="criteria">
+                      <div className="flex items-center gap-2">
+                        <Settings className="w-4 h-4" />
+                        Kriterien
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="communication">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        Kommunikation
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Desktop: Tabs */}
+              <TabsList className="hidden lg:grid w-full grid-cols-5 mb-6">
                 <TabsTrigger value="matched" className="flex items-center gap-2">
                   <Star className="w-4 h-4" />
-                  Matches ({filteredMatchingPlayers.length})
+                  <span className="hidden xl:inline">Matches</span> ({filteredMatchingPlayers.length})
                 </TabsTrigger>
                 <TabsTrigger value="ai_matching" className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />
-                  KI-Analyse
+                  <span className="hidden xl:inline">KI-</span>Analyse
                 </TabsTrigger>
                 <TabsTrigger value="shortlist" className="flex items-center gap-2">
                   <ListChecks className="w-4 h-4" />
-                  Shortlist ({shortlistPlayers.length})
+                  <span className="hidden xl:inline">Short</span>list ({shortlistPlayers.length})
                 </TabsTrigger>
                 <TabsTrigger value="criteria" className="flex items-center gap-2">
                   <Settings className="w-4 h-4" />
-                  Kriterien
+                  <span className="hidden xl:inline">Kriterien</span>
                 </TabsTrigger>
                 <TabsTrigger value="communication" className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
-                  Kommunikation
+                  <span className="hidden xl:inline">Kommunikation</span>
                 </TabsTrigger>
               </TabsList>
 
