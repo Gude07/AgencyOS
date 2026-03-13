@@ -43,6 +43,7 @@ import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEd
 import TemplateManager from "../components/templates/TemplateManager";
 import DataExtractor from "../components/ai/DataExtractor";
 import PlayerComparisonTool from "../components/players/PlayerComparisonTool";
+import PlayersTableView from "../components/players/PlayersTableView";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
