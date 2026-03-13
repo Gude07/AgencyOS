@@ -21,12 +21,13 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Users as UsersIcon, Award } from "lucide-react";
+import { Plus, Search, Users as UsersIcon, Award, GitCompare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, differenceInYears } from "date-fns";
 import LanguagesEditor from "../components/coaches/LanguagesEditor";
+import PlayerComparisonTool from "../components/players/PlayerComparisonTool";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -51,6 +52,7 @@ export default function Coaches() {
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [filterCategory, setFilterCategory] = useState(urlParams.get('category') || "alle");
   const [filterSpecialization, setFilterSpecialization] = useState(urlParams.get('specialization') || "alle");
+  const [showComparisonTool, setShowComparisonTool] = useState(false);
 
   // Restore scroll position on mount
   React.useEffect(() => {
@@ -192,13 +194,23 @@ export default function Coaches() {
             <h1 className="text-3xl font-bold text-slate-900">Trainerverwaltung</h1>
             <p className="text-slate-600 mt-1">{filteredCoaches.length} Trainer im Portfolio</p>
           </div>
-          <Button 
-            onClick={() => setShowCreateDialog(true)}
-            className="bg-blue-900 hover:bg-blue-800 shadow-sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Trainer hinzufügen
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowComparisonTool(true)}
+              variant="outline"
+              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+            >
+              <GitCompare className="w-4 h-4 mr-2" />
+              Vergleichen
+            </Button>
+            <Button 
+              onClick={() => setShowCreateDialog(true)}
+              className="bg-blue-900 hover:bg-blue-800 shadow-sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Trainer hinzufügen
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -559,6 +571,13 @@ export default function Coaches() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <PlayerComparisonTool 
+          open={showComparisonTool}
+          onOpenChange={setShowComparisonTool}
+          initialPlayerIds={[]}
+          entityType="Coach"
+        />
       </div>
     </div>
   );
