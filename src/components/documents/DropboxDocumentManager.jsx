@@ -17,10 +17,12 @@ import { formatInGermanTime } from "@/components/utils/dateUtils";
 
 export default function DropboxDocumentManager({ entityType, entityId }) {
   const queryClient = useQueryClient();
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [documentName, setDocumentName] = useState("");
+  const [showBrowseDialog, setShowBrowseDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [dropboxFiles, setDropboxFiles] = useState([]);
+  const [currentFolder, setCurrentFolder] = useState('');
+  const [folders, setFolders] = useState([]);
+  const [selectedDropboxFile, setSelectedDropboxFile] = useState(null);
 
   const { data: entity } = useQuery({
     queryKey: [entityType.toLowerCase(), entityId],
@@ -43,46 +45,62 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
     },
   });
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setDocumentName(file.name);
+  const loadDropboxFiles = async (folderPath = '') => {
+    setLoading(true);
+    try {
+      const response = await base44.functions.invoke('listDropboxFiles', { 
+        folderPath,
+        recursive: false 
+      });
+
+      if (response.data.success) {
+        setDropboxFiles(response.data.files || []);
+        setFolders(response.data.folders || []);
+      } else {
+        throw new Error(response.data.error || 'Fehler beim Laden der Dateien');
+      }
+    } catch (error) {
+      console.error('Error loading Dropbox files:', error);
+      toast.error('Fehler beim Laden: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      toast.error('Bitte wählen Sie eine Datei aus');
-      return;
-    }
+  const handleFolderClick = (folderPath) => {
+    setCurrentFolder(folderPath);
+    loadDropboxFiles(folderPath);
+  };
 
-    setUploading(true);
+  const handleBackClick = () => {
+    const parentPath = currentFolder.substring(0, currentFolder.lastIndexOf('/'));
+    setCurrentFolder(parentPath);
+    loadDropboxFiles(parentPath);
+  };
+
+  const handleSelectDropboxFile = async (file) => {
+    setLoading(true);
     try {
-      // Erst Ordner erstellen
-      const folderPath = `/STS Sports/${entityType}/${entity.name || entityId}`;
-      await base44.functions.invoke('createDropboxFolder', { folderPath });
+      // Link für die Datei abrufen
+      const linkResponse = await base44.functions.invoke('getDropboxFileLink', {
+        filePath: file.path
+      });
 
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('fileName', documentName || selectedFile.name);
-      formData.append('folderPath', folderPath);
-
-      const response = await base44.functions.invoke('uploadToDropbox', formData);
-
-      if (response.data.error || !response.data.success) {
-        throw new Error(response.data.error || 'Upload fehlgeschlagen');
+      if (!linkResponse.data.success) {
+        throw new Error(linkResponse.data.error || 'Fehler beim Erstellen des Links');
       }
 
+      const user = await base44.auth.me();
+
       const newDocument = {
-        id: response.data.file.id,
-        name: documentName || selectedFile.name,
-        path: response.data.file.path,
-        size: response.data.file.size,
-        url: response.data.file.url,
-        uploaded_date: response.data.file.uploaded_date,
-        uploaded_by: response.data.file.uploaded_by,
-        type: selectedFile.type
+        id: file.id,
+        name: file.name,
+        path: file.path,
+        size: file.size,
+        url: linkResponse.data.url,
+        uploaded_date: file.modified || new Date().toISOString(),
+        uploaded_by: user.email,
+        type: file.name.split('.').pop()
       };
 
       const updatedDocuments = [...documents, newDocument];
@@ -94,17 +112,22 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
         }
       });
 
-      toast.success('Dokument erfolgreich in Dropbox hochgeladen');
-      setShowUploadDialog(false);
-      setSelectedFile(null);
-      setDocumentName("");
+      toast.success('Dokument aus Dropbox verknüpft');
+      setShowBrowseDialog(false);
+      setSelectedDropboxFile(null);
     } catch (error) {
-      console.error('Error uploading document:', error);
-      toast.error('Fehler beim Hochladen: ' + error.message);
+      console.error('Error linking document:', error);
+      toast.error('Fehler beim Verknüpfen: ' + error.message);
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
   };
+
+  React.useEffect(() => {
+    if (showBrowseDialog) {
+      loadDropboxFiles('');
+    }
+  }, [showBrowseDialog]);
 
   const handleDelete = async (docIndex) => {
     try {
@@ -139,13 +162,13 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
           <h3 className="text-lg font-semibold text-slate-800">Dropbox Dokumente</h3>
         </div>
         <Button
-          onClick={() => setShowUploadDialog(true)}
+          onClick={() => setShowBrowseDialog(true)}
           variant="outline"
           size="sm"
           className="text-blue-600 hover:text-blue-700 border-blue-600"
         >
-          <Upload className="w-4 h-4 mr-2" />
-          In Dropbox hochladen
+          <Cloud className="w-4 h-4 mr-2" />
+          Aus Dropbox verknüpfen
         </Button>
       </div>
 
@@ -153,8 +176,8 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
         <Card className="border-slate-200 bg-slate-50">
           <CardContent className="p-8 text-center">
             <Cloud className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-600">Noch keine Dokumente in Dropbox</p>
-            <p className="text-sm text-slate-500 mt-1">Klicken Sie auf "In Dropbox hochladen" um zu starten</p>
+            <p className="text-slate-600">Noch keine Dokumente verknüpft</p>
+            <p className="text-sm text-slate-500 mt-1">Klicken Sie auf "Aus Dropbox verknüpfen" um Dokumente hinzuzufügen</p>
           </CardContent>
         </Card>
       ) : (
@@ -206,45 +229,117 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
         </div>
       )}
 
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent>
+      <Dialog open={showBrowseDialog} onOpenChange={setShowBrowseDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Cloud className="w-5 h-5 text-blue-600" />
-              Dokument in Dropbox hochladen
+              Dokument aus Dropbox auswählen
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="file-upload">Datei auswählen *</Label>
-              <Input
-                id="file-upload"
-                type="file"
-                onChange={handleFileSelect}
-                className="mt-1.5"
-                accept="*/*"
-              />
-              {selectedFile && (
-                <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                  <FileText className="w-3 h-3" />
-                  {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                </p>
-              )}
+            {/* Breadcrumb Navigation */}
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setCurrentFolder('');
+                  loadDropboxFiles('');
+                }}
+                className="h-7 px-2"
+              >
+                Dropbox
+              </Button>
+              {currentFolder.split('/').filter(Boolean).map((folder, idx, arr) => {
+                const path = '/' + arr.slice(0, idx + 1).join('/');
+                return (
+                  <React.Fragment key={path}>
+                    <span>/</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setCurrentFolder(path);
+                        loadDropboxFiles(path);
+                      }}
+                      className="h-7 px-2"
+                    >
+                      {folder}
+                    </Button>
+                  </React.Fragment>
+                );
+              })}
             </div>
 
-            <div>
-              <Label htmlFor="doc-name">Dokumentname (optional)</Label>
-              <Input
-                id="doc-name"
-                value={documentName}
-                onChange={(e) => setDocumentName(e.target.value)}
-                placeholder="Name des Dokuments..."
-                className="mt-1.5"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Wird automatisch der Dateiname verwendet, wenn leer gelassen
-              </p>
+            {/* Back Button */}
+            {currentFolder && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBackClick}
+                className="w-full justify-start"
+              >
+                ← Zurück
+              </Button>
+            )}
+
+            {/* Folder and File List */}
+            <div className="border rounded-lg max-h-96 overflow-y-auto">
+              {loading ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" />
+                  <p className="text-sm text-slate-500">Lade Dateien...</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {/* Folders */}
+                  {folders.map((folder) => (
+                    <button
+                      key={folder.id}
+                      onClick={() => handleFolderClick(folder.path)}
+                      className="w-full p-3 hover:bg-slate-50 transition-colors text-left flex items-center gap-3"
+                    >
+                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                        <Cloud className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900">{folder.name}</p>
+                        <p className="text-xs text-slate-500">Ordner</p>
+                      </div>
+                    </button>
+                  ))}
+
+                  {/* Files */}
+                  {dropboxFiles.map((file) => (
+                    <button
+                      key={file.id}
+                      onClick={() => setSelectedDropboxFile(file)}
+                      className={`w-full p-3 hover:bg-slate-50 transition-colors text-left flex items-center gap-3 ${
+                        selectedDropboxFile?.id === file.id ? 'bg-blue-50 border-l-4 border-blue-600' : ''
+                      }`}
+                    >
+                      <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-slate-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 truncate">{file.name}</p>
+                        <p className="text-xs text-slate-500">
+                          {(file.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+
+                  {folders.length === 0 && dropboxFiles.length === 0 && (
+                    <div className="p-8 text-center">
+                      <Cloud className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                      <p className="text-slate-600">Keine Dateien in diesem Ordner</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -252,28 +347,28 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
             <Button 
               variant="outline" 
               onClick={() => {
-                setShowUploadDialog(false);
-                setSelectedFile(null);
-                setDocumentName("");
+                setShowBrowseDialog(false);
+                setSelectedDropboxFile(null);
+                setCurrentFolder('');
               }}
-              disabled={uploading}
+              disabled={loading}
             >
               Abbrechen
             </Button>
             <Button 
-              onClick={handleUpload}
-              disabled={!selectedFile || uploading}
+              onClick={() => handleSelectDropboxFile(selectedDropboxFile)}
+              disabled={!selectedDropboxFile || loading}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {uploading ? (
+              {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Wird hochgeladen...
+                  Wird verknüpft...
                 </>
               ) : (
                 <>
                   <Cloud className="w-4 h-4 mr-2" />
-                  In Dropbox hochladen
+                  Verknüpfen
                 </>
               )}
             </Button>
