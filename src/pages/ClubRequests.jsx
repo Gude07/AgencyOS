@@ -1700,7 +1700,7 @@ export default function ClubRequests() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </div>
-          </div>
-          );
-          }
+      </div>
+    </div>
+  );
+}
