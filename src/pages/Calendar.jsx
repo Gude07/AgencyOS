@@ -173,14 +173,14 @@ export default function Calendar() {
                       min-h-[100px] p-2 rounded-lg transition-all duration-200
                       ${!isCurrentMonth && 'opacity-30'}
                       ${isSelected && 'bg-blue-50 ring-2 ring-blue-900'}
-                      ${!isSelected && isToday && 'bg-blue-100'}
-                      ${snapshot.isDraggingOver && 'bg-blue-200'}
-                      ${!isSelected && !isToday && !snapshot.isDraggingOver && 'hover:bg-slate-100'}
+                      ${!isSelected && isToday && 'bg-blue-100 dark:bg-blue-950'}
+                      ${snapshot.isDraggingOver && 'bg-blue-200 dark:bg-blue-900'}
+                      ${!isSelected && !isToday && !snapshot.isDraggingOver && 'hover:bg-slate-100 dark:hover:bg-slate-800'}
                     `}
                     onClick={() => setSelectedDate(day)}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <div className={`text-sm font-medium ${isToday ? 'text-blue-900 font-bold' : ''}`}>
+                      <div className={`text-sm font-medium ${isToday ? 'text-blue-900 dark:text-blue-400 font-bold' : 'dark:text-slate-300'}`}>
                         {format(day, 'd')}
                       </div>
                       <Button
@@ -269,16 +269,16 @@ export default function Calendar() {
                     {...provided.droppableProps}
                     className={`
                       rounded-lg border transition-all
-                      ${isToday ? 'border-blue-900 bg-blue-50' : 'border-slate-200 bg-white'}
-                      ${snapshot.isDraggingOver && 'bg-blue-100'}
+                      ${isToday ? 'border-blue-900 bg-blue-50 dark:bg-blue-950 dark:border-blue-700' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'}
+                      ${snapshot.isDraggingOver && 'bg-blue-100 dark:bg-blue-900'}
                     `}
                   >
-                    <div className="p-3 border-b border-slate-100">
+                    <div className="p-3 border-b border-slate-100 dark:border-slate-800">
                       <div className="text-center">
-                        <div className="text-xs text-slate-600 uppercase">
+                        <div className="text-xs text-slate-600 dark:text-slate-400 uppercase">
                           {format(day, 'EEE', { locale: de })}
                         </div>
-                        <div className={`text-xl font-bold ${isToday ? 'text-blue-900' : 'text-slate-900'}`}>
+                        <div className={`text-xl font-bold ${isToday ? 'text-blue-900 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
                           {format(day, 'd')}
                         </div>
                       </div>
@@ -363,10 +363,10 @@ export default function Calendar() {
             >
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                     {format(currentDate, 'EEEE, d. MMMM yyyy', { locale: de })}
                   </h2>
-                  <p className="text-slate-600 mt-1">{events.length} Ereignisse</p>
+                  <p className="text-slate-600 dark:text-slate-400 mt-1">{events.length} Ereignisse</p>
                 </div>
                 <Button
                   onClick={() => {
@@ -381,7 +381,7 @@ export default function Calendar() {
               </div>
 
               {events.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
+                <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                   <CalendarIcon className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                   <p>Keine Ereignisse an diesem Tag</p>
                 </div>
@@ -538,15 +538,15 @@ export default function Calendar() {
         </Card>
 
         {view === "month" && (
-          <Card className="border-slate-200 bg-white">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="text-lg">
+          <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800">
+              <CardTitle className="text-lg dark:text-white">
                 {format(selectedDate, "d. MMMM yyyy", { locale: de })}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               {selectedDateEvents.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                   <CalendarIcon className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                   <p className="text-sm mb-3">Keine Termine an diesem Tag</p>
                   <Button
@@ -597,11 +597,11 @@ export default function Calendar() {
                           </Badge>
                         )}
                       </div>
-                      <h4 className="font-semibold text-slate-900 mb-1">
+                      <h4 className="font-semibold text-slate-900 dark:text-white mb-1">
                         {event.title}
                       </h4>
                       {event.description && (
-                        <p className="text-sm text-slate-600 line-clamp-2">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
                           {event.description}
                         </p>
                       )}

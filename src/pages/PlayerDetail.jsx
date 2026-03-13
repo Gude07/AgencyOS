@@ -740,7 +740,7 @@ export default function PlayerDetail() {
                           className="h-24"
                         />
                       ) : (
-                        <p className="text-slate-600">{currentPlayerData?.strengths || "Keine Angaben"}</p>
+                        <p className="text-slate-600 dark:text-slate-400">{currentPlayerData?.strengths || "Keine Angaben"}</p>
                       )}
                     </div>
 
@@ -903,7 +903,7 @@ export default function PlayerDetail() {
                           className="h-32"
                         />
                       ) : (
-                        <p className="text-slate-600">{currentPlayerData?.notes || "Keine Notizen"}</p>
+                        <p className="text-slate-600 dark:text-slate-400">{currentPlayerData?.notes || "Keine Notizen"}</p>
                       )}
                     </div>
 
@@ -947,11 +947,11 @@ export default function PlayerDetail() {
               </div>
 
               <div className="space-y-6">
-                <Card className="border-green-200 bg-green-50/50">
-                  <CardHeader className="border-b border-green-200">
+                <Card className="border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/30">
+                  <CardHeader className="border-b border-green-200 dark:border-green-900">
                     <div className="flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-green-700" />
-                      <CardTitle className="text-lg text-green-900">Angeboten bei Vereinen</CardTitle>
+                      <CardTitle className="text-lg text-green-900 dark:text-green-300">Angeboten bei Vereinen</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4">
@@ -982,18 +982,18 @@ export default function PlayerDetail() {
                         })}
                       </div>
                     ) : (
-                      <p className="text-sm text-green-700 text-center py-4">
+                      <p className="text-sm text-green-700 dark:text-green-400 text-center py-4">
                         Noch keine Vereine - Im "Matches" Tab per Drag & Drop hinzufügen
                       </p>
                     )}
                   </CardContent>
                 </Card>
 
-                <Card className="border-slate-200 bg-white">
-                  <CardHeader className="border-b border-slate-100">
+                <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                  <CardHeader className="border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-2">
                       <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                      <CardTitle className="text-lg">Favorisierte Matches</CardTitle>
+                      <CardTitle className="text-lg dark:text-white">Favorisierte Matches</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4">
@@ -1020,7 +1020,7 @@ export default function PlayerDetail() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-slate-500 text-center py-4">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">
                         Keine Favoriten
                       </p>
                     )}
@@ -1052,12 +1052,12 @@ export default function PlayerDetail() {
                 />
               )}
 
-              <Card className="border-slate-200 bg-white">
-                <CardHeader className="border-b border-slate-100">
+              <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <CardHeader className="border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-xl">API-Football Statistiken</CardTitle>
-                      <p className="text-sm text-slate-600 mt-1">Automatisch synchronisierte Statistiken</p>
+                      <CardTitle className="text-xl dark:text-white">API-Football Statistiken</CardTitle>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Automatisch synchronisierte Statistiken</p>
                     </div>
                     {editMode && (
                       <div className="flex items-center gap-2">
@@ -1077,16 +1077,16 @@ export default function PlayerDetail() {
                   {!player?.player_api_id ? (
                     <div className="text-center py-12">
                       <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-600 font-medium mb-2">Keine API-Football ID hinterlegt</p>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-slate-600 dark:text-slate-400 font-medium mb-2">Keine API-Football ID hinterlegt</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         Nutzen Sie die Suchfunktion oben, um automatisch die passende ID zu finden
                       </p>
                     </div>
                   ) : playerStats.length === 0 ? (
                   <div className="text-center py-12">
                     <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-600 font-medium mb-2">Noch keine Statistiken verfügbar</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-slate-600 dark:text-slate-400 font-medium mb-2">Noch keine Statistiken verfügbar</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       Die Daten werden täglich um 3 Uhr morgens automatisch abgerufen
                     </p>
                   </div>
@@ -1292,15 +1292,15 @@ export default function PlayerDetail() {
               </Card>
 
               {filteredMatchingRequests.length === 0 ? (
-                <Card className="border-slate-200 bg-white">
+                <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                   <CardContent className="p-8 text-center">
                     <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                    <p className="text-slate-600">
+                    <p className="text-slate-600 dark:text-slate-400">
                       {matchingRequests.length === 0 
                         ? "Keine passenden Vereinsanfragen gefunden" 
                         : "Keine Ergebnisse für die ausgewählten Filter"}
                     </p>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                       {matchingRequests.length === 0 
                         ? "Definieren Sie Spielerpräferenzen für bessere Matches"
                         : "Versuchen Sie andere Filtereinstellungen"}
@@ -1314,7 +1314,7 @@ export default function PlayerDetail() {
                     return (
                       <Card 
                         key={request.id}
-                        className={`border-slate-200 bg-white hover:shadow-md transition-all cursor-pointer ${
+                        className={`border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:shadow-md transition-all cursor-pointer ${
                           isFavorite ? 'ring-2 ring-yellow-400' : ''
                         }`}
                         onClick={() => {
@@ -1328,8 +1328,8 @@ export default function PlayerDetail() {
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div>
-                              <h4 className="font-semibold text-slate-900">{request.club_name}</h4>
-                              <p className="text-sm text-slate-600 mt-1">{request.league} • {request.country}</p>
+                              <h4 className="font-semibold text-slate-900 dark:text-white">{request.club_name}</h4>
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{request.league} • {request.country}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <button
@@ -1351,12 +1351,12 @@ export default function PlayerDetail() {
                           </div>
                           <div className="space-y-2">
                             <div className="text-sm">
-                              <span className="text-slate-600">Position: </span>
-                              <span className="font-semibold text-slate-900">{request.position_needed}</span>
+                              <span className="text-slate-600 dark:text-slate-400">Position: </span>
+                              <span className="font-semibold text-slate-900 dark:text-white">{request.position_needed}</span>
                             </div>
                             <div className="text-sm">
-                              <span className="text-slate-600">Budget: </span>
-                              <span className="font-semibold text-slate-900">
+                              <span className="text-slate-600 dark:text-slate-400">Budget: </span>
+                              <span className="font-semibold text-slate-900 dark:text-white">
                                 {request.budget_min ? `${(request.budget_min / 1000000).toFixed(2).replace(/\.?0+$/, '')}M` : '?'} - 
                                 {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : ' ?'}
                               </span>

@@ -450,8 +450,8 @@ export default function CoachDetail() {
 
           <div className="space-y-6">
             <Card className="border-slate-200 bg-white">
-             <CardHeader className="border-b border-slate-100">
-               <CardTitle className="text-lg">Kontakt</CardTitle>
+             <CardHeader className="border-b border-slate-100 dark:border-slate-800">
+               <CardTitle className="text-lg dark:text-white">Kontakt</CardTitle>
              </CardHeader>
              <CardContent className="p-4 space-y-3">
                {editMode ? (
@@ -503,8 +503,8 @@ export default function CoachDetail() {
             </Card>
 
             <Card className="border-slate-200 bg-white">
-              <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-lg">Potentielle Vereine</CardTitle>
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800">
+                <CardTitle className="text-lg dark:text-white">Potentielle Vereine</CardTitle>
               </CardHeader>
               <CardContent className="p-4">
                 {currentCoachData?.potential_clubs?.length > 0 ? (
@@ -512,7 +512,7 @@ export default function CoachDetail() {
                     {currentCoachData.potential_clubs.map((club, index) => (
                       <div key={index} className="flex items-center gap-2 text-sm">
                         <Building2 className="w-4 h-4 text-slate-400" />
-                        <span className="text-slate-700">{club}</span>
+                        <span className="text-slate-700 dark:text-slate-300">{club}</span>
                       </div>
                     ))}
                   </div>
