@@ -111,11 +111,11 @@ export default function PlayersTableView({ players }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50 hover:bg-slate-50">
+            <TableRow className="bg-slate-50 dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800">
               <TableHead 
                 className="cursor-pointer select-none font-semibold"
                 onClick={() => handleSort("name")}
@@ -134,7 +134,7 @@ export default function PlayersTableView({ players }) {
                   {getSortIcon("age")}
                 </div>
               </TableHead>
-              <TableHead>Position</TableHead>
+              <TableHead className="dark:text-slate-300">Position</TableHead>
               <TableHead 
                 className="cursor-pointer select-none font-semibold"
                 onClick={() => handleSort("club")}
@@ -162,17 +162,17 @@ export default function PlayersTableView({ players }) {
                   {getSortIcon("market_value")}
                 </div>
               </TableHead>
-              <TableHead>Kategorie</TableHead>
+              <TableHead className="dark:text-slate-300">Kategorie</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedPlayers.map((player) => (
               <TableRow
                 key={player.id}
-                className="cursor-pointer hover:bg-slate-50 transition-colors"
+                className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 onClick={() => handleRowClick(player)}
               >
-                <TableCell className="font-medium text-slate-900">
+                <TableCell className="font-medium text-slate-900 dark:text-white">
                   {player.name}
                 </TableCell>
                 <TableCell className="text-slate-700">
@@ -191,7 +191,7 @@ export default function PlayersTableView({ players }) {
                     ? format(new Date(player.contract_until), "dd.MM.yyyy")
                     : "-"}
                 </TableCell>
-                <TableCell className="text-right font-semibold text-slate-900">
+                <TableCell className="text-right font-semibold text-slate-900 dark:text-white">
                   {formatCurrency(player.market_value)}
                 </TableCell>
                 <TableCell>
@@ -207,7 +207,7 @@ export default function PlayersTableView({ players }) {
         </Table>
       </div>
       {sortedPlayers.length === 0 && (
-        <div className="text-center py-12 text-slate-500">
+        <div className="text-center py-12 text-slate-500 dark:text-slate-400">
           Keine Spieler gefunden
         </div>
       )}

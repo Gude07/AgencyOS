@@ -413,12 +413,12 @@ export default function Players() {
   };
 
   return (
-    <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Spielerverwaltung</h1>
-            <p className="text-slate-600 mt-1">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Spielerverwaltung</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">
               {filteredPlayers.length} Spieler {selectionMode && `(${selectedPlayers.size} ausgewählt)`}
             </p>
           </div>
@@ -503,17 +503,17 @@ export default function Players() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="border-slate-200 bg-white">
+              <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                 <CardContent className="p-4">
-                  <p className="text-sm text-slate-600 mb-1">{stat.label}</p>
-                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">{stat.label}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
                 </CardContent>
               </Card>
             </motion.div>
           ))}
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-4">
           <div className="flex items-center justify-between">
             <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
               <TabsList className="bg-slate-100">
@@ -544,7 +544,7 @@ export default function Players() {
                 placeholder="Spieler oder Verein suchen..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 border-slate-200"
+                className="pl-10 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
             </div>
             <div className="flex bg-slate-100 rounded-lg p-1">
@@ -568,7 +568,7 @@ export default function Players() {
           </div>
 
           <Tabs value={filterCategory} onValueChange={setFilterCategory}>
-            <TabsList className="bg-slate-100">
+            <TabsList className="bg-slate-100 dark:bg-slate-800">
               <TabsTrigger value="alle">Alle</TabsTrigger>
               <TabsTrigger value="Wintertransferperiode">Winter</TabsTrigger>
               <TabsTrigger value="Sommertransferperiode">Sommer</TabsTrigger>
@@ -664,10 +664,10 @@ export default function Players() {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <Card 
-                  className={`hover:shadow-md transition-all duration-200 border bg-white relative ${
+                  className={`hover:shadow-md transition-all duration-200 border bg-white dark:bg-slate-900 relative ${
                     selectionMode && selectedPlayers.has(player.id) 
                       ? 'border-blue-500 ring-2 ring-blue-200' 
-                      : 'border-slate-200'
+                      : 'border-slate-200 dark:border-slate-800'
                   }`}
                 >
                   {selectionMode ? (
@@ -715,8 +715,8 @@ export default function Players() {
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="font-bold text-lg text-slate-900">{player.name}</h3>
-                          <p className="text-sm text-slate-600">{player.current_club}</p>
+                          <h3 className="font-bold text-lg text-slate-900 dark:text-white">{player.name}</h3>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{player.current_club}</p>
                         </div>
                         {player.transfermarkt_url && (
                           <a
@@ -757,28 +757,28 @@ export default function Players() {
                         <CardContent className="pt-0 space-y-2">
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <p className="text-slate-600">Alter</p>
-                        <p className="font-semibold text-slate-900">{calculateAge(player.date_of_birth) || '-'}</p>
+                        <p className="text-slate-600 dark:text-slate-400">Alter</p>
+                        <p className="font-semibold text-slate-900 dark:text-white">{calculateAge(player.date_of_birth) || '-'}</p>
                       </div>
                       <div>
-                        <p className="text-slate-600">Nationalität</p>
-                        <p className="font-semibold text-slate-900">{player.nationality || '-'}</p>
+                        <p className="text-slate-600 dark:text-slate-400">Nationalität</p>
+                        <p className="font-semibold text-slate-900 dark:text-white">{player.nationality || '-'}</p>
                       </div>
                       <div>
-                        <p className="text-slate-600">Marktwert</p>
-                        <p className="font-semibold text-slate-900">
+                        <p className="text-slate-600 dark:text-slate-400">Marktwert</p>
+                        <p className="font-semibold text-slate-900 dark:text-white">
                           {player.market_value ? `${(player.market_value / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : '-'}
                         </p>
                       </div>
                       <div>
-                       <p className="text-slate-600">Vertrag bis</p>
-                       <p className="font-semibold text-slate-900">
+                       <p className="text-slate-600 dark:text-slate-400">Vertrag bis</p>
+                       <p className="font-semibold text-slate-900 dark:text-white">
                          {player.contract_until ? format(new Date(player.contract_until), "MM/yyyy") : '-'}
                        </p>
                       </div>
                       </div>
                       {allComments.filter(c => c.player_id === player.id).length > 0 && (
-                      <div className="flex items-center justify-end gap-1 pt-2 mt-2 border-t border-slate-100">
+                      <div className="flex items-center justify-end gap-1 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
                        <MessageCircle className="w-4 h-4 text-red-500" />
                        <span className="text-sm font-semibold text-red-600">
                          {allComments.filter(c => c.player_id === player.id).length}
@@ -800,7 +800,7 @@ export default function Players() {
         {filteredPlayers.length === 0 && !isLoading && (
           <div className="text-center py-16">
             <UsersIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-600 text-lg">Keine Spieler gefunden</p>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Spieler gefunden</p>
           </div>
         )}
 
