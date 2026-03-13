@@ -40,6 +40,8 @@ import { createPageUrl } from "@/utils";
 import { format, differenceInYears } from "date-fns";
 import { de } from "date-fns/locale";
 import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
+import TemplateManager from "../components/templates/TemplateManager";
+import DataExtractor from "../components/ai/DataExtractor";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -768,7 +770,18 @@ export default function Players() {
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold">Neuen Spieler hinzufügen</DialogTitle>
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-xl font-bold">Neuen Spieler hinzufügen</DialogTitle>
+                <div className="flex gap-2">
+                  <TemplateManager 
+                    templateType="player"
+                    onSelectTemplate={(data) => setNewPlayer({...newPlayer, ...data})}
+                  />
+                  <DataExtractor 
+                    onDataExtracted={(data) => setNewPlayer({...newPlayer, ...data})}
+                  />
+                </div>
+              </div>
             </DialogHeader>
             
             <div className="space-y-4 py-4">

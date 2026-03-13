@@ -43,6 +43,7 @@ import PlayerAIAnalysis from "../components/players/PlayerAIAnalysis";
 import DocumentManager from "../components/documents/DocumentManager";
 import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
 import PlayerApiIdSuggestions from "../components/players/PlayerApiIdSuggestions";
+import MarketTrendAnalysis from "../components/ai/MarketTrendAnalysis";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -409,6 +410,7 @@ export default function PlayerDetail() {
               >
                 <Star className={`w-5 h-5 ${isFavorite ? 'fill-yellow-400' : ''}`} />
               </Button>
+              <MarketTrendAnalysis player={player} />
               <Button onClick={() => setShowDeleteDialog(true)} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Löschen
