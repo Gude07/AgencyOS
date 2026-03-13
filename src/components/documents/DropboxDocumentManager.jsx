@@ -59,10 +59,14 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
 
     setUploading(true);
     try {
+      // Erst Ordner erstellen
+      const folderPath = `/STS Sports/${entityType}/${entity.name || entityId}`;
+      await base44.functions.invoke('createDropboxFolder', { folderPath });
+
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('fileName', documentName || selectedFile.name);
-      formData.append('folderPath', `/STS Sports/${entityType}/${entity.name || entityId}`);
+      formData.append('folderPath', folderPath);
 
       const response = await base44.functions.invoke('uploadToDropbox', formData);
 
