@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare } from "lucide-react";
+import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -82,6 +82,7 @@ export default function Players() {
   const [archiveToDelete, setArchiveToDelete] = useState(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [showComparisonTool, setShowComparisonTool] = useState(false);
+  const [displayMode, setDisplayMode] = useState(urlParams.get('display') || 'grid');
 
   // Restore scroll position on mount
   React.useEffect(() => {
@@ -285,6 +286,7 @@ export default function Players() {
     if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
     if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
     if (filterArchive !== 'active') params.set('archive', filterArchive);
+    if (displayMode !== 'grid') params.set('display', displayMode);
 
     const newSearch = params.toString();
     const currentSearch = window.location.search.slice(1);
@@ -292,7 +294,7 @@ export default function Players() {
     if (newSearch !== currentSearch) {
       window.history.replaceState(null, '', `?${newSearch}`);
     }
-  }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches, filterArchive]);
+  }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches, filterArchive, displayMode]);
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -535,14 +537,34 @@ export default function Players() {
             )}
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-            <Input
-              placeholder="Spieler oder Verein suchen..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-slate-200"
-            />
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <Input
+                placeholder="Spieler oder Verein suchen..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 border-slate-200"
+              />
+            </div>
+            <div className="flex bg-slate-100 rounded-lg p-1">
+              <Button
+                variant={displayMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setDisplayMode('grid')}
+                className={displayMode === 'grid' ? 'bg-white shadow-sm' : ''}
+              >
+                <Grid3x3 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={displayMode === 'table' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setDisplayMode('table')}
+                className={displayMode === 'table' ? 'bg-white shadow-sm' : ''}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           <Tabs value={filterCategory} onValueChange={setFilterCategory}>
@@ -631,7 +653,8 @@ export default function Players() {
           </Select>
           </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {displayMode === 'grid' ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence>
             {filteredPlayers.map(player => (
               <motion.div
@@ -769,7 +792,10 @@ export default function Players() {
                     </motion.div>
             ))}
           </AnimatePresence>
-        </div>
+          </div>
+        ) : (
+          <PlayersTableView players={filteredPlayers} />
+        )}
 
         {filteredPlayers.length === 0 && !isLoading && (
           <div className="text-center py-16">
