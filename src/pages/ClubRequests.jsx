@@ -30,7 +30,8 @@ import {
   SelectGroup,
   SelectLabel,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import ClubRequestsMap from "../components/clubRequests/ClubRequestsMap";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User, MessageCircle, Download } from "lucide-react";
@@ -636,17 +637,17 @@ export default function ClubRequests() {
           ))}
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
+        <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-4">
+            <div className="flex items-center justify-between">
               <TabsList className="bg-slate-100 dark:bg-slate-800">
                 <TabsTrigger value="alle">Alle</TabsTrigger>
                 <TabsTrigger value="favoriten" className="flex items-center gap-2">
                   <Star className="w-4 h-4" />
                   Favoriten ({userFavorites.length})
                 </TabsTrigger>
+                <TabsTrigger value="karte">🗺️ Karte</TabsTrigger>
               </TabsList>
-            </Tabs>
             <div className="flex gap-2">
               {filterFavorites === "favoriten" && userFavorites.length > 0 && (
                 <Button
@@ -857,9 +858,10 @@ export default function ClubRequests() {
               )}
             </div>
           )}
-        </div>
+          </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <TabsContent value="alle" className="mt-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence>
             {filteredRequests.map(request => (
               <motion.div
@@ -1022,15 +1024,190 @@ export default function ClubRequests() {
                       </Card>
               </motion.div>
             ))}
-          </AnimatePresence>
-        </div>
+            </AnimatePresence>
+            </div>
 
-        {filteredRequests.length === 0 && !isLoading && (
+            {filteredRequests.length === 0 && !isLoading && (
           <div className="text-center py-16">
             <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Anfragen gefunden</p>
           </div>
-        )}
+            )}
+          </TabsContent>
+
+          <TabsContent value="favoriten" className="mt-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <AnimatePresence>
+                {filteredRequests.map(request => (
+                  <motion.div
+                    key={request.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                  >
+                    <Card 
+                      className={`hover:shadow-md transition-all duration-200 border bg-white dark:bg-slate-900 relative ${
+                        selectionMode && selectedRequests.has(request.id) 
+                          ? 'border-blue-500 ring-2 ring-blue-200' 
+                          : 'border-slate-200 dark:border-slate-800'
+                      }`}
+                    >
+                      {selectionMode ? (
+                        <div className="absolute top-3 right-3 z-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedRequests.has(request.id)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleRequestSelection(request.id);
+                            }}
+                            className="w-5 h-5 rounded border-slate-300"
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavoriteMutation.mutate(request.id);
+                          }}
+                          className="absolute top-3 right-3 z-10 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        >
+                          <Star 
+                            className={`w-5 h-5 ${userFavorites.includes(request.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`}
+                          />
+                        </button>
+                      )}
+                      <div onClick={() => {
+                        if (selectionMode) {
+                          toggleRequestSelection(request.id);
+                          return;
+                        }
+                        const params = new URLSearchParams();
+                        if (searchTerm) params.set('search', searchTerm);
+                        if (searchRequirements) params.set('searchRequirements', searchRequirements);
+                        if (filterStatus !== 'alle') params.set('status', filterStatus);
+                        if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+                        if (filterCountry !== 'alle') params.set('country', filterCountry);
+                        if (filterBudgetMin) params.set('budgetMin', filterBudgetMin);
+                        if (filterBudgetMax) params.set('budgetMax', filterBudgetMax);
+                        if (filterSalaryMin) params.set('salaryMin', filterSalaryMin);
+                        if (filterSalaryMax) params.set('salaryMax', filterSalaryMax);
+                        params.set('scrollY', window.scrollY.toString());
+                        navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                      }} className="cursor-pointer">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0 pr-8">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Building2 className="w-5 h-5 text-blue-900 dark:text-blue-400 flex-shrink-0" />
+                                <h3 className="font-bold text-lg text-slate-900 dark:text-white truncate">{request.club_name}</h3>
+                              </div>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">{request.league} • {request.country}</p>
+                              <div className="flex flex-wrap gap-2 mt-3">
+                                <Badge variant="secondary" className={priorityColors[request.priority] + " border"}>
+                                  {request.priority}
+                                </Badge>
+                                <Badge variant="secondary" className={statusColors[request.status] + " border"}>
+                                  {request.status.replace(/_/g, ' ')}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0 space-y-3">
+                          <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">Gesuchte Position</p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{request.position_needed}</p>
+                          </div>
+
+                          {request.transfer_types && request.transfer_types.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {request.transfer_types.map(type => (
+                                <Badge key={type} variant="outline" className="border-blue-300 bg-blue-50 dark:bg-blue-950 dark:border-blue-700 text-blue-900 dark:text-blue-300 text-xs">
+                                  {type === 'kauf' ? '💰 Kauf' : type === 'leihe' ? '🔄 Leihe' : '🔄💰 Leihe + Kaufoption'}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <p className="text-slate-600 dark:text-slate-400">Budget</p>
+                              <p className="font-semibold text-slate-900 dark:text-white">
+                                {request.budget_min ? `${(request.budget_min / 1000000).toFixed(2).replace(/\.?0+$/, '')}M` : '?'} - 
+                                {request.budget_max ? ` ${(request.budget_max / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : ' ?'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-slate-600 dark:text-slate-400">Alter</p>
+                              <p className="font-semibold text-slate-900 dark:text-white">
+                                {request.age_min || '?'} - {request.age_max || '?'} Jahre
+                              </p>
+                            </div>
+                          </div>
+
+                          {request.transfer_period && (
+                            <Badge variant="outline" className="w-full justify-center border-slate-200 dark:border-slate-700">
+                              {request.transfer_period}
+                            </Badge>
+                          )}
+
+                          {(request.status === 'in_bearbeitung' || request.status === 'angebote_gesendet') && 
+                           request.assigned_to && request.assigned_to.length > 0 && (
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center gap-2 text-sm">
+                                <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                <span className="text-slate-600 dark:text-slate-400">Zuständig:</span>
+                                <div className="flex flex-wrap gap-1">
+                                  {request.assigned_to.slice(0, 2).map(email => {
+                                    const user = users.find(u => u.email === email);
+                                    return (
+                                      <span key={email} className="font-medium text-slate-900 dark:text-white">
+                                        {user ? user.full_name : email.split('@')[0]}
+                                      </span>
+                                    );
+                                  })}
+                                  {request.assigned_to.length > 2 && (
+                                    <span className="text-slate-500 dark:text-slate-400">+{request.assigned_to.length - 2}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {request.contact_person && (
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-sm">
+                              <p className="text-slate-600 dark:text-slate-400">{request.contact_person}</p>
+                              {request.contact_email && (
+                                <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 truncate">{request.contact_email}</p>
+                              )}
+                            </div>
+                          )}
+
+                          {allCommunications.filter(c => c.club_request_id === request.id).length > 0 && (
+                            <div className="flex items-center justify-end gap-1 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
+                              <MessageCircle className="w-4 h-4 text-red-500" />
+                              <span className="text-sm font-semibold text-red-600 dark:text-red-400">
+                                {allCommunications.filter(c => c.club_request_id === request.id).length}
+                              </span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">Kommunikationen</span>
+                            </div>
+                          )}
+                        </CardContent>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="karte" className="mt-6">
+            <ClubRequestsMap requests={filteredRequests} />
+          </TabsContent>
+        </Tabs>
+
+        {filteredRequests.length === 0 && !isLoading && filterFavorites !== 'karte' && (
 
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
