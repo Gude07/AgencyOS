@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import TaskCard from "../components/tasks/TaskCard";
+import DashboardWidgetCustomizer from "../components/dashboard/DashboardWidgetCustomizer";
+import DashboardWidget from "../components/dashboard/DashboardWidget";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -33,6 +35,16 @@ export default function Dashboard() {
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
+  });
+
+  const { data: widgets = [] } = useQuery({
+    queryKey: ['dashboard-widgets', user?.email],
+    queryFn: async () => {
+      if (!user) return [];
+      const allWidgets = await base44.entities.DashboardWidget.filter({ user_email: user.email });
+      return allWidgets.sort((a, b) => (a.position || 0) - (b.position || 0));
+    },
+    enabled: !!user
   });
 
   // Auto-Erinnerungen für Deadlines
@@ -141,15 +153,16 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-3">
             <a 
-              href={base44.agents.getWhatsAppConnectURL('notification_manager')} 
+              href={base44.agents.getWhatsAppConnectURL('communication_agent')} 
               target="_blank"
               rel="noopener noreferrer"
             >
               <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
                 <MessageCircle className="w-4 h-4 mr-2" />
-                WhatsApp verbinden
+                WhatsApp-Agent
               </Button>
             </a>
+            <DashboardWidgetCustomizer />
             <Link to={createPageUrl("Tasks") + "?new=true"}>
               <Button className="bg-blue-900 hover:bg-blue-800 shadow-sm">
                 <Plus className="w-4 h-4 mr-2" />
@@ -184,61 +197,69 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Card className="border-slate-200 bg-white">
-            <CardHeader className="border-b border-slate-100">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-slate-900">
-                  Anstehende Aufgaben
-                </CardTitle>
-                <Link to={createPageUrl("Tasks")}>
-                  <Button variant="ghost" size="sm" className="text-blue-900 hover:text-blue-800">
-                    Alle ansehen
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3">
-              {upcomingTasks.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  <Clock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p>Keine anstehenden Aufgaben</p>
+        {widgets.length > 0 ? (
+          <div className="grid lg:grid-cols-2 gap-6">
+            {widgets.map(widget => (
+              <DashboardWidget key={widget.id} widget={widget} />
+            ))}
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-2 gap-6">
+            <Card className="border-slate-200 bg-white">
+              <CardHeader className="border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold text-slate-900">
+                    Anstehende Aufgaben
+                  </CardTitle>
+                  <Link to={createPageUrl("Tasks")}>
+                    <Button variant="ghost" size="sm" className="text-blue-900 hover:text-blue-800">
+                      Alle ansehen
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
                 </div>
-              ) : (
-                upcomingTasks.map(task => (
-                  <TaskCard 
-                    key={task.id} 
-                    task={task}
-                  />
-                ))
-              )}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="p-4 space-y-3">
+                {upcomingTasks.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500">
+                    <Clock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                    <p>Keine anstehenden Aufgaben</p>
+                  </div>
+                ) : (
+                  upcomingTasks.map(task => (
+                    <TaskCard 
+                      key={task.id} 
+                      task={task}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
 
-          <Card className="border-slate-200 bg-white">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="text-lg font-semibold text-slate-900">
-                Überfällige Aufgaben
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3">
-              {overdueTasks.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-300" />
-                  <p>Keine überfälligen Aufgaben</p>
-                </div>
-              ) : (
-                overdueTasks.slice(0, 5).map(task => (
-                  <TaskCard 
-                    key={task.id} 
-                    task={task}
-                  />
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            <Card className="border-slate-200 bg-white">
+              <CardHeader className="border-b border-slate-100">
+                <CardTitle className="text-lg font-semibold text-slate-900">
+                  Überfällige Aufgaben
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-3">
+                {overdueTasks.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500">
+                    <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-300" />
+                    <p>Keine überfälligen Aufgaben</p>
+                  </div>
+                ) : (
+                  overdueTasks.slice(0, 5).map(task => (
+                    <TaskCard 
+                      key={task.id} 
+                      task={task}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
