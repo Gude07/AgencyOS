@@ -56,17 +56,21 @@ Deal Details:
     const prompt = `
 Erstelle einen professionellen E-Mail-Entwurf auf Deutsch.
 
+WICHTIG: Du schreibst diese E-Mail AUS SICHT EINES SPIELERBERATERS von der Agentur "STS Sports".
+Du vertrittst die Interessen von Spielern und vermittelst sie an Vereine.
+
 KONTEXT:
 ${emailContext}
 
 EMPFÄNGER: ${recipientName || 'Sehr geehrte Damen und Herren'}
 TON: ${tone === 'friendly' ? 'freundlich und persönlich' : tone === 'formal' ? 'sehr förmlich' : 'professionell'}
-ABSENDER: ${user.full_name}
+ABSENDER: ${user.full_name}, Spielerberater bei STS Sports
 
 Die E-Mail soll:
+- Aus Sicht eines Spielerberaters geschrieben sein (nicht aus Spieler-Sicht!)
 - Eine passende Anrede enthalten
-- Den Hauptinhalt klar strukturiert darstellen
-- Einen professionellen Abschluss haben
+- Den Hauptinhalt klar strukturiert darstellen (z.B. Spielervorschlag mit Qualifikationen)
+- Einen professionellen Abschluss haben mit Kontaktdaten
 - Handlungsaufforderungen (Call-to-Action) wo sinnvoll enthalten
 
 Formatiere die E-Mail mit HTML für bessere Lesbarkeit.
