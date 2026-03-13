@@ -187,12 +187,12 @@ export default function Coaches() {
   ];
 
   return (
-    <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Trainerverwaltung</h1>
-            <p className="text-slate-600 mt-1">{filteredCoaches.length} Trainer im Portfolio</p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Trainerverwaltung</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">{filteredCoaches.length} Trainer im Portfolio</p>
           </div>
           <div className="flex gap-2">
             <Button 

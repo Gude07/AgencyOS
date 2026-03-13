@@ -449,17 +449,17 @@ export default function Calendar() {
   const selectedDateEvents = getEventsForDate(selectedDate);
 
   return (
-    <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Kalender</h1>
-            <p className="text-slate-600 mt-1">Termine und Deadlines im Überblick</p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Kalender</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">Termine und Deadlines im Überblick</p>
           </div>
         </div>
 
-        <Card className="border-slate-200 bg-white">
-          <CardHeader className="border-b border-slate-100">
+        <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <Button
@@ -471,7 +471,7 @@ export default function Calendar() {
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <div className="min-w-[200px] text-center">
-                  <CardTitle className="text-xl font-bold">
+                  <CardTitle className="text-xl font-bold dark:text-white">
                     {view === "month" && format(currentDate, "MMMM yyyy", { locale: de })}
                     {view === "week" && `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), "d. MMM", { locale: de })} - ${format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), "d. MMM yyyy", { locale: de })}`}
                     {view === "day" && format(currentDate, "d. MMMM yyyy", { locale: de })}

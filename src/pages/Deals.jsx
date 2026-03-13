@@ -168,13 +168,13 @@ export default function Deals() {
   }
 
   return (
-    <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Deals</h1>
-            <p className="text-slate-600 mt-1">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Deals</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">
               {deals.length} Deals • {stats.active} aktiv • {stats.completed} abgeschlossen
             </p>
           </div>
@@ -211,7 +211,7 @@ export default function Deals() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Aktive Deals</p>
-                    <p className="text-xl font-bold text-slate-900">{stats.active}</p>
+                    <p className="text-xl font-bold text-slate-900 dark:text-white">{stats.active}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -222,7 +222,7 @@ export default function Deals() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Abgeschlossen</p>
-                    <p className="text-xl font-bold text-slate-900">{stats.completed}</p>
+                    <p className="text-xl font-bold text-slate-900 dark:text-white">{stats.completed}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -233,7 +233,7 @@ export default function Deals() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Transfervolumen</p>
-                    <p className="text-xl font-bold text-slate-900">
+                    <p className="text-xl font-bold text-slate-900 dark:text-white">
                       {stats.totalValue >= 1000000 
                         ? `${(stats.totalValue / 1000000).toFixed(1)}M €`
                         : `${(stats.totalValue / 1000).toFixed(0)}K €`
@@ -245,7 +245,7 @@ export default function Deals() {
             </div>
 
             {/* Filter */}
-            <Card className="border-slate-200 bg-white">
+            <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
               <CardContent className="p-4">
                 <div className="grid md:grid-cols-3 gap-3">
                   <div className="relative">
@@ -293,10 +293,10 @@ export default function Deals() {
 
             {/* Deal Liste */}
             {filteredDeals.length === 0 ? (
-              <Card className="border-slate-200 bg-white">
+              <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                 <CardContent className="p-8 text-center">
                   <FileCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-600">Keine Deals gefunden</p>
+                  <p className="text-slate-600 dark:text-slate-400">Keine Deals gefunden</p>
                   <Button 
                     variant="outline" 
                     className="mt-4"
