@@ -112,11 +112,11 @@ export default function ClubRequestsMap({ requests = [] }) {
     setMapLoaded(true);
   }, []);
 
-  // Nur aktive Anfragen (nicht archiviert)
-  const activeRequests = requests.filter(r => !r.archive_id);
+  // Alle Anfragen anzeigen (auch archivierte)
+  const allRequests = requests;
 
   // Gruppiere Anfragen nach Koordinaten (für Cluster)
-  const requestsByLocation = activeRequests.reduce((acc, request) => {
+  const requestsByLocation = allRequests.reduce((acc, request) => {
     const coords = getCoordinatesForClub(request.club_name, request.league, request.country);
     const key = `${coords[0]},${coords[1]}`;
     if (!acc[key]) {
@@ -132,10 +132,10 @@ export default function ClubRequestsMap({ requests = [] }) {
   });
 
   const statusCounts = {
-    offen: activeRequests.filter(r => r.status === 'offen').length,
-    in_bearbeitung: activeRequests.filter(r => r.status === 'in_bearbeitung').length,
-    angebote_gesendet: activeRequests.filter(r => r.status === 'angebote_gesendet').length,
-    abgeschlossen: activeRequests.filter(r => r.status === 'abgeschlossen').length,
+    offen: allRequests.filter(r => r.status === 'offen').length,
+    in_bearbeitung: allRequests.filter(r => r.status === 'in_bearbeitung').length,
+    angebote_gesendet: allRequests.filter(r => r.status === 'angebote_gesendet').length,
+    abgeschlossen: allRequests.filter(r => r.status === 'abgeschlossen').length,
   };
 
   if (!mapLoaded) {
@@ -159,7 +159,7 @@ export default function ClubRequestsMap({ requests = [] }) {
                 Geografische Verteilung der Vereinsanfragen
               </CardTitle>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                {activeRequests.length} aktive Anfragen auf der Karte
+                {allRequests.length} Anfragen auf der Karte
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -169,7 +169,7 @@ export default function ClubRequestsMap({ requests = [] }) {
                 onClick={() => setSelectedFilter('alle')}
                 className={selectedFilter === 'alle' ? 'bg-blue-900' : ''}
               >
-                Alle ({activeRequests.length})
+                Alle ({allRequests.length})
               </Button>
               {Object.entries(statusCounts).map(([status, count]) => (
                 <Button
