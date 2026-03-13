@@ -1208,6 +1208,11 @@ export default function ClubRequests() {
         </Tabs>
 
         {filteredRequests.length === 0 && !isLoading && filterFavorites !== 'karte' && (
+          <div className="text-center py-16">
+            <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Anfragen gefunden</p>
+          </div>
+        )}
 
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -1539,10 +1544,10 @@ export default function ClubRequests() {
                 {createRequestMutation.isPending ? "Wird erstellt..." : "Anfrage erstellen"}
               </Button>
             </div>
-            </DialogContent>
-          </Dialog>
+          </DialogContent>
+        </Dialog>
 
-          <Dialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <Dialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Neues Archiv erstellen</DialogTitle>
@@ -1572,9 +1577,9 @@ export default function ClubRequests() {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
 
-          <Dialog open={showManageArchivesDialog} onOpenChange={setShowManageArchivesDialog}>
+            <Dialog open={showManageArchivesDialog} onOpenChange={setShowManageArchivesDialog}>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Archive verwalten</DialogTitle>
@@ -1653,12 +1658,12 @@ export default function ClubRequests() {
                 )}
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
 
-          <AlertDialog open={!!archiveToDelete} onOpenChange={() => {
+            <AlertDialog open={!!archiveToDelete} onOpenChange={() => {
             setArchiveToDelete(null);
             setDeleteConfirmationText("");
-          }}>
+            }}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle className="text-red-600">⚠️ Archiv unwiderruflich löschen?</AlertDialogTitle>
@@ -1699,7 +1704,7 @@ export default function ClubRequests() {
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
-          </AlertDialog>
+            </AlertDialog>
       </div>
     </div>
   );
