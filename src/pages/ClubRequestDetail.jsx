@@ -1009,8 +1009,8 @@ export default function ClubRequestDetail() {
 
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              {/* Mobile: Dropdown */}
-              <div className="lg:hidden mb-6">
+              {/* Mobile/Tablet: Dropdown */}
+              <div className="xl:hidden mb-6">
                 <Select value={activeTab} onValueChange={setActiveTab}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -1050,27 +1050,27 @@ export default function ClubRequestDetail() {
                 </Select>
               </div>
 
-              {/* Desktop: Tabs */}
-              <TabsList className="hidden lg:grid w-full grid-cols-5 mb-6">
+              {/* Desktop only: Full Tabs */}
+              <TabsList className="hidden xl:grid w-full grid-cols-5 mb-6">
                 <TabsTrigger value="matched" className="flex items-center gap-2">
                   <Star className="w-4 h-4" />
-                  <span className="hidden xl:inline">Matches</span> ({filteredMatchingPlayers.length})
+                  Matches ({filteredMatchingPlayers.length})
                 </TabsTrigger>
                 <TabsTrigger value="ai_matching" className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4" />
-                  <span className="hidden xl:inline">KI-</span>Analyse
+                  KI-Analyse
                 </TabsTrigger>
                 <TabsTrigger value="shortlist" className="flex items-center gap-2">
                   <ListChecks className="w-4 h-4" />
-                  <span className="hidden xl:inline">Short</span>list ({shortlistPlayers.length})
+                  Shortlist ({shortlistPlayers.length})
                 </TabsTrigger>
                 <TabsTrigger value="criteria" className="flex items-center gap-2">
                   <Settings className="w-4 h-4" />
-                  <span className="hidden xl:inline">Kriterien</span>
+                  Kriterien
                 </TabsTrigger>
                 <TabsTrigger value="communication" className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
-                  <span className="hidden xl:inline">Kommunikation</span>
+                  Kommunikation
                 </TabsTrigger>
               </TabsList>
 

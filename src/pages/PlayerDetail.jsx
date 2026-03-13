@@ -432,8 +432,8 @@ export default function PlayerDetail() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* Mobile: Dropdown */}
-          <div className="lg:hidden mb-6">
+          {/* Mobile/Tablet: Dropdown */}
+          <div className="xl:hidden mb-6">
             <Select value={activeTab} onValueChange={setActiveTab}>
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -454,8 +454,8 @@ export default function PlayerDetail() {
             </Select>
           </div>
 
-          {/* Desktop: Tabs */}
-          <TabsList className="hidden lg:grid w-full grid-cols-9 mb-6">
+          {/* Desktop only: Full Tabs */}
+          <TabsList className="hidden xl:grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="info">Info</TabsTrigger>
             <TabsTrigger value="ai">KI-Analyse</TabsTrigger>
             <TabsTrigger value="career">Karriere</TabsTrigger>
