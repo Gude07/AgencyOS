@@ -10,7 +10,29 @@ Deno.serve(async (req) => {
     }
 
     const meeting = payload.data;
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection('outlook');
+    
+    // Überprüfe ob Outlook-Verbindung autorisiert ist
+    let connectionData;
+    try {
+      connectionData = await base44.asServiceRole.connectors.getConnection('outlook');
+    } catch (error) {
+      console.error('Outlook connection error:', error);
+      return Response.json({ 
+        success: false,
+        error: 'Outlook-Verbindung nicht autorisiert. Bitte autorisieren Sie die Outlook-Integration in den Einstellungen.',
+        skipRetry: true
+      }, { status: 400 });
+    }
+
+    const { accessToken } = connectionData;
+    
+    if (!accessToken || accessToken.length < 50) {
+      return Response.json({ 
+        success: false,
+        error: 'Ungültiges Outlook Access Token. Bitte autorisieren Sie die Outlook-Integration neu.',
+        skipRetry: true
+      }, { status: 400 });
+    }
 
     // DELETE: Remove from Outlook
     if (payload.event.type === 'delete' && meeting.outlook_event_id) {
@@ -75,7 +97,20 @@ Deno.serve(async (req) => {
       );
 
       if (!updateResponse.ok) {
-        throw new Error(`Failed to update: ${await updateResponse.text()}`);
+        const errorText = await updateResponse.text();
+        const errorData = JSON.parse(errorText);
+        
+        // Throttling-Fehler: Warten und nicht sofort neu versuchen
+        if (errorData.error?.code === 'ApplicationThrottled' || 
+            errorData.error?.code === 'ErrorExceededMessageLimit') {
+          return Response.json({ 
+            success: false,
+            error: `Outlook API-Limit erreicht: ${errorData.error.message}. Bitte warten Sie einige Minuten.`,
+            skipRetry: true
+          }, { status: 429 });
+        }
+        
+        throw new Error(`Failed to update: ${errorText}`);
       }
 
       const updatedEvent = await updateResponse.json();
@@ -102,7 +137,29 @@ Deno.serve(async (req) => {
       );
 
       if (!createResponse.ok) {
-        throw new Error(`Failed to create: ${await createResponse.text()}`);
+        const errorText = await createResponse.text();
+        const errorData = JSON.parse(errorText);
+        
+        // Token-Fehler: Keine Wiederholungsversuche
+        if (errorData.error?.code === 'InvalidAuthenticationToken') {
+          return Response.json({ 
+            success: false,
+            error: 'Outlook Access Token ist ungültig oder abgelaufen. Bitte autorisieren Sie die Outlook-Integration neu.',
+            skipRetry: true
+          }, { status: 401 });
+        }
+        
+        // Throttling-Fehler
+        if (errorData.error?.code === 'ApplicationThrottled' || 
+            errorData.error?.code === 'ErrorExceededMessageLimit') {
+          return Response.json({ 
+            success: false,
+            error: `Outlook API-Limit erreicht: ${errorData.error.message}. Bitte warten Sie einige Minuten.`,
+            skipRetry: true
+          }, { status: 429 });
+        }
+        
+        throw new Error(`Failed to create: ${errorText}`);
       }
 
       const createdEvent = await createResponse.json();
