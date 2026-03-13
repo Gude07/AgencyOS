@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle, IdCard, Download } from "lucide-react";
+import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -42,6 +42,7 @@ import { de } from "date-fns/locale";
 import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
 import TemplateManager from "../components/templates/TemplateManager";
 import DataExtractor from "../components/ai/DataExtractor";
+import PlayerComparisonTool from "../components/players/PlayerComparisonTool";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -79,6 +80,7 @@ export default function Players() {
   const [editingArchive, setEditingArchive] = useState(null);
   const [archiveToDelete, setArchiveToDelete] = useState(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+  const [showComparisonTool, setShowComparisonTool] = useState(false);
 
   // Restore scroll position on mount
   React.useEffect(() => {
@@ -420,6 +422,14 @@ export default function Players() {
           <div className="flex gap-2">
             {!selectionMode ? (
               <>
+                <Button 
+                  onClick={() => setShowComparisonTool(true)}
+                  variant="outline"
+                  className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                >
+                  <GitCompare className="w-4 h-4 mr-2" />
+                  Vergleichen
+                </Button>
                 <Button 
                   onClick={() => setShowManageArchivesDialog(true)}
                   variant="outline"
@@ -1167,6 +1177,12 @@ export default function Players() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          <PlayerComparisonTool 
+            open={showComparisonTool}
+            onOpenChange={setShowComparisonTool}
+            initialPlayerIds={[]}
+          />
           </div>
           </div>
           );
