@@ -111,62 +111,33 @@ Gib ausführliche, aktuelle Informationen zurück, insbesondere zu aktuellen Ver
 
     console.log(`Spielerdaten vorbereitet für Matching: ${playersData.length} Spieler`);
 
-    // Erstelle einen übersichtlichen Text-basierten Spielerpool
-    let playersText = `SPIELERPOOL (${playersData.length} Spieler):\n\n`;
-    playersData.forEach((p, idx) => {
-      playersText += `${idx + 1}. ${p.name}\n`;
-      playersText += `   - ID: ${p.id}\n`;
-      playersText += `   - Position: ${p.position}`;
-      if (p.secondary_positions && p.secondary_positions.length > 0) {
-        playersText += ` (auch: ${p.secondary_positions.join(', ')})`;
-      }
-      playersText += `\n`;
-      playersText += `   - Alter: ${p.age}, Nationalität: ${p.nationality}\n`;
-      playersText += `   - Aktueller Verein: ${p.current_club}\n`;
-      playersText += `   - Stärken: ${p.strengths}\n`;
-      playersText += `   - Fuß: ${p.foot}, Größe: ${p.height}cm\n`;
-      playersText += `   - Ratings: Tempo ${p.speed_rating}/10, Kraft ${p.strength_rating}/10, Ausdauer ${p.stamina_rating}/10, Agilität ${p.agility_rating}/10\n`;
-      if (p.personality_traits && p.personality_traits.length > 0) {
-        playersText += `   - Charakter: ${p.personality_traits.join(', ')}\n`;
-      }
-      playersText += `   - Form: ${p.current_form}\n\n`;
-    });
+    // LÖSUNG: Kompakter JSON-Ansatz für bessere KI-Verarbeitung
+    console.log('Starte KI-Matching mit kompakten Spielerdaten...');
 
-    const matchingPrompt = `Du bist ein erfahrener Fußball-Scout. Analysiere ALLE ${playersData.length} Spieler aus unserem Pool und finde die TOP 10, die am besten zu "${clubName}" passen.
+    const matchingPrompt = `Du bist ein Fußball-Scout-Experte. Analysiere die Spieler und empfehle die TOP 10 für "${clubName}".
 
-VEREINSPROFIL "${clubName}":
-- Spielweise: ${clubProfile.playing_style}
-- Formationen: ${clubProfile.formations?.join(', ')}
-- Trainer: ${clubProfile.current_coach}
-- Trainerphilosophie: ${clubProfile.coach_philosophy}
-- Gesuchte Attribute: ${clubProfile.key_attributes?.join(', ')}
-- Gesuchte Positionen: ${clubProfile.target_positions?.join(', ')}
-- Transfertrends: ${clubProfile.transfer_trends}
-- Liga: ${clubProfile.league} (${clubProfile.country})
+VEREINSPROFIL:
+Spielweise: ${clubProfile.playing_style}
+Formationen: ${clubProfile.formations?.join(', ') || 'N/A'}
+Trainer: ${clubProfile.current_coach || 'N/A'}
+Philosophie: ${clubProfile.coach_philosophy || 'N/A'}
+Gesuchte Attribute: ${clubProfile.key_attributes?.join(', ') || 'N/A'}
+Gesuchte Positionen: ${clubProfile.target_positions?.join(', ') || 'Alle'}
+Liga: ${clubProfile.league || 'N/A'} (${clubProfile.country || 'N/A'})
 
-${playersText}
+VERFÜGBARE SPIELER (${playersData.length}):
+${JSON.stringify(playersData.slice(0, 50), null, 2)}
 
-AUFGABE:
-Gehe ALLE ${playersData.length} Spieler durch und wähle die TOP 10 aus, die am besten passen.
+${playersData.length > 50 ? `\n... und ${playersData.length - 50} weitere Spieler:\n${JSON.stringify(playersData.slice(50).map(p => ({ id: p.id, name: p.name, position: p.position, age: p.age })), null, 2)}` : ''}
 
-Bewertungskriterien:
-- Position passt zu den gesuchten Positionen
-- Spielweise und Attribute passen zur Vereinsphilosophie
-- Physische Voraussetzungen (Größe, Tempo, Kraft passend zum System)
-- Technische Fähigkeiten aus den Stärken
-- Charakter und Persönlichkeit
-- Alter und Entwicklung
+WICHTIG:
+- Analysiere ALLE ${playersData.length} Spieler
+- Wähle die TOP 10 basierend auf Vereinsprofil
+- Nutze die player_id aus der Liste
+- Match-Score 0-100
+- Konkrete Begründungen
 
-Gib für JEDEN der Top 10 Spieler zurück:
-- player_id (WICHTIG: Exakte ID aus der Liste oben!)
-- player_name
-- match_score (0-100, nutze das volle Spektrum!)
-- reasoning (Detaillierte Begründung mit konkreten Bezügen zu den Spielerdaten)
-- key_strengths (3-5 passende Stärken als Array)
-
-Außerdem eine summary mit Gesamteinschätzung.`;
-
-    console.log('Starte KI-Matching...');
+Gib das Ergebnis im geforderten JSON-Format zurück.`;
 
     const matchingResponse = await base44.integrations.Core.InvokeLLM({
       prompt: matchingPrompt,
@@ -184,24 +155,22 @@ Außerdem eine summary mit Gesamteinschätzung.`;
                 match_score: { type: "number" },
                 reasoning: { type: "string" },
                 key_strengths: { type: "array", items: { type: "string" } }
-              },
-              required: ["player_id", "player_name", "match_score", "reasoning", "key_strengths"]
+              }
             }
           },
           summary: { type: "string" }
-        },
-        required: ["recommendations", "summary"]
+        }
       }
     });
 
-    console.log(`Matching abgeschlossen. Empfehlungen: ${matchingResponse.recommendations?.length || 0}`);
+    console.log(`Matching abgeschlossen. Empfehlungen erhalten: ${matchingResponse?.recommendations?.length || 0}`);
 
-    // Validierung: Prüfe ob Empfehlungen vorhanden sind
-    if (!matchingResponse.recommendations || matchingResponse.recommendations.length === 0) {
-      console.error('Keine Empfehlungen von der KI erhalten!');
+    // Validierung
+    if (!matchingResponse || !matchingResponse.recommendations || matchingResponse.recommendations.length === 0) {
+      console.error('Keine Empfehlungen erhalten. Response:', JSON.stringify(matchingResponse));
       return Response.json({
         success: false,
-        error: 'Die KI konnte keine passenden Spieler finden. Bitte versuchen Sie es erneut.'
+        error: 'Die KI konnte keine passenden Spieler finden. Möglicherweise passen die Kriterien zu keinem Spieler im Pool.'
       });
     }
 
