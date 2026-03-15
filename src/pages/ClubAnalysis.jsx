@@ -22,8 +22,10 @@ import {
 
 export default function ClubAnalysis() {
   const [clubName, setClubName] = useState("");
-  const [currentAnalysis, setCurrentAnalysis] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [currentClubProfile, setCurrentClubProfile] = useState(null);
+  const [currentRecommendations, setCurrentRecommendations] = useState(null);
+  const [isAnalyzingClub, setIsAnalyzingClub] = useState(false);
+  const [isMatchingPlayers, setIsMatchingPlayers] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const queryClient = useQueryClient();
 
@@ -55,54 +57,94 @@ export default function ClubAnalysis() {
     },
   });
 
-  const handleAnalyze = async () => {
+  const handleAnalyzeClub = async () => {
     if (!clubName.trim()) {
       toast.error('Bitte Vereinsname eingeben');
       return;
     }
 
-    setIsAnalyzing(true);
+    setIsAnalyzingClub(true);
+    setCurrentClubProfile(null);
+    setCurrentRecommendations(null);
+    
     try {
-      const response = await base44.functions.invoke('analyzeClubAndRecommendPlayers', {
+      const response = await base44.functions.invoke('analyzeClub', {
         clubName: clubName.trim()
       });
 
       if (response.data.success) {
-        setCurrentAnalysis({
+        setCurrentClubProfile({
           club_name: clubName.trim(),
-          club_profile: response.data.clubProfile,
-          recommended_players: response.data.recommendations,
-          analysis_summary: response.data.summary,
-          total_players_analyzed: response.data.totalPlayersAnalyzed
+          ...response.data.clubProfile
         });
-        toast.success('Analyse abgeschlossen');
+        toast.success('Vereinsanalyse abgeschlossen');
       } else {
         toast.error(response.data.error || 'Analyse fehlgeschlagen');
       }
     } catch (error) {
-      console.error('Analysis error:', error);
-      toast.error('Fehler bei der Analyse');
+      console.error('Club analysis error:', error);
+      toast.error('Fehler bei der Vereinsanalyse');
     } finally {
-      setIsAnalyzing(false);
+      setIsAnalyzingClub(false);
+    }
+  };
+
+  const handleMatchPlayers = async () => {
+    if (!currentClubProfile) {
+      toast.error('Bitte erst Vereinsanalyse durchführen');
+      return;
+    }
+
+    setIsMatchingPlayers(true);
+    try {
+      const response = await base44.functions.invoke('matchPlayersToClub', {
+        clubName: currentClubProfile.club_name,
+        clubProfile: currentClubProfile
+      });
+
+      if (response.data.success) {
+        setCurrentRecommendations({
+          recommendations: response.data.recommendations,
+          summary: response.data.summary,
+          analyzedPlayers: response.data.analyzedPlayers
+        });
+        toast.success(`${response.data.recommendations.length} Spieler empfohlen`);
+      } else {
+        toast.error(response.data.error || 'Matching fehlgeschlagen');
+      }
+    } catch (error) {
+      console.error('Matching error:', error);
+      toast.error('Fehler beim Spieler-Matching');
+    } finally {
+      setIsMatchingPlayers(false);
     }
   };
 
   const handleSaveAnalysis = () => {
-    if (!currentAnalysis) return;
+    if (!currentClubProfile || !currentRecommendations) {
+      toast.error('Bitte erst Vereinsanalyse und Spieler-Matching durchführen');
+      return;
+    }
 
     saveAnalysisMutation.mutate({
       agency_id: user.agency_id,
-      ...currentAnalysis
+      club_name: currentClubProfile.club_name,
+      club_profile: currentClubProfile,
+      recommended_players: currentRecommendations.recommendations,
+      analysis_summary: currentRecommendations.summary,
+      total_players_analyzed: currentRecommendations.analyzedPlayers
     });
   };
 
   const loadSavedAnalysis = (analysis) => {
-    setCurrentAnalysis({
+    setCurrentClubProfile({
       club_name: analysis.club_name,
-      club_profile: analysis.club_profile,
-      recommended_players: analysis.recommended_players,
-      analysis_summary: analysis.analysis_summary,
-      total_players_analyzed: analysis.total_players_analyzed
+      ...analysis.club_profile
+    });
+    setCurrentRecommendations({
+      recommendations: analysis.recommended_players,
+      summary: analysis.analysis_summary,
+      analyzedPlayers: analysis.total_players_analyzed
     });
     setClubName(analysis.club_name);
   };
@@ -138,15 +180,15 @@ export default function ClubAnalysis() {
                 placeholder="z.B. FC Bayern München, Manchester United, ..."
                 value={clubName}
                 onChange={(e) => setClubName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAnalyze()}
-                disabled={isAnalyzing}
+                onKeyPress={(e) => e.key === 'Enter' && handleAnalyzeClub()}
+                disabled={isAnalyzingClub}
               />
               <Button 
-                onClick={handleAnalyze} 
-                disabled={isAnalyzing || !clubName.trim()}
+                onClick={handleAnalyzeClub} 
+                disabled={isAnalyzingClub || !clubName.trim()}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
-                {isAnalyzing ? (
+                {isAnalyzingClub ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Analysiere...
@@ -154,30 +196,51 @@ export default function ClubAnalysis() {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Analysieren
+                    Verein analysieren
                   </>
                 )}
               </Button>
             </div>
-            {isAnalyzing && (
+            {isAnalyzingClub && (
               <div className="text-sm text-slate-600 dark:text-slate-400">
-                Die KI sammelt Informationen aus dem Internet und analysiert Ihren Spielerpool. Dies kann 30-60 Sekunden dauern...
+                Die KI sammelt aktuelle Informationen über den Verein aus dem Internet. Dies kann 30-60 Sekunden dauern...
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Aktuelle Analyse */}
-        {currentAnalysis && (
+        {/* Vereinsprofil */}
+        {currentClubProfile && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Analyse: {currentAnalysis.club_name}
+                Vereinsprofil: {currentClubProfile.club_name}
               </h2>
-              <Button onClick={handleSaveAnalysis} disabled={saveAnalysisMutation.isPending}>
-                <Save className="w-4 h-4 mr-2" />
-                Analyse speichern
-              </Button>
+              <div className="flex gap-3">
+                <Button 
+                  onClick={handleMatchPlayers} 
+                  disabled={isMatchingPlayers}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isMatchingPlayers ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Analysiere Spieler...
+                    </>
+                  ) : (
+                    <>
+                      <Users className="w-4 h-4 mr-2" />
+                      Spieler-Matching starten
+                    </>
+                  )}
+                </Button>
+                {currentRecommendations && (
+                  <Button onClick={handleSaveAnalysis} disabled={saveAnalysisMutation.isPending}>
+                    <Save className="w-4 h-4 mr-2" />
+                    Komplett speichern
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Vereinsprofil */}
@@ -192,12 +255,12 @@ export default function ClubAnalysis() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Spielweise</h4>
-                    <p className="text-slate-600 dark:text-slate-400">{currentAnalysis.club_profile.playing_style}</p>
+                    <p className="text-slate-600 dark:text-slate-400">{currentClubProfile.playing_style}</p>
                   </div>
                   <div>
                     <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Formationen</h4>
                     <div className="flex flex-wrap gap-2">
-                      {currentAnalysis.club_profile.formations?.map((formation, i) => (
+                      {currentClubProfile.formations?.map((formation, i) => (
                         <Badge key={i} variant="outline">{formation}</Badge>
                       ))}
                     </div>
@@ -205,29 +268,29 @@ export default function ClubAnalysis() {
                   <div>
                     <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Trainer & Philosophie</h4>
                     <p className="text-slate-600 dark:text-slate-400">
-                      <span className="font-medium">{currentAnalysis.club_profile.current_coach || 'N/A'}</span>
-                      {currentAnalysis.club_profile.coach_philosophy && (
-                        <span className="block mt-1">{currentAnalysis.club_profile.coach_philosophy}</span>
+                      <span className="font-medium">{currentClubProfile.current_coach || 'N/A'}</span>
+                      {currentClubProfile.coach_philosophy && (
+                        <span className="block mt-1">{currentClubProfile.coach_philosophy}</span>
                       )}
                     </p>
                   </div>
                   <div>
                     <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Liga & Land</h4>
                     <p className="text-slate-600 dark:text-slate-400">
-                      {currentAnalysis.club_profile.league} ({currentAnalysis.club_profile.country})
+                      {currentClubProfile.league} ({currentClubProfile.country})
                     </p>
                   </div>
                 </div>
                 <div>
                   <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Gesuchte Attribute</h4>
                   <div className="flex flex-wrap gap-2">
-                    {currentAnalysis.club_profile.key_attributes?.map((attr, i) => (
+                    {currentClubProfile.key_attributes?.map((attr, i) => (
                       <Badge key={i} className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">{attr}</Badge>
                     ))}
                   </div>
                 </div>
-                <div className="md:col-span-2 space-y-3">
-                  {currentAnalysis.club_profile.injury_situation && (
+                <div className="space-y-3">
+                  {currentClubProfile.injury_situation && (
                     <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3">
                       <h4 className="font-semibold text-red-900 dark:text-red-200 mb-2 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,26 +298,26 @@ export default function ClubAnalysis() {
                         </svg>
                         Aktuelle Verletzungssituation
                       </h4>
-                      <p className="text-red-800 dark:text-red-300">{currentAnalysis.club_profile.injury_situation}</p>
+                      <p className="text-red-800 dark:text-red-300">{currentClubProfile.injury_situation}</p>
                     </div>
                   )}
-                  {currentAnalysis.club_profile.transfer_trends && (
+                  {currentClubProfile.transfer_trends && (
                     <div>
                       <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Transfertrends & Strategie</h4>
-                      <p className="text-slate-600 dark:text-slate-400">{currentAnalysis.club_profile.transfer_trends}</p>
+                      <p className="text-slate-600 dark:text-slate-400">{currentClubProfile.transfer_trends}</p>
                     </div>
                   )}
-                  {currentAnalysis.club_profile.current_reports && (
+                  {currentClubProfile.current_reports && (
                     <div>
                       <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Aktuelle Berichte & News</h4>
-                      <p className="text-slate-600 dark:text-slate-400">{currentAnalysis.club_profile.current_reports}</p>
+                      <p className="text-slate-600 dark:text-slate-400">{currentClubProfile.current_reports}</p>
                     </div>
                   )}
-                  {currentAnalysis.club_profile.target_positions && currentAnalysis.club_profile.target_positions.length > 0 && (
+                  {currentClubProfile.target_positions && currentClubProfile.target_positions.length > 0 && (
                     <div>
                       <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Gesuchte Positionen</h4>
                       <div className="flex flex-wrap gap-2">
-                        {currentAnalysis.club_profile.target_positions.map((pos, i) => (
+                        {currentClubProfile.target_positions.map((pos, i) => (
                           <Badge key={i} className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">{pos}</Badge>
                         ))}
                       </div>
@@ -264,63 +327,64 @@ export default function ClubAnalysis() {
               </CardContent>
             </Card>
 
-            {/* Zusammenfassung */}
-            {currentAnalysis.analysis_summary && (
-              <Card className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 border-purple-200 dark:border-purple-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-purple-600" />
-                    KI-Zusammenfassung
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-700 dark:text-slate-300">{currentAnalysis.analysis_summary}</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-                    {currentAnalysis.total_players_analyzed} Spieler analysiert
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Empfohlene Spieler */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-green-600" />
-                  Empfohlene Spieler ({currentAnalysis.recommended_players?.length || 0})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {currentAnalysis.recommended_players?.map((rec, index) => (
-                    <div key={index} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <Link 
-                            to={createPageUrl("PlayerDetail") + `?id=${rec.player_id}`}
-                            className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            {rec.player_name}
-                          </Link>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                              Match: {rec.match_score}%
-                            </Badge>
-                            <span className="text-sm text-slate-500 dark:text-slate-400">#{index + 1}</span>
+            {currentRecommendations && (
+              <>
+                <Card className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 border-purple-200 dark:border-purple-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-purple-600" />
+                      KI-Zusammenfassung
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-slate-700 dark:text-slate-300">{currentRecommendations.summary}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                      {currentRecommendations.analyzedPlayers} Spieler analysiert
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-green-600" />
+                      Empfohlene Spieler ({currentRecommendations.recommendations?.length || 0})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {currentRecommendations.recommendations?.map((rec, index) => (
+                        <div key={index} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <Link 
+                                to={createPageUrl("PlayerDetail") + `?id=${rec.player_id}`}
+                                className="text-lg font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                {rec.player_name}
+                              </Link>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                  Match: {rec.match_score}%
+                                </Badge>
+                                <span className="text-sm text-slate-500 dark:text-slate-400">#{index + 1}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-slate-600 dark:text-slate-400 mb-2">{rec.reasoning}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {rec.key_strengths?.map((strength, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">{strength}</Badge>
+                            ))}
                           </div>
                         </div>
-                      </div>
-                      <p className="text-slate-600 dark:text-slate-400 mb-2">{rec.reasoning}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {rec.key_strengths?.map((strength, i) => (
-                          <Badge key={i} variant="outline" className="text-xs">{strength}</Badge>
-                        ))}
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         )}
 
