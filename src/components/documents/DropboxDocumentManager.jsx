@@ -145,12 +145,36 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
     }
   };
 
-  const handleDownload = (doc) => {
-    if (doc.url) {
-      // Öffnet den Dropbox-Link in neuem Tab
-      window.open(doc.url, '_blank');
-    } else {
-      toast.error('Download-Link nicht verfügbar');
+  const handleDownload = async (doc) => {
+    try {
+      toast.loading('Download wird vorbereitet...');
+      
+      // Backend-Funktion aufrufen für direkten Download
+      const response = await base44.functions.invoke('downloadDropboxFile', {
+        filePath: doc.path
+      });
+
+      // Response als Blob verarbeiten
+      const blob = await fetch(`data:application/octet-stream;base64,${btoa(
+        String.fromCharCode(...new Uint8Array(response.data))
+      )}`).then(r => r.blob());
+      
+      // Download-Link erstellen und triggern
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Download gestartet');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.dismiss();
+      toast.error('Download fehlgeschlagen: ' + error.message);
     }
   };
 

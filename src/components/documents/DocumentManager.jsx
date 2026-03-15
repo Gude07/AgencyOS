@@ -100,8 +100,41 @@ export default function DocumentManager({ entityType, entityId }) {
     toast.success('Dokument gelöscht');
   };
 
-  const handleDownload = (doc) => {
-    window.open(doc.url, '_blank');
+  const handleDownload = async (doc) => {
+    // Für normale Dokumente (nicht Dropbox) einfach öffnen
+    if (!doc.path) {
+      window.open(doc.url, '_blank');
+      return;
+    }
+    
+    // Für Dropbox-Dokumente direkten Download verwenden
+    try {
+      toast.loading('Download wird vorbereitet...');
+      
+      const response = await base44.functions.invoke('downloadDropboxFile', {
+        filePath: doc.path
+      });
+
+      const blob = await fetch(`data:application/octet-stream;base64,${btoa(
+        String.fromCharCode(...new Uint8Array(response.data))
+      )}`).then(r => r.blob());
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.dismiss();
+      toast.success('Download gestartet');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.dismiss();
+      toast.error('Download fehlgeschlagen');
+    }
   };
 
   return (
