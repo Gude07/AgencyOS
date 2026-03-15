@@ -21,6 +21,9 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    // Pfad bereinigen (Leerzeichen am Anfang entfernen)
+    const cleanPath = filePath.trim();
+
     // Dropbox Verbindung abrufen
     let connectionData;
     try {
@@ -34,47 +37,35 @@ Deno.serve(async (req) => {
     
     const { accessToken } = connectionData;
 
-    // Datei direkt von Dropbox herunterladen
-    const downloadResponse = await fetch('https://content.dropboxapi.com/2/files/download', {
+    // Temporären Download-Link erstellen
+    const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Dropbox-API-Arg': JSON.stringify({ path: filePath })
-      }
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ path: cleanPath })
     });
 
-    if (!downloadResponse.ok) {
-      const errorText = await downloadResponse.text();
-      console.error('Download error:', errorText);
+    if (!tempLinkResponse.ok) {
+      const errorText = await tempLinkResponse.text();
+      console.error('Temporary link error:', errorText);
       return Response.json({ 
         success: false,
-        error: 'Datei konnte nicht heruntergeladen werden' 
-      }, { status: 500 });
+        error: 'Datei konnte nicht gefunden werden. Möglicherweise wurde sie gelöscht oder verschoben.' 
+      }, { status: 404 });
     }
 
-    // Datei als Blob lesen
-    const fileBlob = await downloadResponse.blob();
-    const fileName = filePath.split('/').pop();
+    const tempLinkData = await tempLinkResponse.json();
+    const downloadUrl = tempLinkData.link;
 
-    // Datei zu Base44 hochladen
-    const formData = new FormData();
-    formData.append('file', fileBlob, fileName);
-
-    const uploadResult = await base44.integrations.Core.UploadFile({ file: fileBlob });
-
-    if (!uploadResult.file_url) {
-      return Response.json({ 
-        success: false,
-        error: 'Upload fehlgeschlagen' 
-      }, { status: 500 });
-    }
-
-    // Alle drei Link-Typen zurückgeben (alle zeigen auf die gleiche Base44-URL)
+    // Alle Link-Varianten zurückgeben
+    // Der temporäre Link funktioniert für alle Zwecke (4 Stunden gültig)
     return Response.json({
       success: true,
-      previewUrl: uploadResult.file_url,   // Für Öffnen/Ansehen
-      downloadUrl: uploadResult.file_url,  // Für Download
-      shareUrl: uploadResult.file_url      // Für Teilen
+      previewUrl: downloadUrl,   // Für Öffnen/Ansehen
+      downloadUrl: downloadUrl,  // Für Download  
+      shareUrl: downloadUrl      // Für Teilen
     });
 
   } catch (error) {

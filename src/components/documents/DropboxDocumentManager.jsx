@@ -81,23 +81,14 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
   const handleSelectDropboxFile = async (file) => {
     setLoading(true);
     try {
-      // Link für die Datei abrufen
-      const linkResponse = await base44.functions.invoke('getDropboxFileLink', {
-        filePath: file.path
-      });
-
-      if (!linkResponse.data.success) {
-        throw new Error(linkResponse.data.error || 'Fehler beim Erstellen des Links');
-      }
-
       const user = await base44.auth.me();
 
+      // Dokument direkt mit Pfad speichern (Link wird beim Öffnen generiert)
       const newDocument = {
         id: file.id,
         name: file.name,
-        path: file.path,
+        path: file.path.trim(), // Pfad bereinigen
         size: file.size,
-        url: linkResponse.data.url,
         uploaded_date: file.modified || new Date().toISOString(),
         uploaded_by: user.email,
         type: file.name.split('.').pop()
