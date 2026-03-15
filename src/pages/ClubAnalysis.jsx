@@ -203,8 +203,13 @@ export default function ClubAnalysis() {
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Trainerphilosophie</h4>
-                    <p className="text-slate-600 dark:text-slate-400">{currentAnalysis.club_profile.coach_philosophy}</p>
+                    <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Trainer & Philosophie</h4>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      <span className="font-medium">{currentAnalysis.club_profile.current_coach || 'N/A'}</span>
+                      {currentAnalysis.club_profile.coach_philosophy && (
+                        <span className="block mt-1">{currentAnalysis.club_profile.coach_philosophy}</span>
+                      )}
+                    </p>
                   </div>
                   <div>
                     <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Liga & Land</h4>
@@ -221,12 +226,30 @@ export default function ClubAnalysis() {
                     ))}
                   </div>
                 </div>
-                {currentAnalysis.club_profile.transfer_trends && (
-                  <div>
-                    <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Transfertrends</h4>
-                    <p className="text-slate-600 dark:text-slate-400">{currentAnalysis.club_profile.transfer_trends}</p>
-                  </div>
-                )}
+                <div className="md:col-span-2 space-y-3">
+                  {currentAnalysis.club_profile.transfer_trends && (
+                    <div>
+                      <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Transfertrends & Strategie</h4>
+                      <p className="text-slate-600 dark:text-slate-400">{currentAnalysis.club_profile.transfer_trends}</p>
+                    </div>
+                  )}
+                  {currentAnalysis.club_profile.current_reports && (
+                    <div>
+                      <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Aktuelle Berichte & News</h4>
+                      <p className="text-slate-600 dark:text-slate-400">{currentAnalysis.club_profile.current_reports}</p>
+                    </div>
+                  )}
+                  {currentAnalysis.club_profile.target_positions && currentAnalysis.club_profile.target_positions.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-2">Gesuchte Positionen</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {currentAnalysis.club_profile.target_positions.map((pos, i) => (
+                          <Badge key={i} className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">{pos}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
