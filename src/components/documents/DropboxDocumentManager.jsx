@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Upload, Download, Trash2, FileText, Loader2, Cloud } from "lucide-react";
+import { Upload, Download, Trash2, FileText, Loader2, Cloud, Share2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { formatInGermanTime } from "@/components/utils/dateUtils";
 
@@ -145,36 +145,71 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
     }
   };
 
-  const handleDownload = async (doc) => {
+  const handleView = async (doc) => {
     try {
-      toast.loading('Download wird vorbereitet...');
+      toast.loading('Dokument wird geladen...');
       
-      // Backend-Funktion aufrufen für direkten Download
-      const response = await base44.functions.invoke('downloadDropboxFile', {
+      // Temporären Link von Dropbox holen
+      const response = await base44.functions.invoke('getDropboxFileLink', {
         filePath: doc.path
       });
 
-      // Response als Blob verarbeiten
-      const blob = await fetch(`data:application/octet-stream;base64,${btoa(
-        String.fromCharCode(...new Uint8Array(response.data))
-      )}`).then(r => r.blob());
-      
-      // Download-Link erstellen und triggern
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = doc.name;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast.dismiss();
-      toast.success('Download gestartet');
+      if (response.data.success) {
+        // Dokument in neuem Tab öffnen (funktioniert auf Desktop & Handy)
+        window.open(response.data.url, '_blank');
+        toast.dismiss();
+      } else {
+        throw new Error(response.data.error);
+      }
     } catch (error) {
-      console.error('Download error:', error);
+      console.error('View error:', error);
       toast.dismiss();
-      toast.error('Download fehlgeschlagen: ' + error.message);
+      toast.error('Dokument konnte nicht geöffnet werden');
+    }
+  };
+
+  const handleShare = async (doc) => {
+    try {
+      // Web Share API für mobile Geräte
+      if (navigator.share) {
+        toast.loading('Dokument wird vorbereitet...');
+        
+        const response = await base44.functions.invoke('getDropboxFileLink', {
+          filePath: doc.path
+        });
+
+        if (response.data.success) {
+          await navigator.share({
+            title: doc.name,
+            text: `Dokument: ${doc.name}`,
+            url: response.data.url
+          });
+          toast.dismiss();
+          toast.success('Dokument geteilt');
+        } else {
+          throw new Error(response.data.error);
+        }
+      } else {
+        // Fallback: Link in Zwischenablage kopieren
+        const response = await base44.functions.invoke('getDropboxFileLink', {
+          filePath: doc.path
+        });
+
+        if (response.data.success) {
+          await navigator.clipboard.writeText(response.data.url);
+          toast.success('Link in Zwischenablage kopiert');
+        } else {
+          throw new Error(response.data.error);
+        }
+      }
+    } catch (error) {
+      console.error('Share error:', error);
+      toast.dismiss();
+      if (error.name === 'AbortError') {
+        // Benutzer hat Teilen abgebrochen
+        return;
+      }
+      toast.error('Teilen fehlgeschlagen');
     }
   };
 
@@ -230,11 +265,19 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownload(doc)}
-                      disabled={!doc.url}
-                      title="In Dropbox öffnen"
+                      onClick={() => handleView(doc)}
+                      title="Dokument öffnen"
                     >
-                      <Download className="w-4 h-4" />
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleShare(doc)}
+                      title="Teilen"
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <Share2 className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"
