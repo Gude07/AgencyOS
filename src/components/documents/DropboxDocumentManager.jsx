@@ -145,8 +145,13 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
       });
 
       if (response.data.success) {
-        // Verwende previewUrl für Anzeige im Browser
-        window.open(response.data.previewUrl, '_blank');
+        // Mobile: Nutze location.href für bessere Kompatibilität
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+          window.location.href = response.data.previewUrl;
+        } else {
+          // Desktop: Öffne in neuem Tab
+          window.open(response.data.previewUrl, '_blank');
+        }
         toast.success('Dokument geöffnet', { id: 'doc-view' });
       } else {
         throw new Error(response.data.error || 'Fehler beim Laden');
@@ -166,14 +171,20 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
       });
 
       if (response.data.success) {
-        // Verwende downloadUrl für direkten Download
-        const link = document.createElement('a');
-        link.href = response.data.downloadUrl;
-        link.download = doc.name;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Mobile: Nutze location.href mit dl-Parameter
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+          // Öffne direkt - Mobile Browser starten automatisch den Download
+          window.location.href = response.data.downloadUrl + '?dl=1';
+        } else {
+          // Desktop: Klassischer Download-Link
+          const link = document.createElement('a');
+          link.href = response.data.downloadUrl;
+          link.download = doc.name;
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
         
         toast.success('Download gestartet', { id: 'doc-download' });
       } else {
