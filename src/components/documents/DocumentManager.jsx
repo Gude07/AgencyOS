@@ -105,16 +105,35 @@ export default function DocumentManager({ entityType, entityId }) {
     window.open(doc.url, '_blank');
   };
 
+  const handleDownload = (doc) => {
+    // Download-Link erstellen und triggern
+    const link = document.createElement('a');
+    link.href = doc.url;
+    link.download = doc.name;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Download gestartet');
+  };
+
   const handleShare = async (doc) => {
     try {
       // Web Share API für mobile Geräte
       if (navigator.share) {
-        await navigator.share({
-          title: doc.name,
-          text: `Dokument: ${doc.name}`,
-          url: doc.url
-        });
-        toast.success('Dokument geteilt');
+        try {
+          await navigator.share({
+            title: doc.name,
+            text: `Dokument: ${doc.name}`,
+            url: doc.url
+          });
+          toast.success('Dokument geteilt');
+        } catch (shareError) {
+          // Benutzer hat Teilen abgebrochen
+          if (shareError.name !== 'AbortError') {
+            throw shareError;
+          }
+        }
       } else {
         // Fallback: Link in Zwischenablage kopieren
         await navigator.clipboard.writeText(doc.url);
@@ -122,10 +141,6 @@ export default function DocumentManager({ entityType, entityId }) {
       }
     } catch (error) {
       console.error('Share error:', error);
-      if (error.name === 'AbortError') {
-        // Benutzer hat Teilen abgebrochen
-        return;
-      }
       toast.error('Teilen fehlgeschlagen');
     }
   };
@@ -171,21 +186,31 @@ export default function DocumentManager({ entityType, entityId }) {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex gap-1 flex-shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleView(doc)}
-                      title="Dokument öffnen"
+                      title="Öffnen"
+                      className="hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleDownload(doc)}
+                      title="Herunterladen"
+                      className="hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleShare(doc)}
                       title="Teilen"
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
                     >
                       <Share2 className="w-4 h-4" />
                     </Button>
@@ -193,7 +218,8 @@ export default function DocumentManager({ entityType, entityId }) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(index)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                      title="Entfernen"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

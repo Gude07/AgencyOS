@@ -22,17 +22,20 @@ Deno.serve(async (req) => {
     }
 
     // Dropbox Verbindung abrufen
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection('dropbox');
-    
-    if (!accessToken) {
+    let connectionData;
+    try {
+      connectionData = await base44.asServiceRole.connectors.getConnection('dropbox');
+    } catch (error) {
       return Response.json({ 
         success: false,
         error: 'Dropbox nicht verbunden' 
       }, { status: 500 });
     }
+    
+    const { accessToken } = connectionData;
 
-    // Shared Link erstellen (funktioniert für alle Dateitypen und kann direkt geöffnet werden)
-    const sharedLinkResponse = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
+    // Versuche zuerst bestehende Shared Links zu holen
+    const listLinksResponse = await fetch('https://api.dropboxapi.com/2/sharing/list_shared_links', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -40,60 +43,70 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         path: filePath,
-        settings: {
-          requested_visibility: 'public',
-          audience: 'public',
-          access: 'viewer'
-        }
+        direct_only: true
       })
     });
 
     let sharedLink;
-    
-    if (!sharedLinkResponse.ok) {
-      const errorText = await sharedLinkResponse.text();
-      const errorData = JSON.parse(errorText);
-      
-      // Wenn Link bereits existiert, bestehenden Link abrufen
-      if (errorData.error && errorData.error['.tag'] === 'shared_link_already_exists') {
-        const existingLinkResponse = await fetch('https://api.dropboxapi.com/2/sharing/list_shared_links', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            path: filePath,
-            direct_only: true
-          })
-        });
-        
-        if (!existingLinkResponse.ok) {
-          throw new Error('Fehler beim Abrufen des bestehenden Links');
-        }
-        
-        const existingResult = await existingLinkResponse.json();
-        if (existingResult.links && existingResult.links.length > 0) {
-          sharedLink = existingResult.links[0].url;
-        } else {
-          throw new Error('Kein bestehender Link gefunden');
-        }
-      } else {
-        throw new Error(`Shared-Link-Erstellung fehlgeschlagen: ${errorText}`);
+
+    if (listLinksResponse.ok) {
+      const listResult = await listLinksResponse.json();
+      if (listResult.links && listResult.links.length > 0) {
+        // Bestehenden Link verwenden
+        sharedLink = listResult.links[0].url;
       }
-    } else {
-      const sharedResult = await sharedLinkResponse.json();
-      sharedLink = sharedResult.url;
     }
 
-    // Dropbox-Link in direkten Download-/Vorschau-Link umwandeln
-    // Ändere ?dl=0 zu ?raw=1 für direkte Ansicht im Browser
-    const directLink = sharedLink.replace('?dl=0', '?raw=1').replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+    // Falls kein bestehender Link, neuen erstellen
+    if (!sharedLink) {
+      const createLinkResponse = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          path: filePath,
+          settings: {
+            requested_visibility: 'public',
+            audience: 'public',
+            access: 'viewer'
+          }
+        })
+      });
+
+      if (createLinkResponse.ok) {
+        const createResult = await createLinkResponse.json();
+        sharedLink = createResult.url;
+      } else {
+        const errorText = await createLinkResponse.text();
+        console.error('Create link error:', errorText);
+        return Response.json({ 
+          success: false,
+          error: 'Fehler beim Erstellen des Links' 
+        }, { status: 500 });
+      }
+    }
+
+    if (!sharedLink) {
+      return Response.json({ 
+        success: false,
+        error: 'Kein Link verfügbar' 
+      }, { status: 500 });
+    }
+
+    // Erstelle verschiedene Link-Versionen für unterschiedliche Zwecke
+    // 1. Vorschau-Link (öffnet Datei direkt im Browser)
+    const previewLink = sharedLink.replace('?dl=0', '?raw=1');
+    
+    // 2. Download-Link (forciert Download)
+    const downloadLink = sharedLink.replace('?dl=0', '?dl=1');
 
     return Response.json({
       success: true,
-      url: directLink,
-      shareUrl: sharedLink
+      previewUrl: previewLink,      // Für Öffnen/Ansehen
+      downloadUrl: downloadLink,    // Für Download
+      shareUrl: sharedLink          // Für Teilen (Standard Dropbox Link)
     });
 
   } catch (error) {

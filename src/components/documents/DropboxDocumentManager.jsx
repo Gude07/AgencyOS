@@ -147,68 +147,85 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
 
   const handleView = async (doc) => {
     try {
-      toast.loading('Dokument wird geladen...');
+      toast.loading('Dokument wird geladen...', { id: 'doc-view' });
       
-      // Temporären Link von Dropbox holen
       const response = await base44.functions.invoke('getDropboxFileLink', {
         filePath: doc.path
       });
 
       if (response.data.success) {
-        // Dokument in neuem Tab öffnen (funktioniert auf Desktop & Handy)
-        window.open(response.data.url, '_blank');
-        toast.dismiss();
+        // Verwende previewUrl für Anzeige im Browser
+        window.open(response.data.previewUrl, '_blank');
+        toast.success('Dokument geöffnet', { id: 'doc-view' });
       } else {
-        throw new Error(response.data.error);
+        throw new Error(response.data.error || 'Fehler beim Laden');
       }
     } catch (error) {
       console.error('View error:', error);
-      toast.dismiss();
-      toast.error('Dokument konnte nicht geöffnet werden');
+      toast.error('Dokument konnte nicht geöffnet werden', { id: 'doc-view' });
+    }
+  };
+
+  const handleDownload = async (doc) => {
+    try {
+      toast.loading('Download wird vorbereitet...', { id: 'doc-download' });
+      
+      const response = await base44.functions.invoke('getDropboxFileLink', {
+        filePath: doc.path
+      });
+
+      if (response.data.success) {
+        // Verwende downloadUrl für direkten Download
+        const link = document.createElement('a');
+        link.href = response.data.downloadUrl;
+        link.download = doc.name;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.success('Download gestartet', { id: 'doc-download' });
+      } else {
+        throw new Error(response.data.error || 'Fehler beim Download');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Download fehlgeschlagen', { id: 'doc-download' });
     }
   };
 
   const handleShare = async (doc) => {
     try {
+      const response = await base44.functions.invoke('getDropboxFileLink', {
+        filePath: doc.path
+      });
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Fehler beim Teilen');
+      }
+
       // Web Share API für mobile Geräte
       if (navigator.share) {
-        toast.loading('Dokument wird vorbereitet...');
-        
-        const response = await base44.functions.invoke('getDropboxFileLink', {
-          filePath: doc.path
-        });
-
-        if (response.data.success) {
+        try {
           await navigator.share({
             title: doc.name,
             text: `Dokument: ${doc.name}`,
-            url: response.data.url
+            url: response.data.shareUrl
           });
-          toast.dismiss();
           toast.success('Dokument geteilt');
-        } else {
-          throw new Error(response.data.error);
+        } catch (shareError) {
+          // Benutzer hat Teilen abgebrochen
+          if (shareError.name !== 'AbortError') {
+            throw shareError;
+          }
         }
       } else {
         // Fallback: Link in Zwischenablage kopieren
-        const response = await base44.functions.invoke('getDropboxFileLink', {
-          filePath: doc.path
-        });
-
-        if (response.data.success) {
-          await navigator.clipboard.writeText(response.data.url);
-          toast.success('Link in Zwischenablage kopiert');
-        } else {
-          throw new Error(response.data.error);
-        }
+        await navigator.clipboard.writeText(response.data.shareUrl);
+        toast.success('Link in Zwischenablage kopiert');
       }
     } catch (error) {
       console.error('Share error:', error);
-      toast.dismiss();
-      if (error.name === 'AbortError') {
-        // Benutzer hat Teilen abgebrochen
-        return;
-      }
       toast.error('Teilen fehlgeschlagen');
     }
   };
@@ -261,21 +278,31 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex gap-1 flex-shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleView(doc)}
-                      title="Dokument öffnen"
+                      title="Öffnen"
+                      className="hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleDownload(doc)}
+                      title="Herunterladen"
+                      className="hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleShare(doc)}
                       title="Teilen"
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
                     >
                       <Share2 className="w-4 h-4" />
                     </Button>
@@ -283,8 +310,8 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(index)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      title="Aus Liste entfernen"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                      title="Entfernen"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
