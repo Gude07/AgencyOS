@@ -34,79 +34,47 @@ Deno.serve(async (req) => {
     
     const { accessToken } = connectionData;
 
-    // Versuche zuerst bestehende Shared Links zu holen
-    const listLinksResponse = await fetch('https://api.dropboxapi.com/2/sharing/list_shared_links', {
+    // Datei direkt von Dropbox herunterladen
+    const downloadResponse = await fetch('https://content.dropboxapi.com/2/files/download', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        path: filePath,
-        direct_only: true
-      })
+        'Dropbox-API-Arg': JSON.stringify({ path: filePath })
+      }
     });
 
-    let sharedLink;
-
-    if (listLinksResponse.ok) {
-      const listResult = await listLinksResponse.json();
-      if (listResult.links && listResult.links.length > 0) {
-        // Bestehenden Link verwenden
-        sharedLink = listResult.links[0].url;
-      }
-    }
-
-    // Falls kein bestehender Link, neuen erstellen
-    if (!sharedLink) {
-      const createLinkResponse = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          path: filePath,
-          settings: {
-            requested_visibility: 'public',
-            audience: 'public',
-            access: 'viewer'
-          }
-        })
-      });
-
-      if (createLinkResponse.ok) {
-        const createResult = await createLinkResponse.json();
-        sharedLink = createResult.url;
-      } else {
-        const errorText = await createLinkResponse.text();
-        console.error('Create link error:', errorText);
-        return Response.json({ 
-          success: false,
-          error: 'Fehler beim Erstellen des Links' 
-        }, { status: 500 });
-      }
-    }
-
-    if (!sharedLink) {
+    if (!downloadResponse.ok) {
+      const errorText = await downloadResponse.text();
+      console.error('Download error:', errorText);
       return Response.json({ 
         success: false,
-        error: 'Kein Link verfügbar' 
+        error: 'Datei konnte nicht heruntergeladen werden' 
       }, { status: 500 });
     }
 
-    // Erstelle verschiedene Link-Versionen für unterschiedliche Zwecke
-    // 1. Vorschau-Link (öffnet Datei direkt im Browser)
-    const previewLink = sharedLink.replace('?dl=0', '?raw=1');
-    
-    // 2. Download-Link (forciert Download)
-    const downloadLink = sharedLink.replace('?dl=0', '?dl=1');
+    // Datei als Blob lesen
+    const fileBlob = await downloadResponse.blob();
+    const fileName = filePath.split('/').pop();
 
+    // Datei zu Base44 hochladen
+    const formData = new FormData();
+    formData.append('file', fileBlob, fileName);
+
+    const uploadResult = await base44.integrations.Core.UploadFile({ file: fileBlob });
+
+    if (!uploadResult.file_url) {
+      return Response.json({ 
+        success: false,
+        error: 'Upload fehlgeschlagen' 
+      }, { status: 500 });
+    }
+
+    // Alle drei Link-Typen zurückgeben (alle zeigen auf die gleiche Base44-URL)
     return Response.json({
       success: true,
-      previewUrl: previewLink,      // Für Öffnen/Ansehen
-      downloadUrl: downloadLink,    // Für Download
-      shareUrl: sharedLink          // Für Teilen (Standard Dropbox Link)
+      previewUrl: uploadResult.file_url,   // Für Öffnen/Ansehen
+      downloadUrl: uploadResult.file_url,  // Für Download
+      shareUrl: uploadResult.file_url      // Für Teilen
     });
 
   } catch (error) {
