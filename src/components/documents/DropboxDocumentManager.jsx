@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Upload, Download, Trash2, FileText, Loader2, Cloud, Share2, ExternalLink } from "lucide-react";
+import { Upload, Download, Trash2, FileText, Loader2, Cloud, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatInGermanTime } from "@/components/utils/dateUtils";
 
@@ -250,7 +250,11 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
       ) : (
         <div className="space-y-2">
           {documents.map((doc, index) => (
-            <Card key={index} className="border-slate-200 bg-white hover:shadow-md transition-shadow">
+            <Card 
+              key={index} 
+              className="border-slate-200 bg-white hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => handleView(doc)}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -269,16 +273,7 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-1 flex-shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleView(doc)}
-                      title="Öffnen"
-                      className="hover:bg-slate-100 dark:hover:bg-slate-800"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </Button>
+                  <div className="flex gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="outline"
                       size="sm"
