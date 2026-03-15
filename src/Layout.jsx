@@ -76,6 +76,11 @@ const transferItems = [
     icon: Building2,
   },
   {
+    title: "KI-Vereinsanalyse",
+    url: createPageUrl("ClubAnalysis"),
+    icon: Sparkles,
+  },
+  {
     title: "Deals",
     url: createPageUrl("Deals"),
     icon: CheckSquare,
