@@ -137,48 +137,65 @@ WICHTIG:
 - Match-Score 0-100
 - Konkrete Begründungen
 
-Gib das Ergebnis im geforderten JSON-Format zurück.`;
+ANTWORTE NUR mit folgendem JSON-Format (kein Markdown, kein Text drumherum):
+{
+  "recommendations": [
+    {
+      "player_id": "die_exakte_id_aus_der_liste",
+      "player_name": "Spielername",
+      "match_score": 85,
+      "reasoning": "Detaillierte Begründung warum dieser Spieler passt",
+      "key_strengths": ["Stärke 1", "Stärke 2", "Stärke 3"]
+    }
+  ],
+  "summary": "Gesamteinschätzung der Empfehlungen"
+}`;
 
     const matchingResponse = await base44.integrations.Core.InvokeLLM({
       prompt: matchingPrompt,
-      model: 'claude_sonnet_4_6',
-      response_json_schema: {
-        type: "object",
-        properties: {
-          recommendations: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                player_id: { type: "string" },
-                player_name: { type: "string" },
-                match_score: { type: "number" },
-                reasoning: { type: "string" },
-                key_strengths: { type: "array", items: { type: "string" } }
-              }
-            }
-          },
-          summary: { type: "string" }
-        }
-      }
+      model: 'gpt_5'
     });
 
-    console.log(`Matching abgeschlossen. Empfehlungen erhalten: ${matchingResponse?.recommendations?.length || 0}`);
+    console.log('Raw LLM Response:', matchingResponse);
+
+    // Parse die Antwort falls String
+    let parsedResponse;
+    if (typeof matchingResponse === 'string') {
+      try {
+        // Extrahiere JSON aus Markdown falls vorhanden
+        const jsonMatch = matchingResponse.match(/```json\n([\s\S]*?)\n```/) || matchingResponse.match(/```\n([\s\S]*?)\n```/);
+        if (jsonMatch) {
+          parsedResponse = JSON.parse(jsonMatch[1]);
+        } else {
+          parsedResponse = JSON.parse(matchingResponse);
+        }
+      } catch (e) {
+        console.error('JSON Parse Error:', e);
+        return Response.json({
+          success: false,
+          error: 'KI-Antwort konnte nicht verarbeitet werden.'
+        });
+      }
+    } else {
+      parsedResponse = matchingResponse;
+    }
+
+    console.log(`Empfehlungen gefunden: ${parsedResponse?.recommendations?.length || 0}`);
 
     // Validierung
-    if (!matchingResponse || !matchingResponse.recommendations || matchingResponse.recommendations.length === 0) {
-      console.error('Keine Empfehlungen erhalten. Response:', JSON.stringify(matchingResponse));
+    if (!parsedResponse || !parsedResponse.recommendations || parsedResponse.recommendations.length === 0) {
+      console.error('Keine Empfehlungen in parsedResponse:', parsedResponse);
       return Response.json({
         success: false,
-        error: 'Die KI konnte keine passenden Spieler finden. Möglicherweise passen die Kriterien zu keinem Spieler im Pool.'
+        error: 'Die KI konnte keine passenden Spieler finden.'
       });
     }
 
     return Response.json({
       success: true,
       clubProfile: clubProfile,
-      recommendations: matchingResponse.recommendations,
-      summary: matchingResponse.summary,
+      recommendations: parsedResponse.recommendations,
+      summary: parsedResponse.summary || 'Analyse abgeschlossen',
       totalPlayersAnalyzed: allPlayers.length
     });
 
