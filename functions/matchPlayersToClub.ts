@@ -48,10 +48,34 @@ Deno.serve(async (req) => {
       console.log(`Gefilterte Spieler nach Position: ${relevantPlayers.length}`);
     }
 
+    // Filtere zusätzlich nach Budget, wenn vorhanden
+    if (clubProfile.realistic_budget && clubProfile.realistic_budget.max > 0) {
+      const budgetMin = clubProfile.realistic_budget.min || 0;
+      const budgetMax = clubProfile.realistic_budget.max;
+      const budgetAvg = clubProfile.realistic_budget.average || budgetMax;
+
+      // Bei hohem Budget (>15 Mio): Spieler sollten mindestens 30% des Durchschnittsbudgets wert sein
+      // Bei mittlerem Budget (5-15 Mio): Spieler sollten mindestens 20% wert sein
+      // Bei niedrigem Budget (<5 Mio): Keine Mindestgrenze
+      let minMarketValue = 0;
+      if (budgetAvg > 15000000) {
+        minMarketValue = budgetAvg * 0.3;
+      } else if (budgetAvg > 5000000) {
+        minMarketValue = budgetAvg * 0.2;
+      }
+
+      relevantPlayers = relevantPlayers.filter(p => {
+        const marketValue = p.market_value || 0;
+        return marketValue >= minMarketValue && marketValue <= budgetMax * 1.2; // 20% Toleranz nach oben
+      });
+
+      console.log(`Budget-Filter angewendet (${budgetMin}€ - ${budgetMax}€, Min: ${minMarketValue}€): ${relevantPlayers.length} Spieler`);
+    }
+
     if (relevantPlayers.length === 0) {
       return Response.json({
         success: false,
-        error: 'Keine Spieler gefunden, die zu den gesuchten Positionen passen'
+        error: 'Keine Spieler gefunden, die zu den gesuchten Positionen und dem Budget passen'
       });
     }
 
@@ -107,7 +131,12 @@ Bewertungskriterien:
 - Charaktereigenschaften
 - Alter und Entwicklungspotenzial
 - Aktuelle Form
-- WICHTIG: Marktwert muss im realistischen Budget-Rahmen liegen (${clubProfile.realistic_budget ? `${clubProfile.realistic_budget.min}€ - ${clubProfile.realistic_budget.max}€` : 'nicht definiert'})
+- WICHTIG Budget-Logik: 
+  * Marktwert muss im Budget-Rahmen liegen (${clubProfile.realistic_budget ? `${clubProfile.realistic_budget.min?.toLocaleString('de-DE')}€ - ${clubProfile.realistic_budget.max?.toLocaleString('de-DE')}€` : 'nicht definiert'})
+  * Bei hohem Budget (>15 Mio): BEVORZUGE Spieler im oberen Marktwert-Segment, die dem Budget entsprechen
+  * Bei mittlerem Budget (5-15 Mio): Wähle Spieler mit angemessenem Marktwert zum Budget
+  * Je höher das Budget, desto höher sollte auch der durchschnittliche Marktwert der empfohlenen Spieler sein
+  * Vermeide Spieler mit zu niedrigem Marktwert bei hohem Budget (wirkt unrealistisch)
 
 ANTWORTE NUR mit folgendem JSON-Format:
 {
