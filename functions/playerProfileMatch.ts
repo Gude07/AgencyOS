@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
   let playerProfile;
   try {
     const step1Result = await base44.integrations.Core.InvokeLLM({
-      model: 'gemini_3_pro',
+      model: 'gemini_3_flash',
       add_context_from_internet: true,
       prompt: `Analyze the football player "${playerName}" from "${clubName}"${position ? ` playing as ${position}` : ''}.
 
