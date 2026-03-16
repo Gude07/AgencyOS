@@ -34,6 +34,8 @@ Use publicly available football analysis sources, match reports, scouting articl
 
 Focus on STYLE and TACTICAL ROLE, not just statistics.
 
+IMPORTANT: All text values in the JSON must be written in GERMAN language.
+
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "player_name": "",
@@ -90,6 +92,8 @@ Requirements:
 - Search across ALL leagues globally
 - Include undervalued or lesser-known players
 - Do NOT include the reference player themselves
+
+IMPORTANT: All text values (playing_style_summary, similarity_reason, etc.) must be written in GERMAN language.
 
 Return ONLY valid JSON (no markdown):
 {
@@ -152,6 +156,8 @@ Fit Score (0–100) based on:
 - Playing style similarity (30%)
 - Key attributes overlap (25%)
 - Physical profile similarity (15%)
+
+IMPORTANT: All text values (comparison_summary, strength_overlap, key_difference, etc.) must be written in GERMAN language.
 
 Return ONLY valid JSON sorted by highest fit_score (no markdown):
 {
@@ -216,6 +222,8 @@ Use web research to understand "${clubName}"'s:
 - Transfer market strategy and typical budget
 
 Evaluate which of the candidate players would fit BEST as a replacement within THIS SPECIFIC CLUB SYSTEM.
+
+IMPORTANT: All text values (tactical_fit_explanation, strength_for_club_system, potential_risk, playing_style, tactical_philosophy, etc.) must be written in GERMAN language.
 
 Return ONLY valid JSON sorted by highest replacement_score (no markdown):
 {
