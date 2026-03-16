@@ -107,11 +107,28 @@ export function SimilarPlayerCard({ player, fitResult }) {
             <FitScoreBar score={fitResult.fit_score} />
           </div>
         )}
-        {player.estimated_market_value && (
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-            💰 Marktwert: <span className="font-medium">{player.estimated_market_value}</span>
-          </p>
-        )}
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
+          {(player.estimated_market_value || fitResult?.estimated_market_value) && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              💰 <span className="font-medium">{player.estimated_market_value || fitResult?.estimated_market_value}</span>
+            </p>
+          )}
+          {(player.contract_until || fitResult?.contract_until) && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              📄 Vertrag bis: <span className="font-medium">{player.contract_until || fitResult?.contract_until}</span>
+            </p>
+          )}
+          {(player.nationality || fitResult?.nationality) && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              🌍 <span className="font-medium">{player.nationality || fitResult?.nationality}</span>
+            </p>
+          )}
+          {(player.status_note || fitResult?.status_note) && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+              ⚠️ {player.status_note || fitResult?.status_note}
+            </p>
+          )}
+        </div>
         {fitResult?.comparison_summary && (
           <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">{fitResult.comparison_summary}</p>
         )}
