@@ -93,6 +93,14 @@ Requirements:
 - Include undervalued or lesser-known players
 - Do NOT include the reference player themselves
 
+CRITICAL DATA ACCURACY REQUIREMENTS:
+- For EACH player you suggest, you MUST look up their CURRENT club as of March 2026 on transfermarkt.de, sofascore.com, or fbref.com
+- Verify the current market value from transfermarkt.de specifically — use the most recent valuation available
+- If a player changed clubs recently, use their NEW club (check recent transfer news)
+- Do NOT rely on training data alone for club/market value — actively search and verify each player
+- Format market value as "X Mio. €" or "X Tsd. €"
+- Add "contract_until" (Vertragsende) if findable on transfermarkt.de
+
 IMPORTANT: All text values (playing_style_summary, similarity_reason, etc.) must be written in GERMAN language.
 
 Return ONLY valid JSON (no markdown):
@@ -103,8 +111,10 @@ Return ONLY valid JSON (no markdown):
       "club": "",
       "league": "",
       "age": "",
+      "nationality": "",
       "position": "",
       "estimated_market_value": "",
+      "contract_until": "",
       "playing_style_summary": "",
       "similarity_reason": ""
     }
@@ -122,8 +132,10 @@ Return ONLY valid JSON (no markdown):
                 club: { type: 'string' },
                 league: { type: 'string' },
                 age: { type: 'string' },
+                nationality: { type: 'string' },
                 position: { type: 'string' },
                 estimated_market_value: { type: 'string' },
+                contract_until: { type: 'string' },
                 playing_style_summary: { type: 'string' },
                 similarity_reason: { type: 'string' }
               }
@@ -136,6 +148,83 @@ Return ONLY valid JSON (no markdown):
     console.log('Step 2 done:', similarPlayers.length, 'players found');
   } catch (e) {
     return Response.json({ error: `Step 2 fehlgeschlagen: ${e.message}` }, { status: 500 });
+  }
+
+  // STEP 2b — Verify & Correct Club/Market Value Data
+  try {
+    const playerListForVerification = similarPlayers.map(p => `${p.name} (${p.club})`).join(', ');
+    const verifyResult = await base44.integrations.Core.InvokeLLM({
+      model: 'gemini_3_pro',
+      add_context_from_internet: true,
+      prompt: `Verify and correct the following football players' current club and market value as of March 2026.
+Use transfermarkt.de as the primary source for market values and current clubs.
+
+Players to verify: ${playerListForVerification}
+
+For each player:
+1. Search transfermarkt.de for their current profile
+2. Confirm or CORRECT their current club (as of March 2026 — include recent winter transfer window moves)
+3. Confirm or CORRECT their market value from transfermarkt.de
+4. Note if any player retired, is injured long-term, or is a free agent
+
+Return ONLY valid JSON:
+{
+  "verified_players": [
+    {
+      "name": "",
+      "current_club": "",
+      "current_league": "",
+      "market_value_transfermarkt": "",
+      "contract_until": "",
+      "status_note": ""
+    }
+  ]
+}`,
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          verified_players: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                current_club: { type: 'string' },
+                current_league: { type: 'string' },
+                market_value_transfermarkt: { type: 'string' },
+                contract_until: { type: 'string' },
+                status_note: { type: 'string' }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Merge verified data back into similarPlayers
+    const verifiedMap = {};
+    for (const vp of (verifyResult.verified_players || [])) {
+      const key = vp.name?.toLowerCase().trim();
+      if (key) verifiedMap[key] = vp;
+    }
+    similarPlayers = similarPlayers.map(p => {
+      const key = p.name?.toLowerCase().trim();
+      const verified = verifiedMap[key];
+      if (verified) {
+        return {
+          ...p,
+          club: verified.current_club || p.club,
+          league: verified.current_league || p.league,
+          estimated_market_value: verified.market_value_transfermarkt || p.estimated_market_value,
+          contract_until: verified.contract_until || p.contract_until,
+          status_note: verified.status_note || ''
+        };
+      }
+      return p;
+    });
+    console.log('Step 2b done: data verified');
+  } catch (e) {
+    console.warn('Step 2b (Verifikation) fehlgeschlagen, weiter mit unverifizierten Daten:', e.message);
   }
 
   // STEP 3 — Tactical Fit Scoring
