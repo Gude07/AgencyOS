@@ -154,7 +154,7 @@ Return ONLY valid JSON (no markdown):
   let fitResults;
   try {
     const step3Result = await base44.integrations.Core.InvokeLLM({
-      model: 'gemini_3_pro',
+      model: 'gemini_3_flash',
       prompt: `Reference player profile:
 ${JSON.stringify(playerProfile, null, 2)}
 
