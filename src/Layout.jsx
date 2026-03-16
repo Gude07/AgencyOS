@@ -81,6 +81,11 @@ const transferItems = [
     icon: Sparkles,
   },
   {
+    title: "Spieler-Vergleich KI",
+    url: createPageUrl("PlayerComparison"),
+    icon: Sparkles,
+  },
+  {
     title: "Deals",
     url: createPageUrl("Deals"),
     icon: CheckSquare,

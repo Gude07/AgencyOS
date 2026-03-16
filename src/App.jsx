@@ -71,6 +71,22 @@ const AuthenticatedApp = () => {
           </LayoutWrapper>
         } 
       />
+      <Route 
+        path="/PlayerComparison" 
+        element={
+          <LayoutWrapper currentPageName="PlayerComparison">
+            <PlayerComparison />
+          </LayoutWrapper>
+        } 
+      />
+      <Route 
+        path="/SavedComparisons" 
+        element={
+          <LayoutWrapper currentPageName="SavedComparisons">
+            <SavedComparisons />
+          </LayoutWrapper>
+        } 
+      />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
