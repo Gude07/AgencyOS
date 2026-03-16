@@ -235,7 +235,7 @@ Return ONLY valid JSON:
       prompt: `Reference player profile:
 ${JSON.stringify(playerProfile, null, 2)}
 
-Similar players found:
+Similar players found (already verified with current club & market value data):
 ${JSON.stringify(similarPlayers, null, 2)}
 
 Evaluate how similar each player is to the reference player.
@@ -246,7 +246,10 @@ Fit Score (0–100) based on:
 - Key attributes overlap (25%)
 - Physical profile similarity (15%)
 
-IMPORTANT: All text values (comparison_summary, strength_overlap, key_difference, etc.) must be written in GERMAN language.
+IMPORTANT:
+- Use the already-verified club and market_value from the input data — do NOT change them
+- All text values (comparison_summary, strength_overlap, key_difference, etc.) must be written in GERMAN language
+- Include contract_until and nationality from input data in the output
 
 Return ONLY valid JSON sorted by highest fit_score (no markdown):
 {
@@ -254,7 +257,11 @@ Return ONLY valid JSON sorted by highest fit_score (no markdown):
     {
       "name": "",
       "club": "",
+      "league": "",
+      "nationality": "",
       "position": "",
+      "estimated_market_value": "",
+      "contract_until": "",
       "fit_score": 0,
       "comparison_summary": "",
       "strength_overlap": [],
