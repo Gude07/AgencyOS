@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
       age: p.age || 'N/A',
       nationality: p.nationality || 'N/A',
       current_club: p.current_club || 'Vereinslos',
+      market_value: p.market_value || 0,
       strengths: p.strengths || 'Keine Angaben',
       foot: p.foot || 'N/A',
       height: p.height || 0,
@@ -89,6 +90,8 @@ VEREINSPROFIL:
 - Gesuchte Positionen: ${targetPositions.join(', ') || 'Alle'}
 - Verletzungssituation: ${clubProfile.injury_situation || 'N/A'}
 - Liga: ${clubProfile.league || 'N/A'} (${clubProfile.country || 'N/A'})
+- Realistisches Budget: ${clubProfile.realistic_budget ? `${clubProfile.realistic_budget.min}€ - ${clubProfile.realistic_budget.max}€ (Ø ${clubProfile.realistic_budget.average}€)` : 'N/A'}
+- Budget-Hinweise: ${clubProfile.realistic_budget?.notes || 'N/A'}
 
 VERFÜGBARE SPIELER (${playersForAnalysis.length}):
 ${JSON.stringify(playersForAnalysis, null, 2)}
@@ -104,6 +107,7 @@ Bewertungskriterien:
 - Charaktereigenschaften
 - Alter und Entwicklungspotenzial
 - Aktuelle Form
+- WICHTIG: Marktwert muss im realistischen Budget-Rahmen liegen (${clubProfile.realistic_budget ? `${clubProfile.realistic_budget.min}€ - ${clubProfile.realistic_budget.max}€` : 'nicht definiert'})
 
 ANTWORTE NUR mit folgendem JSON-Format:
 {

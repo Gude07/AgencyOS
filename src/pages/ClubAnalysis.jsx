@@ -323,6 +323,29 @@ export default function ClubAnalysis() {
                       </div>
                     </div>
                   )}
+                  {currentClubProfile.realistic_budget && (
+                    <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                      <h4 className="font-semibold text-green-900 dark:text-green-200 mb-2 flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Realistisches Transferbudget
+                      </h4>
+                      <div className="space-y-1">
+                        <p className="text-green-800 dark:text-green-300 font-medium">
+                          {currentClubProfile.realistic_budget.min?.toLocaleString('de-DE')}€ - {currentClubProfile.realistic_budget.max?.toLocaleString('de-DE')}€
+                        </p>
+                        <p className="text-sm text-green-700 dark:text-green-400">
+                          Durchschnitt: {currentClubProfile.realistic_budget.average?.toLocaleString('de-DE')}€
+                        </p>
+                        {currentClubProfile.realistic_budget.notes && (
+                          <p className="text-sm text-green-700 dark:text-green-400 mt-2">
+                            {currentClubProfile.realistic_budget.notes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

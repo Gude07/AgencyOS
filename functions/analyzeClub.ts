@@ -46,7 +46,14 @@ Deno.serve(async (req) => {
    - In welcher Liga spielt der Verein?
    - Land und Wettbewerbsniveau
 
-Gib ausführliche, aktuelle Informationen zurück, insbesondere zu aktuellen Verletzungen und daraus resultierenden Transferbedarf.
+6. TRANSFERBUDGET UND FINANZIELLE REALITÄT:
+   - Analysiere die letzten 3-5 Transfers des Vereins (Ablösesummen)
+   - Ermittle das typische/durchschnittliche Transferbudget pro Spieler
+   - Berücksichtige die finanzielle Stärke des Vereins
+   - Gib eine realistische Budgetspanne an (Minimum - Maximum in Euro)
+   - Berücksichtige auch Leihgeschäfte als Option
+
+Gib ausführliche, aktuelle Informationen zurück, insbesondere zu aktuellen Verletzungen, Transferbedarf und realistischem Budget.
 
 ANTWORTE NUR mit folgendem JSON-Format:
 {
@@ -60,7 +67,14 @@ ANTWORTE NUR mit folgendem JSON-Format:
   "injury_situation": "Verletzungssituation und Auswirkungen",
   "target_positions": ["Position 1", "Position 2"],
   "league": "Liga",
-  "country": "Land"
+  "country": "Land",
+  "realistic_budget": {
+    "min": 0,
+    "max": 0,
+    "average": 0,
+    "currency": "EUR",
+    "notes": "Erläuterung zur Budgeteinschätzung"
+  }
 }`;
 
     const clubProfileResponse = await base44.integrations.Core.InvokeLLM({
