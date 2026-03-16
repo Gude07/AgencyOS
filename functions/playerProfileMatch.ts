@@ -79,7 +79,7 @@ Return ONLY valid JSON (no markdown, no explanation):
   let similarPlayers;
   try {
     const step2Result = await base44.integrations.Core.InvokeLLM({
-      model: 'gemini_3_pro',
+      model: 'gemini_3_flash',
       add_context_from_internet: true,
       prompt: `Based on this player profile:
 ${JSON.stringify(playerProfile, null, 2)}
