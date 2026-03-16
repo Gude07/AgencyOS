@@ -279,7 +279,11 @@ Return ONLY valid JSON sorted by highest fit_score (no markdown):
               properties: {
                 name: { type: 'string' },
                 club: { type: 'string' },
+                league: { type: 'string' },
+                nationality: { type: 'string' },
                 position: { type: 'string' },
+                estimated_market_value: { type: 'string' },
+                contract_until: { type: 'string' },
                 fit_score: { type: 'number' },
                 comparison_summary: { type: 'string' },
                 strength_overlap: { type: 'array', items: { type: 'string' } },
