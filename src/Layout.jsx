@@ -65,11 +65,7 @@ const transferItems = [
     url: createPageUrl("Coaches"),
     icon: UserCog,
   },
-  {
-    title: "Vereine",
-    url: createPageUrl("ClubsOverview"),
-    icon: Building2,
-  },
+
   {
     title: "Vereinsanfragen",
     url: createPageUrl("ClubRequests"),
