@@ -105,19 +105,47 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
         } else {
           toast.error("Analyse fehlgeschlagen");
         }
-      } else {
-        // Neue Vereine analysieren: erst alle Club-Profile via analyzeClub erstellen, dann Fit berechnen
-        if (selectedClubs.length === 0) {
-          toast.error("Bitte mindestens einen Verein eingeben");
+        setIsAnalyzing(false);
+        setAnalyzeStep("");
+        return;
+      }
+
+      // Neue Vereine: Falls Liga eingegeben aber noch nicht geladen, jetzt laden
+      let clubsToAnalyze = [...selectedClubs];
+      if (clubsToAnalyze.length === 0 && leagueInput.trim()) {
+        setAnalyzeStep(`Lade Vereine aus ${leagueInput.trim()}...`);
+        try {
+          const res = await base44.functions.invoke('getLeagueClubs', { leagueName: leagueInput.trim() });
+          if (res.data.success && res.data.clubs?.length > 0) {
+            clubsToAnalyze = res.data.clubs;
+            setSelectedClubs(res.data.clubs);
+            setLeagueClubs(res.data.clubs);
+            toast.success(`${res.data.clubs.length} Vereine aus ${res.data.league_name || leagueInput} geladen`);
+          } else {
+            toast.error("Liga konnte nicht geladen werden");
+            setIsAnalyzing(false);
+            setAnalyzeStep("");
+            return;
+          }
+        } catch {
+          toast.error("Fehler beim Abrufen der Liga");
           setIsAnalyzing(false);
+          setAnalyzeStep("");
           return;
         }
+      }
+
+      if (clubsToAnalyze.length === 0) {
+        toast.error("Bitte mindestens einen Verein eingeben oder eine Liga laden");
+        setIsAnalyzing(false);
+        return;
+      }
 
         // Schritt 1: Alle Clubs analysieren (sequentiell, um Rate-Limits zu vermeiden)
         const savedProfiles = [];
-        for (let i = 0; i < selectedClubs.length; i++) {
-          const clubName = selectedClubs[i];
-          setAnalyzeStep(`Analysiere Verein ${i + 1}/${selectedClubs.length}: ${clubName}...`);
+        for (let i = 0; i < clubsToAnalyze.length; i++) {
+          const clubName = clubsToAnalyze[i];
+          setAnalyzeStep(`Analysiere Verein ${i + 1}/${clubsToAnalyze.length}: ${clubName}...`);
           try {
             const res = await base44.functions.invoke('analyzeClub', { clubName });
             if (res.data.success) {
@@ -153,7 +181,6 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
         } else {
           toast.error("Fit-Analyse fehlgeschlagen");
         }
-      }
     } catch (error) {
       toast.error("Fehler bei der Analyse");
     } finally {
