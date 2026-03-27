@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { jsPDF } from "jspdf";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,129 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
     setClubInput("");
   };
   const removeClub = (name) => setSelectedClubs(prev => prev.filter(c => c !== name));
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    const contentW = pageW - margin * 2;
+    let y = 20;
+
+    const checkPage = (needed = 10) => {
+      if (y + needed > 280) { doc.addPage(); y = 20; }
+    };
+
+    // Header
+    doc.setFillColor(88, 28, 220);
+    doc.rect(0, 0, pageW, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Club-Fit Analyse: ${playerName}`, margin, 25);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Erstellt am ${new Date().toLocaleDateString('de-DE')} | ${totalClubs} Vereine analysiert`, margin, 34);
+    y = 55;
+    doc.setTextColor(0, 0, 0);
+
+    // Ideal Profile
+    if (idealProfile) {
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(63, 63, 63);
+      doc.text('Ideales Club-Profil', margin, y); y += 7;
+      doc.setDrawColor(88, 28, 220);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, margin + contentW, y); y += 5;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+
+      if (idealProfile.player_summary) {
+        const lines = doc.splitTextToSize(idealProfile.player_summary, contentW);
+        checkPage(lines.length * 5);
+        doc.text(lines, margin, y); y += lines.length * 5 + 4;
+      }
+      const fields = [
+        ['Taktische Rolle', idealProfile.tactical_role],
+        ['Idealer Spielstil', idealProfile.ideal_playing_style],
+        ['Liganiveau', idealProfile.ideal_league_level],
+        ['Entwicklungsumgebung', idealProfile.development_environment],
+      ];
+      fields.forEach(([label, val]) => {
+        if (!val) return;
+        checkPage(12);
+        doc.setFont('helvetica', 'bold'); doc.text(`${label}:`, margin, y);
+        doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(val, contentW - 40);
+        doc.text(lines, margin + 42, y); y += Math.max(lines.length * 5, 6) + 2;
+      });
+      y += 6;
+    }
+
+    // Club Fit Results
+    clubFitResults.forEach((result, i) => {
+      checkPage(30);
+      const score = result.fit_score;
+      const scoreColor = score >= 80 ? [34,197,94] : score >= 60 ? [59,130,246] : score >= 40 ? [234,179,8] : [239,68,68];
+
+      // Club header bar
+      doc.setFillColor(245, 245, 250);
+      doc.rect(margin, y - 4, contentW, 14, 'F');
+      doc.setFillColor(...scoreColor);
+      doc.rect(margin, y - 4, 18, 14, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${score}%`, margin + 1, y + 5);
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(11);
+      doc.text(`#${i + 1}  ${result.club_name}`, margin + 22, y + 5);
+      if (result.match_level) {
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text(result.match_level, pageW - margin - doc.getTextWidth(result.match_level), y + 5);
+      }
+      y += 14;
+
+      if (result.summary) {
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(70, 70, 70);
+        const lines = doc.splitTextToSize(result.summary, contentW);
+        checkPage(lines.length * 5);
+        doc.text(lines, margin, y); y += lines.length * 5 + 3;
+      }
+
+      const colW = (contentW - 5) / 2;
+      const forItems = result.reasons_for || [];
+      const againstItems = result.reasons_against || [];
+      const maxRows = Math.max(forItems.length, againstItems.length);
+
+      if (maxRows > 0) {
+        checkPage(maxRows * 5 + 8);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(22, 163, 74);
+        doc.text('+ Spricht dafür', margin, y);
+        doc.setTextColor(220, 38, 38);
+        doc.text('− Spricht dagegen', margin + colW + 5, y); y += 5;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(60, 60, 60);
+        forItems.forEach(r => {
+          const lines = doc.splitTextToSize(`• ${r}`, colW);
+          doc.text(lines, margin, y); y += lines.length * 4.5;
+        });
+        y -= forItems.length * 4.5;
+        againstItems.forEach(r => {
+          const lines = doc.splitTextToSize(`• ${r}`, colW);
+          doc.text(lines, margin + colW + 5, y); y += lines.length * 4.5;
+        });
+        y += 4;
+      }
+      y += 6;
+    });
+
+    doc.save(`Club-Fit_${playerName.replace(/\s+/g, '_')}_${new Date().toLocaleDateString('de-DE').replace(/\./g, '-')}.pdf`);
+  };
 
   // Liga abrufen
   const fetchLeague = async () => {
@@ -169,14 +293,9 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
         const fitRes = await base44.functions.invoke('generatePlayerClubFit', { playerId });
         if (fitRes.data.success) {
           setIdealProfile(fitRes.data.idealProfile);
-          // Filtere Ergebnisse auf die neu analysierten Vereine
-          const newClubNames = savedProfiles.map(p => p.club_name.toLowerCase());
           const allResults = fitRes.data.clubFitResults || [];
-          const relevantResults = allResults.filter(r =>
-            newClubNames.some(n => r.club_name.toLowerCase().includes(n) || n.includes(r.club_name.toLowerCase()))
-          );
-          setClubFitResults(relevantResults.length > 0 ? relevantResults : allResults);
-          setTotalClubs(savedProfiles.length);
+          setClubFitResults(allResults);
+          setTotalClubs(allResults.length);
           toast.success(`Analyse abgeschlossen! ${savedProfiles.length} Vereine profiliert & verglichen.`);
         } else {
           toast.error("Fit-Analyse fehlgeschlagen");
@@ -309,6 +428,15 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
 
           {isAnalyzing && analyzeStep && (
             <p className="text-sm text-purple-600 dark:text-purple-400">{analyzeStep}</p>
+          )}
+
+          {idealProfile && clubFitResults.length > 0 && (
+            <button
+              onClick={exportToPDF}
+              className="flex items-center gap-2 text-sm text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 rounded-lg px-3 py-2 hover:bg-purple-50 dark:hover:bg-purple-950 transition-colors"
+            >
+              📄 Als PDF exportieren
+            </button>
           )}
         </CardContent>
       </Card>
