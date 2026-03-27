@@ -187,10 +187,34 @@ function ProfileCard({ profile, onEdit, onDelete, onReanalyze, isReanalyzing }) 
                 <div className="flex flex-wrap gap-1">{profile.target_positions.map((p, i) => <Badge key={i} className="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">{p}</Badge>)}</div>
               </div>
             )}
+            {profile.coach_philosophy && (
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Trainer-Philosophie</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{profile.coach_philosophy}</p>
+              </div>
+            )}
             {profile.club_culture && (
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Vereinskultur</p>
                 <p className="text-sm text-slate-700 dark:text-slate-300">{profile.club_culture}</p>
+              </div>
+            )}
+            {profile.player_culture_fit && (
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Idealer Spielertyp</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300 italic">{profile.player_culture_fit}</p>
+              </div>
+            )}
+            {profile.transfer_trends && (
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Transfertrends</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{profile.transfer_trends}</p>
+              </div>
+            )}
+            {profile.injury_situation && (
+              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <p className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase mb-1">⚠ Verletzungssituation</p>
+                <p className="text-sm text-red-800 dark:text-red-300">{profile.injury_situation}</p>
               </div>
             )}
             {profile.realistic_budget && (profile.realistic_budget.min || profile.realistic_budget.max) && (
