@@ -217,32 +217,32 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
     try {
       if (mode === "existing") {
         // Nur bestehende DB-Profile vergleichen
-        setAnalyzeStep("Erstelle Idealprofil & vergleiche mit gespeicherten Vereinsprofilen...");
+        setAnalyzeStep("KI erstellt Spieler-Idealprofil & vergleicht mit gespeicherten Vereinsprofilen... (kann 1-2 Min. dauern)");
         const response = await base44.functions.invoke('generatePlayerClubFit', { playerId });
-        if (response.data.success) {
-          setIdealProfile(response.data.idealProfile);
-          const results = response.data.clubFitResults || [];
+        const resData = response?.data || response;
+        if (resData.success) {
+          setIdealProfile(resData.idealProfile);
+          const results = resData.clubFitResults || [];
           setClubFitResults(results);
-          setTotalClubs(response.data.totalClubsAnalyzed || 0);
-          setMessage(response.data.message || null);
+          setTotalClubs(resData.totalClubsAnalyzed || results.length);
+          setMessage(resData.message || null);
           const count = results.length;
           if (count > 0) {
             toast.success(`${count} Vereine analysiert`);
-            // Auto-save as document on player
             try {
               await saveAnalysisDocument({
                 title: `Club-Fit Analyse ${playerName} ${new Date().toLocaleDateString('de-DE')}`,
                 analysisType: 'Club-Fit Analyse',
                 entityType: 'Player',
                 entityId: playerId,
-                htmlBody: buildClubFitHtml(response.data.idealProfile, results, playerName)
+                htmlBody: buildClubFitHtml(resData.idealProfile, results, playerName)
               });
             } catch (e) { console.warn('Auto-save failed:', e); }
           } else {
             toast.info('Idealprofil erstellt – keine Club-Profile in DB gefunden');
           }
         } else {
-          toast.error("Analyse fehlgeschlagen");
+          toast.error("Analyse fehlgeschlagen: " + (resData.error || "Unbekannter Fehler"));
         }
         setIsAnalyzing(false);
         setAnalyzeStep("");
@@ -326,7 +326,8 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
           toast.error("Fit-Analyse fehlgeschlagen");
         }
     } catch (error) {
-      toast.error("Fehler bei der Analyse");
+      console.error('handleAnalyze error:', error);
+      toast.error("Fehler bei der Analyse: " + (error?.message || String(error)));
     } finally {
       setIsAnalyzing(false);
       setAnalyzeStep("");
@@ -451,8 +452,14 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
             }
           </Button>
 
-          {isAnalyzing && analyzeStep && (
-            <p className="text-sm text-purple-600 dark:text-purple-400">{analyzeStep}</p>
+          {isAnalyzing && (
+            <div className="bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-700 rounded-lg p-4 flex items-center gap-3">
+              <Loader2 className="w-5 h-5 text-purple-600 animate-spin flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-purple-800 dark:text-purple-200">Analyse läuft…</p>
+                <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">{analyzeStep}</p>
+              </div>
+            </div>
           )}
 
           {idealProfile && clubFitResults.length > 0 && (
