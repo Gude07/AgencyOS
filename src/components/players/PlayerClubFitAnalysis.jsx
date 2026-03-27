@@ -3,7 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Loader2, ThumbsUp, ThumbsDown, Target, Building2, CheckCircle2, AlertCircle, Info } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Sparkles, Loader2, ThumbsUp, ThumbsDown, Target, Building2,
+  CheckCircle2, AlertCircle, Info, Plus, X, Globe, Search
+} from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -22,43 +26,145 @@ const fitScoreColor = (score) => {
   return "text-red-700 bg-red-50 border-red-200";
 };
 
+const POPULAR_LEAGUES = [
+  "Bundesliga", "2. Bundesliga", "Premier League", "La Liga", "Serie A",
+  "Ligue 1", "Eredivisie", "Primeira Liga", "Süper Lig", "3. Liga"
+];
+
 export default function PlayerClubFitAnalysis({ playerId, playerName }) {
+  // Modus: "existing" (nur DB-Profile), "new_clubs" (neue analysieren + vergleichen)
+  const [mode, setMode] = useState("existing");
+
+  // Neue Vereine eingeben
+  const [clubInput, setClubInput] = useState("");
+  const [selectedClubs, setSelectedClubs] = useState([]);
+
+  // Liga-Modus
+  const [leagueInput, setLeagueInput] = useState("");
+  const [isFetchingLeague, setIsFetchingLeague] = useState(false);
+  const [leagueClubs, setLeagueClubs] = useState([]);
+
+  // Analyse-Status
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzeStep, setAnalyzeStep] = useState(""); // Fortschrittstext
   const [idealProfile, setIdealProfile] = useState(null);
   const [clubFitResults, setClubFitResults] = useState([]);
   const [totalClubs, setTotalClubs] = useState(0);
   const [message, setMessage] = useState(null);
 
+  // Clubs hinzufügen
+  const addClub = (name) => {
+    const trimmed = name.trim();
+    if (trimmed && !selectedClubs.includes(trimmed)) {
+      setSelectedClubs(prev => [...prev, trimmed]);
+    }
+    setClubInput("");
+  };
+  const removeClub = (name) => setSelectedClubs(prev => prev.filter(c => c !== name));
+
+  // Liga abrufen
+  const fetchLeague = async () => {
+    if (!leagueInput.trim()) return;
+    setIsFetchingLeague(true);
+    try {
+      const res = await base44.functions.invoke('getLeagueClubs', { leagueName: leagueInput.trim() });
+      if (res.data.success) {
+        setLeagueClubs(res.data.clubs || []);
+        setSelectedClubs(res.data.clubs || []);
+        toast.success(`${res.data.clubs.length} Vereine aus ${res.data.league_name} geladen`);
+      } else {
+        toast.error("Liga konnte nicht geladen werden");
+      }
+    } catch {
+      toast.error("Fehler beim Abrufen der Liga");
+    } finally {
+      setIsFetchingLeague(false);
+    }
+  };
+
+  // Haupt-Analyse
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setIdealProfile(null);
     setClubFitResults([]);
     setMessage(null);
+
     try {
-      const response = await base44.functions.invoke('generatePlayerClubFit', { playerId });
-      if (response.data.success) {
-        setIdealProfile(response.data.idealProfile);
-        setClubFitResults(response.data.clubFitResults || []);
-        setTotalClubs(response.data.totalClubsAnalyzed || 0);
-        setMessage(response.data.message || null);
-        if ((response.data.clubFitResults || []).length > 0) {
-          toast.success(`${response.data.clubFitResults.length} Vereine analysiert`);
+      if (mode === "existing") {
+        // Nur bestehende DB-Profile vergleichen
+        setAnalyzeStep("Erstelle Idealprofil & vergleiche mit gespeicherten Vereinsprofilen...");
+        const response = await base44.functions.invoke('generatePlayerClubFit', { playerId });
+        if (response.data.success) {
+          setIdealProfile(response.data.idealProfile);
+          setClubFitResults(response.data.clubFitResults || []);
+          setTotalClubs(response.data.totalClubsAnalyzed || 0);
+          setMessage(response.data.message || null);
+          const count = (response.data.clubFitResults || []).length;
+          if (count > 0) toast.success(`${count} Vereine analysiert`);
+          else toast.info('Idealprofil erstellt – keine Club-Profile in DB gefunden');
         } else {
-          toast.info('Idealprofil erstellt – keine Club-Profile zum Abgleichen gefunden');
+          toast.error("Analyse fehlgeschlagen");
         }
       } else {
-        toast.error('Analyse fehlgeschlagen');
+        // Neue Vereine analysieren: erst alle Club-Profile via analyzeClub erstellen, dann Fit berechnen
+        if (selectedClubs.length === 0) {
+          toast.error("Bitte mindestens einen Verein eingeben");
+          setIsAnalyzing(false);
+          return;
+        }
+
+        // Schritt 1: Alle Clubs analysieren (sequentiell, um Rate-Limits zu vermeiden)
+        const savedProfiles = [];
+        for (let i = 0; i < selectedClubs.length; i++) {
+          const clubName = selectedClubs[i];
+          setAnalyzeStep(`Analysiere Verein ${i + 1}/${selectedClubs.length}: ${clubName}...`);
+          try {
+            const res = await base44.functions.invoke('analyzeClub', { clubName });
+            if (res.data.success) {
+              savedProfiles.push({ club_name: clubName, ...res.data.clubProfile });
+            }
+          } catch {
+            // Einzelne Fehler überspringen
+          }
+        }
+
+        if (savedProfiles.length === 0) {
+          toast.error("Keine Vereinsprofile konnten erstellt werden");
+          setIsAnalyzing(false);
+          return;
+        }
+
+        toast.success(`${savedProfiles.length} Vereinsprofile gespeichert – starte Fit-Analyse...`);
+
+        // Schritt 2: Fit-Analyse mit den neu gespeicherten Profilen
+        setAnalyzeStep("Erstelle Spieler-Idealprofil & berechne Fit-Scores...");
+        const fitRes = await base44.functions.invoke('generatePlayerClubFit', { playerId });
+        if (fitRes.data.success) {
+          setIdealProfile(fitRes.data.idealProfile);
+          // Filtere Ergebnisse auf die neu analysierten Vereine
+          const newClubNames = savedProfiles.map(p => p.club_name.toLowerCase());
+          const allResults = fitRes.data.clubFitResults || [];
+          const relevantResults = allResults.filter(r =>
+            newClubNames.some(n => r.club_name.toLowerCase().includes(n) || n.includes(r.club_name.toLowerCase()))
+          );
+          setClubFitResults(relevantResults.length > 0 ? relevantResults : allResults);
+          setTotalClubs(savedProfiles.length);
+          toast.success(`Analyse abgeschlossen! ${savedProfiles.length} Vereine profiliert & verglichen.`);
+        } else {
+          toast.error("Fit-Analyse fehlgeschlagen");
+        }
       }
     } catch (error) {
-      toast.error('Fehler bei der Analyse');
+      toast.error("Fehler bei der Analyse");
     } finally {
       setIsAnalyzing(false);
+      setAnalyzeStep("");
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header + Start */}
+      {/* Modus-Auswahl */}
       <Card className="border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950 dark:to-indigo-950">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-purple-900 dark:text-purple-200">
@@ -66,11 +172,103 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
             Club-Fit Analyse
           </CardTitle>
           <CardDescription className="text-purple-700 dark:text-purple-400">
-            Die KI analysiert alle Spielerdaten und erstellt ein "Ideales Club-Profil" für {playerName}. 
-            Anschließend werden vorhandene Vereinsprofile abgeglichen. <span className="font-semibold">Sehr geringer Credit-Verbrauch.</span>
+            Finde das beste taktische Club-Umfeld für {playerName}. Vergleiche mit gespeicherten Profilen oder analysiere neue Vereine direkt hier.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Modus-Toggle */}
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant={mode === "existing" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("existing")}
+            >
+              <Building2 className="w-4 h-4 mr-1" />
+              Gespeicherte Profile
+            </Button>
+            <Button
+              variant={mode === "new_clubs" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("new_clubs")}
+            >
+              <Sparkles className="w-4 h-4 mr-1" />
+              Neue Vereine analysieren
+            </Button>
+          </div>
+
+          {/* Modus: Neue Vereine */}
+          {mode === "new_clubs" && (
+            <div className="space-y-4 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
+              {/* Einzelne Vereine */}
+              <div>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Vereine eingeben</p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Vereinsname eingeben..."
+                    value={clubInput}
+                    onChange={e => setClubInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addClub(clubInput)}
+                    className="text-sm"
+                  />
+                  <Button size="sm" variant="outline" onClick={() => addClub(clubInput)}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedClubs.map(club => (
+                    <Badge
+                      key={club}
+                      className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 gap-1 cursor-pointer pr-1"
+                      onClick={() => removeClub(club)}
+                    >
+                      {club} <X className="w-3 h-3" />
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Liga-Import */}
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-3">
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  Ganze Liga laden
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="z.B. Bundesliga, Premier League, Serie A..."
+                    value={leagueInput}
+                    onChange={e => setLeagueInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && fetchLeague()}
+                    className="text-sm"
+                    list="league-suggestions"
+                  />
+                  <datalist id="league-suggestions">
+                    {POPULAR_LEAGUES.map(l => <option key={l} value={l} />)}
+                  </datalist>
+                  <Button size="sm" variant="outline" onClick={fetchLeague} disabled={isFetchingLeague}>
+                    {isFetchingLeague ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Lädt alle Vereine der Liga automatisch in die Liste oben
+                </p>
+              </div>
+
+              {selectedClubs.length > 0 && (
+                <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700">
+                  <span><strong>{selectedClubs.length}</strong> Vereine ausgewählt</span>
+                  <Button variant="ghost" size="sm" className="text-red-500 h-7 text-xs" onClick={() => setSelectedClubs([])}>
+                    Alle entfernen
+                  </Button>
+                </div>
+              )}
+
+              <div className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-2">
+                ⚡ Jeder Verein wird via KI analysiert & als Vereinsprofil gespeichert. Bei vielen Vereinen kann das mehrere Minuten dauern.
+              </div>
+            </div>
+          )}
+
           <Button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
@@ -78,18 +276,17 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
           >
             {isAnalyzing
               ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analysiere...</>
-              : <><Sparkles className="w-4 h-4 mr-2" />Club-Fit Analyse starten</>
+              : <><Sparkles className="w-4 h-4 mr-2" />Analyse starten</>
             }
           </Button>
-          {isAnalyzing && (
-            <p className="text-sm text-purple-600 dark:text-purple-400 mt-2">
-              Schritt 1: Ideales Club-Profil wird generiert... dann Abgleich mit {totalClubs > 0 ? `${totalClubs} Vereinsprofilen` : 'vorhandenen Vereinsprofilen'}...
-            </p>
+
+          {isAnalyzing && analyzeStep && (
+            <p className="text-sm text-purple-600 dark:text-purple-400">{analyzeStep}</p>
           )}
         </CardContent>
       </Card>
 
-      {/* Kein Club-Profil gefunden */}
+      {/* Hinweis: keine Profile */}
       {message && !idealProfile && (
         <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
           <CardContent className="pt-4 flex items-start gap-3">
@@ -186,12 +383,6 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
             <Building2 className="w-5 h-5 text-slate-500" />
             Abgleich mit {totalClubs} Vereinsprofilen
           </h3>
-          {message && (
-            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-              <Info className="w-4 h-4 flex-shrink-0" />
-              {message}
-            </div>
-          )}
           {clubFitResults.map((result, i) => (
             <Card key={result.club_id || i} className="border-slate-200 dark:border-slate-700">
               <CardContent className="pt-4">
@@ -262,7 +453,7 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
             <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="font-medium">Keine Club-Profile zum Abgleichen</p>
             <p className="text-sm mt-1">
-              Erstellen Sie zuerst Vereinsprofile über die{" "}
+              Wechsle zu <span className="font-semibold">"Neue Vereine analysieren"</span> oder erstelle Profile über die{" "}
               <Link to={createPageUrl("ClubAnalysis")} className="text-blue-600 underline">KI-Vereinsanalyse</Link>.
             </p>
           </CardContent>
