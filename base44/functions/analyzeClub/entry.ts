@@ -145,7 +145,7 @@ ANTWORTE NUR mit folgendem JSON:
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: fullPrompt,
         add_context_from_internet: true,
-        model: 'gemini_3_pro'
+        model: 'gemini_3_flash'
       });
 
       clubProfile = parseJson(response);
