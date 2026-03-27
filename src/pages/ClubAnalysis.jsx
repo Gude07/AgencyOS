@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sparkles, Loader2, Save, Trash2, TrendingUp, Users, Target, Brain,
-  X, Plus, Building2, ThumbsUp, ThumbsDown, AlertTriangle, BarChart3, GitCompare
+  X, Plus, Building2, ThumbsUp, ThumbsDown, AlertTriangle, BarChart3, GitCompare, CheckCircle2
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -43,6 +43,7 @@ export default function ClubAnalysis() {
   const [whatIfParams, setWhatIfParams] = useState({});
   const [feedback, setFeedback] = useState({});
   const [activeTab, setActiveTab] = useState("results");
+  const [usedExistingProfile, setUsedExistingProfile] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: () => base44.auth.me() });
@@ -79,6 +80,7 @@ export default function ClubAnalysis() {
     setCurrentRecommendations(null);
     setMatchedRequests([]);
     setFeedback({});
+    setUsedExistingProfile(false);
     try {
       const response = await base44.functions.invoke('analyzeClub', {
         clubName: clubName.trim(),
@@ -87,10 +89,14 @@ export default function ClubAnalysis() {
       if (response.data.success) {
         setCurrentClubProfile({ club_name: clubName.trim(), ...response.data.clubProfile });
         setMatchedRequests(response.data.matchedRequests || []);
+        setUsedExistingProfile(response.data.usedExistingProfile || false);
+        queryClient.invalidateQueries({ queryKey: ['clubProfiles'] });
         if ((response.data.matchedRequests || []).length > 0) {
           toast.success(`${response.data.matchedRequests.length} passende Vereinsanfrage(n) gefunden!`);
+        } else if (response.data.usedExistingProfile) {
+          toast.success('Vereinsprofil aus Datenbank ergänzt & aktualisiert');
         } else {
-          toast.success('Vereinsanalyse abgeschlossen');
+          toast.success('Vereinsanalyse abgeschlossen & Profil gespeichert');
         }
       } else {
         toast.error(response.data.error || 'Analyse fehlgeschlagen');
@@ -229,13 +235,19 @@ export default function ClubAnalysis() {
                 ))}
               </div>
             </div>
-            {isAnalyzingClub && <p className="text-sm text-slate-600 dark:text-slate-400">KI sammelt Informationen aus dem Internet (30–60 Sekunden)...</p>}
+            {isAnalyzingClub && <p className="text-sm text-slate-600 dark:text-slate-400">KI analysiert Verein... (30–60 Sekunden)</p>}
           </CardContent>
         </Card>
 
         {/* Analysis Results */}
         {currentClubProfile && (
           <div className="space-y-6">
+            {usedExistingProfile && (
+              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg text-sm text-green-800 dark:text-green-300">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                <span>Bestehendes Vereinsprofil aus der Datenbank als Grundlage verwendet — KI hat nur fehlende Informationen ergänzt (spart Credits).</span>
+              </div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{currentClubProfile.club_name}</h2>
               <div className="flex gap-3 flex-wrap">
@@ -251,33 +263,6 @@ export default function ClubAnalysis() {
             </div>
 
             {/* Matched Requests */}
-            {matchedRequests.length > 0 && (
-              <Card className="border-2 border-green-400 bg-green-50 dark:bg-green-950">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
-                    <Building2 className="w-5 h-5" />
-                    {matchedRequests.length} passende Vereinsanfrage{matchedRequests.length > 1 ? 'n' : ''} gefunden
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {matchedRequests.map(r => (
-                    <div key={r.id} className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                      <div>
-                        <span className="font-semibold text-slate-900 dark:text-white">{r.club_name}</span>
-                        <span className="mx-2 text-slate-400">·</span>
-                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">{r.position_needed}</Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {r.priority && <Badge variant="outline" className="text-xs">{r.priority}</Badge>}
-                        <Link to={`${createPageUrl("ClubRequestDetail")}?id=${r.id}`} className="text-xs text-blue-600 hover:underline">Details →</Link>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-4 w-full">
                 <TabsTrigger value="results">Vereinsprofil</TabsTrigger>

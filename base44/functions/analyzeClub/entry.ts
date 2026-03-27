@@ -6,82 +6,123 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Nicht autorisiert' }, { status: 401 });
 
-    const { clubName, manualPositions = [] } = await req.json();
+    const { clubName, manualPositions = [], forceRefresh = false, existingProfileId = null } = await req.json();
     if (!clubName) return Response.json({ error: 'Vereinsname fehlt' }, { status: 400 });
 
-    console.log(`Analysiere Verein: ${clubName}`);
+    console.log(`Analysiere Verein: ${clubName}, forceRefresh: ${forceRefresh}`);
 
-    // Load active (non-archived) ClubRequests for the agency
+    // --- 1. Check for existing ClubProfile in DB ---
+    let existingProfile = null;
+    try {
+      const profiles = await base44.asServiceRole.entities.ClubProfile.filter({ agency_id: user.agency_id });
+      const normalize = (s) => s.toLowerCase().replace(/\s+/g, '').trim();
+      existingProfile = profiles.find(p => normalize(p.club_name) === normalize(clubName));
+      if (!existingProfile && existingProfileId) {
+        existingProfile = profiles.find(p => p.id === existingProfileId);
+      }
+    } catch (e) {
+      console.warn('Could not load ClubProfiles:', e.message);
+    }
+
+    // --- 2. Load matched ClubRequests ---
     let matchedRequests = [];
     try {
       const allRequests = await base44.asServiceRole.entities.ClubRequest.filter({ agency_id: user.agency_id });
       const activeRequests = allRequests.filter(r => !r.archive_id && r.status !== 'abgeschlossen' && r.status !== 'abgelehnt');
 
-      // Fuzzy name matching
-      const normalize = (str) => str.toLowerCase()
+      const normalizeClub = (str) => str.toLowerCase()
         .replace(/^(fc|sv|sc|vfb|bsc|tsg|rb|rw|vfl|fsv|sg|tus|fk|sk|ac|as|ss|cf|cd|rc|atletico|atlético|real|inter|ssc)\s+/gi, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+        .replace(/\s+/g, ' ').trim();
 
-      const clubNormalized = normalize(clubName);
+      const clubNormalized = normalizeClub(clubName);
       const clubParts = clubNormalized.split(' ').filter(p => p.length > 2);
 
       matchedRequests = activeRequests.filter(r => {
         if (!r.club_name) return false;
-        const reqNormalized = normalize(r.club_name);
+        const reqNormalized = normalizeClub(r.club_name);
         if (reqNormalized.includes(clubNormalized) || clubNormalized.includes(reqNormalized)) return true;
-        // Check if any significant part matches
         return clubParts.some(part => reqNormalized.includes(part) && part.length > 3);
       });
-
       console.log(`Gefundene passende Vereinsanfragen: ${matchedRequests.length}`);
     } catch (e) {
       console.warn('Could not load ClubRequests:', e.message);
     }
 
-    // Collect positions from matched requests
     const requestPositions = [...new Set(
-      matchedRequests
-        .map(r => r.position_needed)
-        .filter(p => p && p !== 'Alle Positionen')
+      matchedRequests.map(r => r.position_needed).filter(p => p && p !== 'Alle Positionen')
     )];
-
     const allTargetPositions = [...new Set([...requestPositions, ...manualPositions])];
 
-    const clubProfilePrompt = `Analysiere den Fußballverein "${clubName}" umfassend basierend auf aktuellen Informationen aus dem Internet (März 2026, Saison 2025/2026).
+    // --- 3. Build prompt: use existing profile as base if available and not force refresh ---
+    let clubProfile;
+    const useExistingAsBase = existingProfile && !forceRefresh;
 
-1. AKTUELLE SPIELWEISE UND TAKTIK:
-   - Welches taktische System spielt der Verein aktuell?
-   - Spielphilosophie (Ballbesitz, Konter, Pressing, High-Line etc.)
-   - Bevorzugte Formationen
+    if (useExistingAsBase) {
+      // Existing profile found: only supplement/update missing or outdated info
+      const existingJson = JSON.stringify({
+        playing_style: existingProfile.playing_style,
+        formations: existingProfile.formations,
+        key_attributes: existingProfile.key_attributes,
+        coach_philosophy: existingProfile.coach_philosophy,
+        current_coach: existingProfile.current_coach,
+        club_culture: existingProfile.club_culture,
+        player_culture_fit: existingProfile.player_culture_fit,
+        transfer_trends: existingProfile.transfer_trends,
+        injury_situation: existingProfile.injury_situation,
+        target_positions: existingProfile.target_positions,
+        league: existingProfile.league,
+        country: existingProfile.country,
+        realistic_budget: existingProfile.realistic_budget,
+      }, null, 2);
 
-2. TRAINER UND PHILOSOPHIE:
-   - Aktueller Trainer und seine spielerische Ausrichtung
-   - Bevorzugte Spielertypen
+      const supplementPrompt = `Wir haben bereits folgendes Vereinsprofil für "${clubName}" in unserer Datenbank (Stand: ${existingProfile.last_analyzed_date || existingProfile.created_date}):
 
-3. VEREINSKULTUR & PHILOSOPHIE:
-   - Ist der Verein bekannt für Nachwuchsförderung oder kauft er fertige Spieler?
-   - Internationaler Fokus oder lokale Identität?
-   - Vereinswerte und Spielerkultur (z.B. Teamgeist, Disziplin, Kreativität)
-   - Typisches Durchschnittsalter des Kaders und Entwicklungsstrategie
-   - Bekannte Charaktertypen die beim Verein florieren
+${existingJson}
 
-4. AKTUELLE TRENDS UND BERICHTE (März 2026):
-   - Transfergerüchte und -ziele
-   - Gesuchte Positionen
-   - Verletzungssituation im Kader
-   - Transferstrategie und Budget-Situation
+Bitte ergänze und aktualisiere dieses Profil nur mit NEUEN Informationen aus dem Internet (aktuell März 2026, Saison 2025/2026). 
+Behalte bestehende Informationen bei, wenn sie noch aktuell sind. 
+Ergänze besonders: aktuelle Transfergerüchte, Verletzungen, neue Informationen über den Trainer, aktuelle Spielform und Transferbudget.
 
-5. GESUCHTE SPIELERPROFILE:
-   - Körperliche Attribute, technische Fähigkeiten, mentale Eigenschaften
+${allTargetPositions.length > 0 ? `Folgende Positionen werden speziell gesucht: ${allTargetPositions.join(', ')}` : ''}
 
+ANTWORTE NUR mit folgendem JSON (alle Felder müssen ausgefüllt sein, übernimm bestehende Werte wo sinnvoll):
+{
+  "playing_style": "...",
+  "formations": ["..."],
+  "key_attributes": ["..."],
+  "coach_philosophy": "...",
+  "current_coach": "...",
+  "club_culture": "...",
+  "player_culture_fit": "...",
+  "transfer_trends": "...",
+  "current_reports": "...",
+  "injury_situation": "...",
+  "target_positions": ["..."],
+  "league": "...",
+  "country": "...",
+  "realistic_budget": { "min": 0, "max": 0, "average": 0, "currency": "EUR", "notes": "..." }
+}`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: supplementPrompt,
+        add_context_from_internet: true,
+        model: 'gemini_3_flash'
+      });
+
+      clubProfile = parseJson(response);
+    } else {
+      // Full analysis (no existing profile or force refresh)
+      const fullPrompt = `Analysiere den Fußballverein "${clubName}" umfassend basierend auf aktuellen Informationen aus dem Internet (März 2026, Saison 2025/2026).
+
+1. AKTUELLE SPIELWEISE UND TAKTIK: taktisches System, Spielphilosophie, Formationen
+2. TRAINER UND PHILOSOPHIE: aktueller Trainer, Spielausrichtung, bevorzugte Spielertypen
+3. VEREINSKULTUR: Nachwuchs vs. fertige Spieler, Vereinswerte, typischer Spielercharakter
+4. AKTUELLE TRENDS (März 2026): Transfergerüchte, Verletzungssituation, Budget
+5. GESUCHTE SPIELERPROFILE: physische, technische, mentale Attribute
 6. LIGA UND WETTBEWERBSUMFELD
+7. TRANSFERBUDGET: letzte 3-5 Transfers, realistisches Budget in Euro
 
-7. TRANSFERBUDGET UND FINANZIELLE REALITÄT:
-   - Letzte 3-5 Transfers analysieren
-   - Realistisches Budget in Euro
-
-${allTargetPositions.length > 0 ? `\nHINWEIS: Folgende Positionen werden speziell gesucht (aus aktiven Anfragen/manuell): ${allTargetPositions.join(', ')}` : ''}
+${allTargetPositions.length > 0 ? `\nSpeziell gesuchte Positionen: ${allTargetPositions.join(', ')}` : ''}
 
 ANTWORTE NUR mit folgendem JSON:
 {
@@ -90,46 +131,64 @@ ANTWORTE NUR mit folgendem JSON:
   "key_attributes": ["..."],
   "coach_philosophy": "...",
   "current_coach": "...",
-  "club_culture": "Detaillierte Vereinskultur - Nachwuchs/erfahrene Spieler, internationale/lokale Ausrichtung, Werte",
-  "player_culture_fit": "Welcher Spielertyp passt kulturell zu diesem Verein",
+  "club_culture": "...",
+  "player_culture_fit": "...",
   "transfer_trends": "...",
   "current_reports": "...",
   "injury_situation": "...",
   "target_positions": ["..."],
   "league": "...",
   "country": "...",
-  "realistic_budget": {
-    "min": 0,
-    "max": 0,
-    "average": 0,
-    "currency": "EUR",
-    "notes": "..."
-  }
+  "realistic_budget": { "min": 0, "max": 0, "average": 0, "currency": "EUR", "notes": "..." }
 }`;
 
-    const clubProfileResponse = await base44.integrations.Core.InvokeLLM({
-      prompt: clubProfilePrompt,
-      add_context_from_internet: true,
-      model: 'gemini_3_pro'
-    });
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: fullPrompt,
+        add_context_from_internet: true,
+        model: 'gemini_3_pro'
+      });
 
-    let clubProfile;
-    if (typeof clubProfileResponse === 'string') {
-      try {
-        const jsonMatch = clubProfileResponse.match(/```json\n([\s\S]*?)\n```/) || clubProfileResponse.match(/```\n([\s\S]*?)\n```/);
-        clubProfile = jsonMatch ? JSON.parse(jsonMatch[1]) : JSON.parse(clubProfileResponse);
-      } catch (e) {
-        console.error('JSON Parse Error:', e);
-        clubProfile = clubProfileResponse;
-      }
-    } else {
-      clubProfile = clubProfileResponse;
+      clubProfile = parseJson(response);
     }
 
-    // Merge positions: AI + requests + manual (unique)
+    // Merge positions
     const aiPositions = clubProfile.target_positions || [];
-    const mergedPositions = [...new Set([...aiPositions, ...allTargetPositions])];
-    clubProfile.target_positions = mergedPositions;
+    clubProfile.target_positions = [...new Set([...aiPositions, ...allTargetPositions])];
+
+    // --- 4. Save/update ClubProfile in DB ---
+    let savedProfileId = existingProfile?.id || null;
+    try {
+      const profileData = {
+        agency_id: user.agency_id,
+        club_name: clubName,
+        league: clubProfile.league,
+        country: clubProfile.country,
+        current_coach: clubProfile.current_coach,
+        coach_philosophy: clubProfile.coach_philosophy,
+        playing_style: clubProfile.playing_style,
+        formations: clubProfile.formations,
+        key_attributes: clubProfile.key_attributes,
+        target_positions: clubProfile.target_positions,
+        club_culture: clubProfile.club_culture,
+        player_culture_fit: clubProfile.player_culture_fit,
+        transfer_trends: clubProfile.transfer_trends,
+        injury_situation: clubProfile.injury_situation,
+        realistic_budget: clubProfile.realistic_budget,
+        last_analyzed_date: new Date().toISOString(),
+      };
+
+      if (existingProfile) {
+        await base44.asServiceRole.entities.ClubProfile.update(existingProfile.id, profileData);
+        savedProfileId = existingProfile.id;
+        console.log(`Vereinsprofil aktualisiert: ${existingProfile.id}`);
+      } else {
+        const created = await base44.asServiceRole.entities.ClubProfile.create(profileData);
+        savedProfileId = created.id;
+        console.log(`Neues Vereinsprofil gespeichert: ${created.id}`);
+      }
+    } catch (e) {
+      console.warn('Could not save ClubProfile:', e.message);
+    }
 
     return Response.json({
       success: true,
@@ -143,7 +202,9 @@ ANTWORTE NUR mit folgendem JSON:
         budget_max: r.budget_max,
         transfer_types: r.transfer_types,
         requirements: r.requirements
-      }))
+      })),
+      usedExistingProfile: useExistingAsBase,
+      savedProfileId,
     });
 
   } catch (error) {
@@ -151,3 +212,16 @@ ANTWORTE NUR mit folgendem JSON:
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 });
+
+function parseJson(response) {
+  if (typeof response === 'string') {
+    try {
+      const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/) || response.match(/```\n([\s\S]*?)\n```/);
+      return jsonMatch ? JSON.parse(jsonMatch[1]) : JSON.parse(response);
+    } catch (e) {
+      console.error('JSON Parse Error:', e);
+      return response;
+    }
+  }
+  return response;
+}

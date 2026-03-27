@@ -1,0 +1,108 @@
+{
+  "name": "ClubProfile",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "club_name": {
+      "type": "string",
+      "description": "Name des Vereins"
+    },
+    "league": {
+      "type": "string",
+      "description": "Liga"
+    },
+    "country": {
+      "type": "string",
+      "description": "Land"
+    },
+    "current_coach": {
+      "type": "string",
+      "description": "Aktueller Trainer"
+    },
+    "coach_philosophy": {
+      "type": "string",
+      "description": "Trainingsphilosophie"
+    },
+    "playing_style": {
+      "type": "string",
+      "description": "Spielstil"
+    },
+    "formations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Bevorzugte Formationen"
+    },
+    "key_attributes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Gesuchte Spielerattribute"
+    },
+    "target_positions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Gesuchte Positionen"
+    },
+    "club_culture": {
+      "type": "string",
+      "description": "Vereinskultur und Philosophie"
+    },
+    "player_culture_fit": {
+      "type": "string",
+      "description": "Idealer Spielertyp kulturell"
+    },
+    "transfer_trends": {
+      "type": "string",
+      "description": "Transfertrends"
+    },
+    "injury_situation": {
+      "type": "string",
+      "description": "Verletzungssituation"
+    },
+    "realistic_budget": {
+      "type": "object",
+      "description": "Realistisches Transferbudget",
+      "properties": {
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "average": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "last_analyzed_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Datum der letzten KI-Analyse"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Manuelle Notizen"
+    }
+  },
+  "required": [
+    "agency_id",
+    "club_name"
+  ]
+}

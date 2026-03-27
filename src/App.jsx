@@ -10,6 +10,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ClubAnalysis from './pages/ClubAnalysis';
+import ClubProfiles from './pages/ClubProfiles';
 import PlayerComparison from './pages/PlayerComparison';
 import SavedComparisons from './pages/SavedComparisons';
 
@@ -64,7 +65,15 @@ const AuthenticatedApp = () => {
         />
       ))}
       <Route 
-        path="/ClubAnalysis" 
+        path="/ClubProfiles" 
+        element={
+          <LayoutWrapper currentPageName="ClubProfiles">
+            <ClubProfiles />
+          </LayoutWrapper>
+        } 
+      />
+      <Route 
+        path="/ClubAnalysis"
         element={
           <LayoutWrapper currentPageName="ClubAnalysis">
             <ClubAnalysis />
