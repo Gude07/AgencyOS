@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { saveAnalysisDocument, buildPlayerAnalysisHtml } from "@/utils/saveAnalysisDocument";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,20 @@ export default function PlayerAIAnalysis({ playerId, playerName }) {
     setIsLoading(true);
     try {
       const result = await base44.functions.invoke('analyzePlayer', { player_id: playerId });
-      setAnalysis(result.data.analysis);
+      const analysisData = result.data.analysis;
+      setAnalysis(analysisData);
+      // Auto-save as document on player
+      try {
+        await saveAnalysisDocument({
+          title: `KI-Analyse ${playerName} ${new Date().toLocaleDateString('de-DE')}`,
+          analysisType: 'KI-Spieleranalyse',
+          entityType: 'Player',
+          entityId: playerId,
+          htmlBody: buildPlayerAnalysisHtml(analysisData, playerName)
+        });
+      } catch (e) {
+        console.warn('Auto-save document failed:', e);
+      }
     } catch (error) {
       console.error('Error running analysis:', error);
     } finally {

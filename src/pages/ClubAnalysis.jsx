@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { saveAnalysisDocument, buildClubMatchingHtml } from "@/utils/saveAnalysisDocument";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,6 +125,27 @@ export default function ClubAnalysis() {
         setCurrentRecommendations(response.data);
         setActiveTab("results");
         toast.success(`${response.data.recommendations.length} Spieler empfohlen`);
+        // Auto-save as document on ClubProfile
+        try {
+          const profiles = await base44.entities.ClubProfile.filter({ agency_id: user?.agency_id });
+          const matchedProfile = profiles.find(p =>
+            p.club_name?.toLowerCase() === currentClubProfile.club_name?.toLowerCase()
+          );
+          if (matchedProfile) {
+            await saveAnalysisDocument({
+              title: `Spieler-Matching ${currentClubProfile.club_name} ${new Date().toLocaleDateString('de-DE')}`,
+              analysisType: 'KI-Spieler-Matching',
+              entityType: 'ClubProfile',
+              entityId: matchedProfile.id,
+              htmlBody: buildClubMatchingHtml(
+                currentClubProfile.club_name,
+                currentClubProfile,
+                response.data.recommendations,
+                response.data.summary
+              )
+            });
+          }
+        } catch (e) { console.warn('Auto-save club matching failed:', e); }
       } else {
         toast.error(response.data.error || 'Matching fehlgeschlagen');
       }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { jsPDF } from "jspdf";
+import { saveAnalysisDocument, buildClubFitHtml } from "@/utils/saveAnalysisDocument";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -220,12 +221,26 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
         const response = await base44.functions.invoke('generatePlayerClubFit', { playerId });
         if (response.data.success) {
           setIdealProfile(response.data.idealProfile);
-          setClubFitResults(response.data.clubFitResults || []);
+          const results = response.data.clubFitResults || [];
+          setClubFitResults(results);
           setTotalClubs(response.data.totalClubsAnalyzed || 0);
           setMessage(response.data.message || null);
-          const count = (response.data.clubFitResults || []).length;
-          if (count > 0) toast.success(`${count} Vereine analysiert`);
-          else toast.info('Idealprofil erstellt – keine Club-Profile in DB gefunden');
+          const count = results.length;
+          if (count > 0) {
+            toast.success(`${count} Vereine analysiert`);
+            // Auto-save as document on player
+            try {
+              await saveAnalysisDocument({
+                title: `Club-Fit Analyse ${playerName} ${new Date().toLocaleDateString('de-DE')}`,
+                analysisType: 'Club-Fit Analyse',
+                entityType: 'Player',
+                entityId: playerId,
+                htmlBody: buildClubFitHtml(response.data.idealProfile, results, playerName)
+              });
+            } catch (e) { console.warn('Auto-save failed:', e); }
+          } else {
+            toast.info('Idealprofil erstellt – keine Club-Profile in DB gefunden');
+          }
         } else {
           toast.error("Analyse fehlgeschlagen");
         }
@@ -297,6 +312,16 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
           setClubFitResults(allResults);
           setTotalClubs(allResults.length);
           toast.success(`Analyse abgeschlossen! ${savedProfiles.length} Vereine profiliert & verglichen.`);
+          // Auto-save as document on player
+          try {
+            await saveAnalysisDocument({
+              title: `Club-Fit Analyse ${playerName} ${new Date().toLocaleDateString('de-DE')}`,
+              analysisType: 'Club-Fit Analyse',
+              entityType: 'Player',
+              entityId: playerId,
+              htmlBody: buildClubFitHtml(fitRes.data.idealProfile, allResults, playerName)
+            });
+          } catch (e) { console.warn('Auto-save failed:', e); }
         } else {
           toast.error("Fit-Analyse fehlgeschlagen");
         }
