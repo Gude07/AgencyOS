@@ -40,6 +40,7 @@ import PlayerMatchesDragDrop from "../components/players/PlayerMatchesDragDrop";
 import PlayerCareerStats from "../components/players/PlayerCareerStats";
 import PlayerScoutingReports from "../components/players/PlayerScoutingReports";
 import PlayerAIAnalysis from "../components/players/PlayerAIAnalysis";
+import PlayerClubFitAnalysis from "../components/players/PlayerClubFitAnalysis";
 import DocumentManager from "../components/documents/DocumentManager";
 import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
 import PlayerApiIdSuggestions from "../components/players/PlayerApiIdSuggestions";
@@ -1031,7 +1032,13 @@ export default function PlayerDetail() {
           </TabsContent>
 
           <TabsContent value="ai">
-            <PlayerAIAnalysis playerId={playerId} playerName={player?.name} />
+            <div className="space-y-8">
+              <PlayerAIAnalysis playerId={playerId} playerName={player?.name} />
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Club-Fit Analyse</h3>
+                <PlayerClubFitAnalysis playerId={playerId} playerName={player?.name} />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="career">

@@ -72,14 +72,14 @@ const transferItems = [
     icon: Building2,
   },
   {
-    title: "KI-Vereinsanalyse",
-    url: createPageUrl("ClubAnalysis"),
-    icon: Sparkles,
-  },
-  {
     title: "Vereinsprofile",
     url: createPageUrl("ClubProfiles"),
     icon: Building2,
+  },
+  {
+    title: "KI-Vereinsanalyse",
+    url: createPageUrl("ClubAnalysis"),
+    icon: Sparkles,
   },
   {
     title: "Spieler-Vergleich KI",
