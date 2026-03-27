@@ -8,13 +8,21 @@ Deno.serve(async (req) => {
   const { playerId } = await req.json();
   if (!playerId) return Response.json({ error: 'playerId fehlt' }, { status: 400 });
 
+  // Helper: ensure we always get a plain array
+  const toArray = (v) => Array.isArray(v) ? v : (v?.items || v?.data || v?.results || []);
+
   // Lade alle relevanten Spielerdaten parallel
-  const [players, scoutingReports, careerStats, clubProfiles] = await Promise.all([
-    base44.entities.Player.list(),
-    base44.entities.ScoutingReport ? base44.entities.ScoutingReport.list() : Promise.resolve([]),
-    base44.entities.PlayerCareerStat.filter({ player_id: playerId }),
-    base44.entities.ClubProfile.filter({ agency_id: user.agency_id }),
+  const [playersRaw, scoutingRaw, careerRaw, clubProfilesRaw] = await Promise.all([
+    base44.entities.Player.filter({ agency_id: user.agency_id }),
+    base44.entities.ScoutingReport.filter({ player_id: playerId }).catch(() => []),
+    base44.entities.PlayerCareerStat.filter({ player_id: playerId }).catch(() => []),
+    base44.entities.ClubProfile.filter({ agency_id: user.agency_id }).catch(() => []),
   ]);
+
+  const players = toArray(playersRaw);
+  const scoutingReports = toArray(scoutingRaw);
+  const careerStats = toArray(careerRaw);
+  const clubProfiles = toArray(clubProfilesRaw);
 
   const player = players.find(p => p.id === playerId);
   if (!player) return Response.json({ error: 'Spieler nicht gefunden' }, { status: 404 });
