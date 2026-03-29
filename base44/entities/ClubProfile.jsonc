@@ -52,7 +52,7 @@
         "type": "string"
       },
       "default": [],
-      "description": "Gesuchte Positionen"
+      "description": "M\u00f6gliche Priorit\u00e4tspositionen (KI-Einsch\u00e4tzung + Vereinsanfragen)"
     },
     "club_culture": {
       "type": "string",
@@ -66,9 +66,19 @@
       "type": "string",
       "description": "Transfertrends"
     },
+    "transfer_trends_updated_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Datum der letzten Transfertrends-Aktualisierung"
+    },
     "injury_situation": {
       "type": "string",
       "description": "Verletzungssituation"
+    },
+    "injury_situation_updated_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Datum der letzten Verletzungssituation-Aktualisierung"
     },
     "realistic_budget": {
       "type": "object",

@@ -52,6 +52,9 @@ Deno.serve(async (req) => {
       matchedRequests.map(r => r.position_needed).filter(p => p && p !== 'Alle Positionen')
     )];
     const allTargetPositions = [...new Set([...requestPositions, ...manualPositions])];
+    const positionHintText = allTargetPositions.length > 0
+      ? `\nHINWEIS: Unsere Agentur hat aktuelle Vereinsanfragen für folgende Positionen bei diesem Verein: ${allTargetPositions.join(', ')}. Berücksichtige dies bei den möglichen Prioritätspositionen, aber beschreibe diese immer als KI-Einschätzung basierend auf dem tatsächlichen Bedarf des Vereins – nicht als fixe Vorgabe.`
+      : '';
 
     // --- 3. Build prompt: use existing profile as base if available and not force refresh ---
     let clubProfile;
@@ -82,8 +85,9 @@ ${existingJson}
 Bitte ergänze und aktualisiere dieses Profil nur mit NEUEN Informationen aus dem Internet (aktuell März 2026, Saison 2025/2026). 
 Behalte bestehende Informationen bei, wenn sie noch aktuell sind. 
 Ergänze besonders: aktuelle Transfergerüchte, Verletzungen, neue Informationen über den Trainer, aktuelle Spielform und Transferbudget.
+${positionHintText}
 
-${allTargetPositions.length > 0 ? `Folgende Positionen werden speziell gesucht: ${allTargetPositions.join(', ')}` : ''}
+Für das Feld "target_positions": Beschreibe dies als KI-Einschätzung der MÖGLICHEN Prioritätspositionen des Vereins basierend auf aktuellem Kader, Verletzungen und Transferstrategie – keine fixe Liste, sondern eine fundierte Einschätzung.
 
 ANTWORTE NUR mit folgendem JSON (alle Felder müssen ausgefüllt sein, übernimm bestehende Werte wo sinnvoll):
 {
@@ -121,8 +125,9 @@ ANTWORTE NUR mit folgendem JSON (alle Felder müssen ausgefüllt sein, übernimm
 5. GESUCHTE SPIELERPROFILE: physische, technische, mentale Attribute
 6. LIGA UND WETTBEWERBSUMFELD
 7. TRANSFERBUDGET: letzte 3-5 Transfers, realistisches Budget in Euro
+${positionHintText}
 
-${allTargetPositions.length > 0 ? `\nSpeziell gesuchte Positionen: ${allTargetPositions.join(', ')}` : ''}
+Für das Feld "target_positions": Beschreibe dies als KI-Einschätzung der MÖGLICHEN Prioritätspositionen des Vereins basierend auf aktuellem Kader, Verletzungen und Transferstrategie – keine fixe Liste, sondern eine fundierte Einschätzung.
 
 ANTWORTE NUR mit folgendem JSON:
 {
@@ -151,7 +156,7 @@ ANTWORTE NUR mit folgendem JSON:
       clubProfile = parseJson(response);
     }
 
-    // Merge positions
+    // Merge positions: AI estimate + request hints (deduplicated)
     const aiPositions = clubProfile.target_positions || [];
     clubProfile.target_positions = [...new Set([...aiPositions, ...allTargetPositions])];
 
@@ -172,7 +177,9 @@ ANTWORTE NUR mit folgendem JSON:
         club_culture: clubProfile.club_culture,
         player_culture_fit: clubProfile.player_culture_fit,
         transfer_trends: clubProfile.transfer_trends,
+        transfer_trends_updated_date: new Date().toISOString(),
         injury_situation: clubProfile.injury_situation,
+        injury_situation_updated_date: new Date().toISOString(),
         realistic_budget: clubProfile.realistic_budget,
         last_analyzed_date: new Date().toISOString(),
       };

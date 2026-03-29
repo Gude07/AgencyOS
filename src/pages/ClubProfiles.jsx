@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Building2, Pencil, Trash2, RefreshCw, Loader2, Save, X, Calendar,
-  ChevronDown, ChevronUp, Sparkles
+  ChevronDown, ChevronUp, Sparkles, Zap
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -95,7 +95,7 @@ function EditProfileDialog({ profile, onClose, onSave }) {
           <div><Label>Idealer Spielertyp (kulturell)</Label><Input value={form.player_culture_fit} onChange={e => set("player_culture_fit", e.target.value)} /></div>
           <div><Label>Formationen (kommagetrennt)</Label><Input value={form.formations} onChange={e => set("formations", e.target.value)} placeholder="z.B. 4-3-3, 4-2-3-1" /></div>
           <div><Label>Gesuchte Attribute (kommagetrennt)</Label><Input value={form.key_attributes} onChange={e => set("key_attributes", e.target.value)} /></div>
-          <div><Label>Gesuchte Positionen (kommagetrennt)</Label><Input value={form.target_positions} onChange={e => set("target_positions", e.target.value)} /></div>
+          <div><Label>Mögliche Prioritätspositionen (kommagetrennt, KI-Einschätzung)</Label><Input value={form.target_positions} onChange={e => set("target_positions", e.target.value)} /></div>
           <div><Label>Transfertrends</Label><Textarea rows={2} value={form.transfer_trends} onChange={e => set("transfer_trends", e.target.value)} /></div>
           <div><Label>Verletzungssituation</Label><Textarea rows={2} value={form.injury_situation} onChange={e => set("injury_situation", e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-4">
@@ -114,7 +114,7 @@ function EditProfileDialog({ profile, onClose, onSave }) {
   );
 }
 
-function ProfileCard({ profile, onEdit, onDelete, onReanalyze, isReanalyzing }) {
+function ProfileCard({ profile, onEdit, onDelete, onReanalyze, isReanalyzing, onUpdateField, updatingField }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -183,7 +183,7 @@ function ProfileCard({ profile, onEdit, onDelete, onReanalyze, isReanalyzing }) 
             )}
             {profile.target_positions?.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Gesuchte Positionen</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Mögliche Prioritätspositionen <span className="normal-case font-normal text-slate-400">(KI-Einschätzung)</span></p>
                 <div className="flex flex-wrap gap-1">{profile.target_positions.map((p, i) => <Badge key={i} className="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">{p}</Badge>)}</div>
               </div>
             )}
@@ -205,18 +205,40 @@ function ProfileCard({ profile, onEdit, onDelete, onReanalyze, isReanalyzing }) 
                 <p className="text-sm text-slate-700 dark:text-slate-300 italic">{profile.player_culture_fit}</p>
               </div>
             )}
-            {profile.transfer_trends && (
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Transfertrends</p>
-                <p className="text-sm text-slate-700 dark:text-slate-300">{profile.transfer_trends}</p>
+            <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-500 uppercase">Transfertrends</p>
+                <div className="flex items-center gap-1">
+                  {profile.transfer_trends_updated_date && (
+                    <span className="text-xs text-slate-400">Stand: {formatDate(profile.transfer_trends_updated_date)}</span>
+                  )}
+                  <Button size="icon" variant="ghost" className="h-6 w-6" title="Transfertrends via KI aktualisieren" onClick={() => onUpdateField(profile.id, 'transfer_trends')} disabled={!!updatingField}>
+                    {updatingField === 'transfer_trends' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 text-amber-500" />}
+                  </Button>
+                </div>
               </div>
-            )}
-            {profile.injury_situation && (
-              <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                <p className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase mb-1">⚠ Verletzungssituation</p>
-                <p className="text-sm text-red-800 dark:text-red-300">{profile.injury_situation}</p>
+              {profile.transfer_trends
+                ? <p className="text-sm text-slate-700 dark:text-slate-300">{profile.transfer_trends}</p>
+                : <p className="text-xs text-slate-400 italic">Noch keine Daten – per KI aktualisieren</p>
+              }
+            </div>
+            <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase">⚠ Verletzungssituation</p>
+                <div className="flex items-center gap-1">
+                  {profile.injury_situation_updated_date && (
+                    <span className="text-xs text-red-400">Stand: {formatDate(profile.injury_situation_updated_date)}</span>
+                  )}
+                  <Button size="icon" variant="ghost" className="h-6 w-6" title="Verletzungssituation via KI aktualisieren" onClick={() => onUpdateField(profile.id, 'injury_situation')} disabled={!!updatingField}>
+                    {updatingField === 'injury_situation' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3 text-amber-500" />}
+                  </Button>
+                </div>
               </div>
-            )}
+              {profile.injury_situation
+                ? <p className="text-sm text-red-800 dark:text-red-300">{profile.injury_situation}</p>
+                : <p className="text-xs text-red-400 italic">Noch keine Daten – per KI aktualisieren</p>
+              }
+            </div>
             {profile.realistic_budget && (profile.realistic_budget.min || profile.realistic_budget.max) && (
               <div>
                 <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Transferbudget</p>
@@ -243,6 +265,7 @@ export default function ClubProfiles() {
   const [editingProfile, setEditingProfile] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [reanalyzingId, setReanalyzingId] = useState(null);
+  const [updatingField, setUpdatingField] = useState(null); // { profileId, field }
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
 
@@ -296,6 +319,23 @@ export default function ClubProfiles() {
     }
   };
 
+  const handleUpdateField = async (profileId, field) => {
+    setUpdatingField({ profileId, field });
+    try {
+      const response = await base44.functions.invoke('updateClubFieldAI', { profileId, field });
+      if (response.data.success) {
+        queryClient.invalidateQueries({ queryKey: ['clubProfiles'] });
+        toast.success(`${field === 'transfer_trends' ? 'Transfertrends' : 'Verletzungssituation'} aktualisiert`);
+      } else {
+        toast.error(response.data.error || 'Aktualisierung fehlgeschlagen');
+      }
+    } catch {
+      toast.error('Fehler bei der Aktualisierung');
+    } finally {
+      setUpdatingField(null);
+    }
+  };
+
   const filtered = profiles.filter(p =>
     !search || p.club_name?.toLowerCase().includes(search.toLowerCase()) ||
     p.league?.toLowerCase().includes(search.toLowerCase())
@@ -344,6 +384,8 @@ export default function ClubProfiles() {
                 onDelete={setDeleteId}
                 onReanalyze={handleReanalyze}
                 isReanalyzing={reanalyzingId === profile.id}
+                onUpdateField={handleUpdateField}
+                updatingField={updatingField?.profileId === profile.id ? updatingField.field : null}
               />
             ))}
           </div>
