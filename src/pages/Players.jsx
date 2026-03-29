@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List } from "lucide-react";
+import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, LayoutGrid } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -44,6 +44,7 @@ import TemplateManager from "../components/templates/TemplateManager";
 import DataExtractor from "../components/ai/DataExtractor";
 import PlayerComparisonTool from "../components/players/PlayerComparisonTool";
 import PlayersTableView from "../components/players/PlayersTableView";
+import PlayerBoxesView from "../components/players/PlayerBoxesView";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -564,6 +565,15 @@ export default function Players() {
               >
                 <List className="w-4 h-4" />
               </Button>
+              <Button
+                variant={displayMode === 'boxes' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setDisplayMode('boxes')}
+                className={displayMode === 'boxes' ? 'bg-white shadow-sm' : ''}
+                title="Boxen-Ansicht"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
             </div>
           </div>
 
@@ -653,7 +663,9 @@ export default function Players() {
           </Select>
           </div>
 
-        {displayMode === 'grid' ? (
+        {displayMode === 'boxes' ? (
+          <PlayerBoxesView players={players.filter(p => !p.archive_id)} />
+        ) : displayMode === 'grid' ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence>
             {filteredPlayers.map(player => (

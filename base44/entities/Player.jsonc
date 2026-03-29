@@ -1,0 +1,317 @@
+{
+  "name": "Player",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name des Spielers"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date",
+      "description": "Geburtsdatum"
+    },
+    "age": {
+      "type": "number",
+      "description": "Alter des Spielers"
+    },
+    "nationality": {
+      "type": "string",
+      "description": "Nationalit\u00e4t"
+    },
+    "position": {
+      "type": "string",
+      "enum": [
+        "Torwart",
+        "Innenverteidiger",
+        "Au\u00dfenverteidiger",
+        "Linker Au\u00dfenverteidiger",
+        "Rechter Au\u00dfenverteidiger",
+        "Defensives Mittelfeld",
+        "Mittelfeld",
+        "Linkes Mittelfeld",
+        "Zentrales Mittelfeld",
+        "Rechtes Mittelfeld",
+        "Offensives Mittelfeld",
+        "Fl\u00fcgelspieler",
+        "Linksau\u00dfen",
+        "Rechtsau\u00dfen",
+        "St\u00fcrmer"
+      ],
+      "description": "Hauptposition des Spielers"
+    },
+    "secondary_positions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Torwart",
+          "Innenverteidiger",
+          "Au\u00dfenverteidiger",
+          "Linker Au\u00dfenverteidiger",
+          "Rechter Au\u00dfenverteidiger",
+          "Defensives Mittelfeld",
+          "Mittelfeld",
+          "Linkes Mittelfeld",
+          "Zentrales Mittelfeld",
+          "Rechtes Mittelfeld",
+          "Offensives Mittelfeld",
+          "Fl\u00fcgelspieler",
+          "Linksau\u00dfen",
+          "Rechtsau\u00dfen",
+          "St\u00fcrmer"
+        ]
+      },
+      "default": [],
+      "description": "Nebenpositionen des Spielers"
+    },
+    "current_club": {
+      "type": "string",
+      "description": "Aktueller Verein"
+    },
+    "market_value": {
+      "type": "number",
+      "description": "Marktwert in Euro"
+    },
+    "contract_until": {
+      "type": "string",
+      "format": "date",
+      "description": "Vertragsende"
+    },
+    "transfermarkt_url": {
+      "type": "string",
+      "description": "Link zum Transfermarkt.de Profil"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Wintertransferperiode",
+        "Sommertransferperiode",
+        "Zukunft",
+        "Beobachtungsliste",
+        "Top-Priorit\u00e4t",
+        "Vertragsende"
+      ],
+      "default": "Beobachtungsliste",
+      "description": "Kategorie f\u00fcr die Organisation"
+    },
+    "potential_clubs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Liste potentieller Vereine (Legacy)"
+    },
+    "offered_to_requests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "IDs der Vereinsanfragen, bei denen der Spieler angeboten wurde"
+    },
+    "matched_requests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der passenden Vereinsanfragen"
+    },
+    "favorite_matches": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "IDs der favorisierten Vereinsanfragen"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen zum Spieler"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "noch_offen",
+        "in_bearbeitung",
+        "bei_verein_angeboten",
+        "abgeschlossen"
+      ],
+      "default": "noch_offen",
+      "description": "Status des Spielers"
+    },
+    "strengths": {
+      "type": "string",
+      "description": "St\u00e4rken des Spielers"
+    },
+    "foot": {
+      "type": "string",
+      "enum": [
+        "links",
+        "rechts",
+        "beidf\u00fc\u00dfig"
+      ],
+      "description": "Starker Fu\u00df"
+    },
+    "height": {
+      "type": "number",
+      "description": "Gr\u00f6\u00dfe in cm"
+    },
+    "speed_rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Tempo-Bewertung (1-10)"
+    },
+    "strength_rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "St\u00e4rke-Bewertung (1-10)"
+    },
+    "stamina_rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Ausdauer-Bewertung (1-10)"
+    },
+    "agility_rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Agilit\u00e4t-Bewertung (1-10)"
+    },
+    "personality_traits": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "F\u00fchrungsst\u00e4rke",
+          "Teamplayer",
+          "Ehrgeiz",
+          "Mentalit\u00e4t",
+          "Disziplin",
+          "Kommunikation",
+          "Belastbarkeit",
+          "Lernbereitschaft",
+          "Kampfgeist",
+          "Kreativit\u00e4t"
+        ]
+      },
+      "default": [],
+      "description": "Charakter-Eigenschaften des Spielers"
+    },
+    "current_form": {
+      "type": "string",
+      "enum": [
+        "ausgezeichnet",
+        "sehr_gut",
+        "gut",
+        "befriedigend",
+        "schwach"
+      ],
+      "description": "Aktuelle Form / Leistungsstand"
+    },
+    "form_description": {
+      "type": "string",
+      "description": "Erg\u00e4nzende Beschreibung zur aktuellen Form"
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "preferred_leagues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "preferred_countries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "min_salary": {
+          "type": "number"
+        },
+        "max_salary": {
+          "type": "number"
+        },
+        "excluded_clubs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "career_goals": {
+          "type": "string"
+        }
+      },
+      "description": "Spielerpr\u00e4ferenzen f\u00fcr Matching"
+    },
+    "archive_id": {
+      "type": "string",
+      "description": "ID des Archiv-Ordners, falls archiviert"
+    },
+    "has_player_card": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ob eine Player Card f\u00fcr diesen Spieler vorhanden ist"
+    },
+    "player_boxes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "IDs der Spieler-Boxen, denen der Spieler zugeordnet ist"
+    },
+    "dropbox_documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "uploaded_date": {
+            "type": "string"
+          },
+          "uploaded_by": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "In Dropbox hochgeladene Dokumente"
+    },
+    "player_api_id": {
+      "type": "number",
+      "description": "API-Football Spieler-ID f\u00fcr automatische Statistik-Updates"
+    }
+  },
+  "required": [
+    "agency_id",
+    "name",
+    "position"
+  ]
+}
