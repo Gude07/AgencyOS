@@ -1157,6 +1157,5 @@ export default function Players() {
             initialPlayerIds={[]}
           />
           </div>
-          </div>
           );
           }
