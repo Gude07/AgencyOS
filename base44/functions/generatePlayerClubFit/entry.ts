@@ -118,30 +118,39 @@ Erstelle ein strukturiertes "Ideales Club-Profil" aus der Sicht dieses Spielers.
     });
   }
 
-  // Vergleich: Spieler-Idealprofil vs. Club-Profile (ein KI-Aufruf für alle)
-  const clubProfilesSummary = profilesToCompare.map((cp, i) => ({
-    index: i,
-    id: cp.id,
-    club_name: cp.club_name,
-    league: cp.league,
-    country: cp.country,
-    playing_style: cp.playing_style,
-    formations: cp.formations,
-    coach_philosophy: cp.coach_philosophy,
-    key_attributes: cp.key_attributes,
-    club_culture: cp.club_culture,
-    player_culture_fit: cp.player_culture_fit,
-    target_positions: cp.target_positions,
-  }));
+  // Vergleich: in Batches aufteilen um LLM-Limits zu vermeiden
+  const BATCH_SIZE = 10;
+  const batches = [];
+  for (let i = 0; i < profilesToCompare.length; i += BATCH_SIZE) {
+    batches.push(profilesToCompare.slice(i, i + BATCH_SIZE));
+  }
 
-  const matchPrompt = `Du bist ein erfahrener Fußball-Scout. Vergleiche das ideale Club-Profil eines Spielers mit einer Liste von Club-Profilen und berechne einen Fit-Score.
+  const allResults = [];
+
+  for (const batch of batches) {
+    const clubProfilesSummary = batch.map((cp) => ({
+      id: cp.id,
+      club_name: cp.club_name,
+      league: cp.league,
+      country: cp.country,
+      playing_style: cp.playing_style,
+      formations: cp.formations,
+      coach_philosophy: cp.coach_philosophy,
+      key_attributes: cp.key_attributes,
+      club_culture: cp.club_culture,
+      player_culture_fit: cp.player_culture_fit,
+      target_positions: cp.target_positions,
+    }));
+
+    const matchPrompt = `Du bist ein erfahrener Fußball-Scout. Vergleiche das ideale Club-Profil eines Spielers mit einer Liste von Club-Profilen und berechne einen Fit-Score.
 ANTWORTE AUSSCHLIESSLICH AUF DEUTSCH. Alle Texte (summary, reasons_for, reasons_against, match_level) müssen auf Deutsch sein.
 match_level muss einer dieser Werte sein: "Sehr gut", "Gut", "Mittel", "Gering".
+WICHTIG: Gib für JEDEN der ${batch.length} Vereine in der Liste ein Ergebnis zurück – keinen auslassen.
 
 IDEALES CLUB-PROFIL DES SPIELERS (${player.name}):
 ${JSON.stringify(idealProfile, null, 2)}
 
-CLUB-PROFILE ZUM VERGLEICH:
+CLUB-PROFILE ZUM VERGLEICH (${batch.length} Vereine):
 ${JSON.stringify(clubProfilesSummary, null, 2)}
 
 Für jeden Verein: Berechne einen Fit-Score (0-100) und gib eine kurze Begründung auf Deutsch.
@@ -153,53 +162,52 @@ Antworte NUR mit einem JSON-Objekt:
       "club_name": "Name des Vereins",
       "fit_score": 85,
       "match_level": "Sehr gut",
-      "reasons_for": ["Grund 1 auf Deutsch", "Grund 2 auf Deutsch"],
-      "reasons_against": ["Grund 1 auf Deutsch"],
-      "summary": "Kurze Zusammenfassung auf Deutsch"
+      "reasons_for": ["Grund 1", "Grund 2"],
+      "reasons_against": ["Grund 1"],
+      "summary": "Kurze Zusammenfassung"
     }
   ]
 }`;
 
-  const matchResult = await base44.integrations.Core.InvokeLLM({
-    prompt: matchPrompt,
-    add_context_from_internet: false,
-    response_json_schema: {
-      type: "object",
-      properties: {
-        results: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              club_id: { type: "string" },
-              club_name: { type: "string" },
-              fit_score: { type: "number" },
-              match_level: { type: "string" },
-              reasons_for: { type: "array", items: { type: "string" } },
-              reasons_against: { type: "array", items: { type: "string" } },
-              summary: { type: "string" }
+    const matchResult = await base44.integrations.Core.InvokeLLM({
+      prompt: matchPrompt,
+      add_context_from_internet: false,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          results: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                club_id: { type: "string" },
+                club_name: { type: "string" },
+                fit_score: { type: "number" },
+                match_level: { type: "string" },
+                reasons_for: { type: "array", items: { type: "string" } },
+                reasons_against: { type: "array", items: { type: "string" } },
+                summary: { type: "string" }
+              }
             }
           }
         }
       }
-    }
-  });
+    });
 
-  const matchData = typeof matchResult === 'string' ? JSON.parse(matchResult) : matchResult;
+    const matchData = typeof matchResult === 'string' ? JSON.parse(matchResult) : matchResult;
+    const batchResultsWithIds = (matchData.results || []).map(r => {
+      const matchedProfile = batch.find(cp => cp.club_name === r.club_name);
+      return { ...r, club_id: matchedProfile?.id || r.club_id };
+    });
+    allResults.push(...batchResultsWithIds);
+  }
 
-  // Ergänze Club-IDs aus den Profilen (KI kennt nur den Index/Namen)
-  const resultsWithIds = (matchData.results || []).map(r => {
-    const matchedProfile = profilesToCompare.find(cp => cp.club_name === r.club_name);
-    return {
-      ...r,
-      club_id: matchedProfile?.id || r.club_id,
-    };
-  }).sort((a, b) => b.fit_score - a.fit_score);
+  const resultsWithIds = allResults.sort((a, b) => b.fit_score - a.fit_score);
 
   return Response.json({
     success: true,
     idealProfile,
     clubFitResults: resultsWithIds,
-    totalClubsAnalyzed: profilesToCompare.length
+    totalClubsAnalyzed: resultsWithIds.length
   });
 });
