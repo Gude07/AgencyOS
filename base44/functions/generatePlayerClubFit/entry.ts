@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { playerId } = await req.json();
+  const { playerId, selectedClubIds } = await req.json();
   if (!playerId) return Response.json({ error: 'playerId fehlt' }, { status: 400 });
 
   // Helper: ensure we always get a plain array
@@ -104,7 +104,12 @@ Erstelle ein strukturiertes "Ideales Club-Profil" aus der Sicht dieses Spielers.
   const idealProfile = typeof idealProfileResult === 'string' ? JSON.parse(idealProfileResult) : idealProfileResult;
 
   // Schritt 2: Abgleich mit vorhandenen Club-Profilen
-  if (!clubProfiles || clubProfiles.length === 0) {
+  // Filtere nach ausgewählten Clubs falls angegeben
+  const profilesToCompare = (selectedClubIds && selectedClubIds.length > 0)
+    ? clubProfiles.filter(cp => selectedClubIds.includes(cp.id))
+    : clubProfiles;
+
+  if (!profilesToCompare || profilesToCompare.length === 0) {
     return Response.json({
       success: true,
       idealProfile,
@@ -114,7 +119,7 @@ Erstelle ein strukturiertes "Ideales Club-Profil" aus der Sicht dieses Spielers.
   }
 
   // Vergleich: Spieler-Idealprofil vs. Club-Profile (ein KI-Aufruf für alle)
-  const clubProfilesSummary = clubProfiles.map((cp, i) => ({
+  const clubProfilesSummary = profilesToCompare.map((cp, i) => ({
     index: i,
     id: cp.id,
     club_name: cp.club_name,
@@ -130,6 +135,8 @@ Erstelle ein strukturiertes "Ideales Club-Profil" aus der Sicht dieses Spielers.
   }));
 
   const matchPrompt = `Du bist ein erfahrener Fußball-Scout. Vergleiche das ideale Club-Profil eines Spielers mit einer Liste von Club-Profilen und berechne einen Fit-Score.
+ANTWORTE AUSSCHLIESSLICH AUF DEUTSCH. Alle Texte (summary, reasons_for, reasons_against, match_level) müssen auf Deutsch sein.
+match_level muss einer dieser Werte sein: "Sehr gut", "Gut", "Mittel", "Gering".
 
 IDEALES CLUB-PROFIL DES SPIELERS (${player.name}):
 ${JSON.stringify(idealProfile, null, 2)}
@@ -137,7 +144,7 @@ ${JSON.stringify(idealProfile, null, 2)}
 CLUB-PROFILE ZUM VERGLEICH:
 ${JSON.stringify(clubProfilesSummary, null, 2)}
 
-Für jeden Verein: Berechne einen Fit-Score (0-100) und gib eine kurze Begründung.
+Für jeden Verein: Berechne einen Fit-Score (0-100) und gib eine kurze Begründung auf Deutsch.
 Antworte NUR mit einem JSON-Objekt:
 {
   "results": [
@@ -145,10 +152,10 @@ Antworte NUR mit einem JSON-Objekt:
       "club_id": "ID des Vereins",
       "club_name": "Name des Vereins",
       "fit_score": 85,
-      "match_level": "Sehr gut" | "Gut" | "Mittel" | "Gering",
-      "reasons_for": ["Grund 1", "Grund 2"],
-      "reasons_against": ["Grund 1"],
-      "summary": "Kurze Zusammenfassung"
+      "match_level": "Sehr gut",
+      "reasons_for": ["Grund 1 auf Deutsch", "Grund 2 auf Deutsch"],
+      "reasons_against": ["Grund 1 auf Deutsch"],
+      "summary": "Kurze Zusammenfassung auf Deutsch"
     }
   ]
 }`;
@@ -182,7 +189,7 @@ Antworte NUR mit einem JSON-Objekt:
 
   // Ergänze Club-IDs aus den Profilen (KI kennt nur den Index/Namen)
   const resultsWithIds = (matchData.results || []).map(r => {
-    const matchedProfile = clubProfiles.find(cp => cp.club_name === r.club_name);
+    const matchedProfile = profilesToCompare.find(cp => cp.club_name === r.club_name);
     return {
       ...r,
       club_id: matchedProfile?.id || r.club_id,
@@ -193,6 +200,6 @@ Antworte NUR mit einem JSON-Objekt:
     success: true,
     idealProfile,
     clubFitResults: resultsWithIds,
-    totalClubsAnalyzed: clubProfiles.length
+    totalClubsAnalyzed: profilesToCompare.length
   });
 });

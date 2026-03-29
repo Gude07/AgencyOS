@@ -37,22 +37,50 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
   // Modus: "existing" (nur DB-Profile), "new_clubs" (neue analysieren + vergleichen)
   const [mode, setMode] = useState("existing");
 
+  // Filter für gespeicherte Profile
+  const [savedProfiles, setSavedProfiles] = useState([]);
+  const [filteredClubIds, setFilteredClubIds] = useState([]); // leer = alle
+  const [leagueFilter, setLeagueFilter] = useState("");
+  const [clubSearchFilter, setClubSearchFilter] = useState("");
+
   // Neue Vereine eingeben
   const [clubInput, setClubInput] = useState("");
   const [selectedClubs, setSelectedClubs] = useState([]);
 
-  // Liga-Modus
-  const [leagueInput, setLeagueInput] = useState("");
-  const [isFetchingLeague, setIsFetchingLeague] = useState(false);
-  const [leagueClubs, setLeagueClubs] = useState([]);
-
   // Analyse-Status
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzeStep, setAnalyzeStep] = useState(""); // Fortschrittstext
-  const [idealProfile, setIdealProfile] = useState(null);
-  const [clubFitResults, setClubFitResults] = useState([]);
-  const [totalClubs, setTotalClubs] = useState(0);
-  const [message, setMessage] = useState(null);
+
+  // Gespeicherte Profile laden
+  React.useEffect(() => {
+    base44.entities.ClubProfile.list().then(profiles => {
+      setSavedProfiles(Array.isArray(profiles) ? profiles : []);
+    }).catch(() => {});
+  }, []);
+
+  // Eindeutige Ligen aus gespeicherten Profilen
+  const availableLeagues = React.useMemo(() => {
+    const leagues = savedProfiles.map(p => p.league).filter(Boolean);
+    return [...new Set(leagues)].sort();
+  }, [savedProfiles]);
+
+  // Gefilterte Profile für Anzeige
+  const displayedSavedProfiles = React.useMemo(() => {
+    return savedProfiles.filter(p => {
+      const leagueMatch = !leagueFilter || p.league === leagueFilter;
+      const nameMatch = !clubSearchFilter || p.club_name?.toLowerCase().includes(clubSearchFilter.toLowerCase());
+      return leagueMatch && nameMatch;
+    });
+  }, [savedProfiles, leagueFilter, clubSearchFilter]);
+
+  const toggleClubFilter = (id) => {
+    setFilteredClubIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const selectAllDisplayed = () => setFilteredClubIds(displayedSavedProfiles.map(p => p.id));
+  const clearSelection = () => setFilteredClubIds([]);
 
   // Clubs hinzufügen
   const addClub = (name) => {
@@ -217,8 +245,12 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
     try {
       if (mode === "existing") {
         // Nur bestehende DB-Profile vergleichen
-        setAnalyzeStep("KI erstellt Spieler-Idealprofil & vergleicht mit gespeicherten Vereinsprofilen... (kann 1-2 Min. dauern)");
-        const response = await base44.functions.invoke('generatePlayerClubFit', { playerId });
+        const selectedCount = filteredClubIds.length;
+        setAnalyzeStep(`KI erstellt Spieler-Idealprofil & vergleicht mit ${selectedCount > 0 ? selectedCount + ' ausgewählten' : 'allen gespeicherten'} Vereinsprofilen... (kann 1-2 Min. dauern)`);
+        const response = await base44.functions.invoke('generatePlayerClubFit', {
+          playerId,
+          selectedClubIds: filteredClubIds.length > 0 ? filteredClubIds : undefined
+        });
         const resData = response?.data || response;
         if (resData.success) {
           setIdealProfile(resData.idealProfile);
@@ -281,29 +313,27 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
       }
 
         // Schritt 1: Alle Clubs analysieren (sequentiell, um Rate-Limits zu vermeiden)
-        const savedProfiles = [];
+        const newlyCreated = [];
         for (let i = 0; i < clubsToAnalyze.length; i++) {
           const clubName = clubsToAnalyze[i];
           setAnalyzeStep(`Analysiere Verein ${i + 1}/${clubsToAnalyze.length}: ${clubName}...`);
           try {
             const res = await base44.functions.invoke('analyzeClub', { clubName });
             if (res.data.success) {
-              savedProfiles.push({ club_name: clubName, ...res.data.clubProfile });
+              newlyCreated.push({ club_name: clubName, ...res.data.clubProfile });
             }
           } catch {
             // Einzelne Fehler überspringen
           }
         }
 
-        if (savedProfiles.length === 0) {
+        if (newlyCreated.length === 0) {
           toast.error("Keine Vereinsprofile konnten erstellt werden");
           setIsAnalyzing(false);
           return;
         }
 
-        toast.success(`${savedProfiles.length} Vereinsprofile gespeichert – starte Fit-Analyse...`);
-
-        // Schritt 2: Fit-Analyse mit den neu gespeicherten Profilen
+        // Schritt 2: Fit-Analyse – alle gespeicherten Profile berücksichtigen (inkl. neue)
         setAnalyzeStep("Erstelle Spieler-Idealprofil & berechne Fit-Scores...");
         const fitRes = await base44.functions.invoke('generatePlayerClubFit', { playerId });
         if (fitRes.data.success) {
@@ -311,7 +341,7 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
           const allResults = fitRes.data.clubFitResults || [];
           setClubFitResults(allResults);
           setTotalClubs(allResults.length);
-          toast.success(`Analyse abgeschlossen! ${savedProfiles.length} Vereine profiliert & verglichen.`);
+          toast.success(`Analyse abgeschlossen! ${newlyCreated.length} Vereine profiliert & verglichen.`);
           // Auto-save as document on player
           try {
             await saveAnalysisDocument({
@@ -367,6 +397,55 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
               Neue Vereine analysieren
             </Button>
           </div>
+
+          {/* Modus: Gespeicherte Profile - Filter */}
+          {mode === "existing" && savedProfiles.length > 0 && (
+            <div className="space-y-3 border border-purple-200 dark:border-purple-700 rounded-lg p-4">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Clubs filtern <span className="font-normal text-slate-500">({filteredClubIds.length > 0 ? `${filteredClubIds.length} ausgewählt` : `alle ${savedProfiles.length} werden analysiert`})</span>
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <div className="flex-1 min-w-[160px]">
+                  <Input
+                    placeholder="Vereinsname suchen..."
+                    value={clubSearchFilter}
+                    onChange={e => setClubSearchFilter(e.target.value)}
+                    className="text-sm h-8"
+                  />
+                </div>
+                <select
+                  value={leagueFilter}
+                  onChange={e => setLeagueFilter(e.target.value)}
+                  className="text-sm border border-slate-200 dark:border-slate-700 rounded-md px-2 h-8 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300"
+                >
+                  <option value="">Alle Ligen</option>
+                  {availableLeagues.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
+              {displayedSavedProfiles.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <button onClick={selectAllDisplayed} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Alle anzeigten auswählen</button>
+                    {filteredClubIds.length > 0 && <><span className="text-slate-300">|</span><button onClick={clearSelection} className="text-xs text-red-500 hover:underline">Auswahl löschen</button></>}
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-1">
+                    {displayedSavedProfiles.map(p => (
+                      <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 px-2 py-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={filteredClubIds.includes(p.id)}
+                          onChange={() => toggleClubFilter(p.id)}
+                          className="rounded"
+                        />
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{p.club_name}</span>
+                        {p.league && <span className="text-xs text-slate-400 ml-1">{p.league}</span>}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Modus: Neue Vereine */}
           {mode === "new_clubs" && (
