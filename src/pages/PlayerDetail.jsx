@@ -45,6 +45,8 @@ import DocumentManager from "../components/documents/DocumentManager";
 import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
 import PlayerApiIdSuggestions from "../components/players/PlayerApiIdSuggestions";
 import MarketTrendAnalysis from "../components/ai/MarketTrendAnalysis";
+import { PlayerBoxEditor } from "../components/players/PlayerBoxBadges";
+import PlayerBoxBadges from "../components/players/PlayerBoxBadges";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -572,6 +574,7 @@ export default function PlayerDetail() {
                               Player Card vorhanden
                             </Badge>
                             )}
+                            {!editMode && <PlayerBoxBadges playerBoxes={currentPlayerData?.player_boxes} />}
                             </div>
 
                         {editMode && editedPlayer && (
@@ -907,6 +910,16 @@ export default function PlayerDetail() {
                         <p className="text-slate-600 dark:text-slate-400">{currentPlayerData?.notes || "Keine Notizen"}</p>
                       )}
                     </div>
+
+                    {editMode && (
+                      <div>
+                        <Label className="text-sm font-semibold text-slate-700 mb-2 block">Spieler-Boxen</Label>
+                        <PlayerBoxEditor
+                          playerBoxes={editedPlayer?.player_boxes || []}
+                          onChange={(boxes) => setEditedPlayer({...editedPlayer, player_boxes: boxes})}
+                        />
+                      </div>
+                    )}
 
                     {editMode && (
                       <div>

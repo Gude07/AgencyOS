@@ -45,6 +45,7 @@ import DataExtractor from "../components/ai/DataExtractor";
 import PlayerComparisonTool from "../components/players/PlayerComparisonTool";
 import PlayersTableView from "../components/players/PlayersTableView";
 import PlayerBoxesView from "../components/players/PlayerBoxesView";
+import PlayerBoxBadges from "../components/players/PlayerBoxBadges";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -715,6 +716,7 @@ export default function Players() {
                             {player.has_player_card && (
                               <Badge className="bg-green-600 text-white text-xs flex items-center gap-1"><IdCard className="w-3 h-3" />Player Card</Badge>
                             )}
+                            <PlayerBoxBadges playerBoxes={player.player_boxes} />
                           </div>
                         </div>
                       </CardHeader>
