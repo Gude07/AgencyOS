@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { jsPDF } from "jspdf";
 import { saveAnalysisDocument, buildClubFitHtml } from "@/utils/saveAnalysisDocument";
@@ -46,6 +46,17 @@ export default function PlayerClubFitAnalysis({ playerId, playerName }) {
   // Neue Vereine eingeben
   const [clubInput, setClubInput] = useState("");
   const [selectedClubs, setSelectedClubs] = useState([]);
+
+  // Liga-Modus (neue Vereine)
+  const [leagueInput, setLeagueInput] = useState("");
+  const [isFetchingLeague, setIsFetchingLeague] = useState(false);
+  const [leagueClubs, setLeagueClubs] = useState([]);
+
+  // Analyse-Ergebnisse
+  const [idealProfile, setIdealProfile] = useState(null);
+  const [clubFitResults, setClubFitResults] = useState([]);
+  const [totalClubs, setTotalClubs] = useState(0);
+  const [message, setMessage] = useState(null);
 
   // Analyse-Status
   const [isAnalyzing, setIsAnalyzing] = useState(false);
