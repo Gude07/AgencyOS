@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Nicht autorisiert' }, { status: 401 });
 
-    const { clubName, manualPositions = [], forceRefresh = false, existingProfileId = null } = await req.json();
+    const { clubName, manualPositions = [], forceRefresh = false, existingProfileId = null, newCoach = null } = await req.json();
     if (!clubName) return Response.json({ error: 'Vereinsname fehlt' }, { status: 400 });
 
     console.log(`Analysiere Verein: ${clubName}, forceRefresh: ${forceRefresh}`);
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
     // --- 3. Build prompt: use existing profile as base if available and not force refresh ---
     let clubProfile;
-    const useExistingAsBase = existingProfile && !forceRefresh;
+    const useExistingAsBase = existingProfile && !forceRefresh && !newCoach;
 
     if (useExistingAsBase) {
       // Existing profile found: only supplement/update missing or outdated info
@@ -115,11 +115,15 @@ ANTWORTE NUR mit folgendem JSON (alle Felder müssen ausgefüllt sein, übernimm
 
       clubProfile = parseJson(response);
     } else {
-      // Full analysis (no existing profile or force refresh)
-      const fullPrompt = `Analysiere den Fußballverein "${clubName}" umfassend basierend auf aktuellen Informationen aus dem Internet (März 2026, Saison 2025/2026).
+      // Full analysis (no existing profile, force refresh, or new coach)
+      const coachIntro = newCoach
+        ? `Der Verein "${clubName}" hat einen neuen Trainer: ${newCoach}. Baue das gesamte Vereinsprofil NEU auf basierend auf der bekannten Philosophie, dem Spielstil und den Präferenzen von Trainer ${newCoach}. Nutze aktuelle Informationen aus dem Internet (März 2026).`
+        : `Analysiere den Fußballverein "${clubName}" umfassend basierend auf aktuellen Informationen aus dem Internet (März 2026, Saison 2025/2026).`;
+
+      const fullPrompt = `${coachIntro}
 
 1. AKTUELLE SPIELWEISE UND TAKTIK: taktisches System, Spielphilosophie, Formationen
-2. TRAINER UND PHILOSOPHIE: aktueller Trainer, Spielausrichtung, bevorzugte Spielertypen
+2. TRAINER UND PHILOSOPHIE: ${newCoach ? `Trainer ${newCoach}` : 'aktueller Trainer'}, Spielausrichtung, bevorzugte Spielertypen
 3. VEREINSKULTUR: Nachwuchs vs. fertige Spieler, Vereinswerte, typischer Spielercharakter
 4. AKTUELLE TRENDS (März 2026): Transfergerüchte, Verletzungssituation, Budget
 5. GESUCHTE SPIELERPROFILE: physische, technische, mentale Attribute

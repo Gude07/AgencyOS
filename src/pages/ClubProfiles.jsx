@@ -28,6 +28,8 @@ function formatDate(dateStr) {
 }
 
 function EditProfileDialog({ profile, onClose, onSave }) {
+  const [newCoachName, setNewCoachName] = useState("");
+  const [isRebuildingProfile, setIsRebuildingProfile] = useState(false);
   const [form, setForm] = useState({
     club_name: profile.club_name || "",
     league: profile.league || "",
@@ -49,6 +51,46 @@ function EditProfileDialog({ profile, onClose, onSave }) {
   });
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  const handleRebuildWithCoach = async () => {
+    if (!newCoachName.trim()) return;
+    setIsRebuildingProfile(true);
+    try {
+      const response = await base44.functions.invoke('analyzeClub', {
+        clubName: profile.club_name,
+        newCoach: newCoachName.trim(),
+        forceRefresh: true,
+        existingProfileId: profile.id,
+      });
+      if (response.data.success) {
+        const cp = response.data.clubProfile;
+        setForm(f => ({
+          ...f,
+          current_coach: cp.current_coach || newCoachName.trim(),
+          coach_philosophy: cp.coach_philosophy || f.coach_philosophy,
+          playing_style: cp.playing_style || f.playing_style,
+          formations: (cp.formations || []).join(', '),
+          key_attributes: (cp.key_attributes || []).join(', '),
+          club_culture: cp.club_culture || f.club_culture,
+          player_culture_fit: cp.player_culture_fit || f.player_culture_fit,
+          transfer_trends: cp.transfer_trends || f.transfer_trends,
+          injury_situation: cp.injury_situation || f.injury_situation,
+          target_positions: (cp.target_positions || []).join(', '),
+          budget_min: cp.realistic_budget?.min || f.budget_min,
+          budget_max: cp.realistic_budget?.max || f.budget_max,
+          budget_notes: cp.realistic_budget?.notes || f.budget_notes,
+        }));
+        setNewCoachName("");
+        toast.success(`Profil basierend auf Trainer "${newCoachName.trim()}" neu aufgebaut`);
+      } else {
+        toast.error(response.data.error || 'Analyse fehlgeschlagen');
+      }
+    } catch {
+      toast.error('Fehler beim Aufbau des Profils');
+    } finally {
+      setIsRebuildingProfile(false);
+    }
+  };
 
   const handleSave = () => {
     const updated = {
@@ -83,6 +125,32 @@ function EditProfileDialog({ profile, onClose, onSave }) {
           <DialogTitle>Vereinsprofil bearbeiten: {profile.club_name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          {/* Neuer Trainer → Profil neu aufbauen */}
+          <div className="border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 rounded-lg p-4 space-y-2">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+              🧑‍💼 Neuer Trainer? Profil automatisch neu aufbauen
+            </p>
+            <p className="text-xs text-amber-700 dark:text-amber-400">Gib den Namen des neuen Trainers ein – die KI erstellt daraufhin ein neues Vereinsprofil basierend auf seiner Philosophie und seinem Stil.</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="z.B. Thomas Tuchel"
+                value={newCoachName}
+                onChange={e => setNewCoachName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleRebuildWithCoach()}
+                className="text-sm"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRebuildWithCoach}
+                disabled={!newCoachName.trim() || isRebuildingProfile}
+                className="shrink-0 border-amber-400 text-amber-800 hover:bg-amber-100"
+              >
+                {isRebuildingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                <span className="ml-1">Neu aufbauen</span>
+              </Button>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div><Label>Vereinsname</Label><Input value={form.club_name} onChange={e => set("club_name", e.target.value)} /></div>
             <div><Label>Liga</Label><Input value={form.league} onChange={e => set("league", e.target.value)} /></div>
