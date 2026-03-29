@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Calendar, TrendingUp, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, LayoutGrid } from "lucide-react";
+import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -84,6 +84,7 @@ export default function Players() {
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [showComparisonTool, setShowComparisonTool] = useState(false);
   const [displayMode, setDisplayMode] = useState(urlParams.get('display') || 'grid');
+  const [activeBox, setActiveBox] = useState(null);
 
   // Restore scroll position on mount
   React.useEffect(() => {
@@ -303,18 +304,17 @@ export default function Players() {
     const matchesCategory = filterCategory === "alle" || player.category === filterCategory;
     const matchesPosition = filterPosition === "alle" || player.position === filterPosition;
     const matchesStatus = filterStatus === "alle" || player.status === filterStatus;
-    // Bei Favoriten-Filter: nur nicht-archivierte Spieler anzeigen
     const matchesFavorites = filterFavorites === "alle" || 
                             (filterFavorites === "favoriten" && userFavorites.includes(player.id) && !player.archive_id);
     const matchesHasMatches = filterHasMatches === "alle" || 
                              (filterHasMatches === "mit_matches" && Array.isArray(player.favorite_matches) && player.favorite_matches.length > 0) ||
                              (filterHasMatches === "ohne_matches" && (!Array.isArray(player.favorite_matches) || player.favorite_matches.length === 0));
-    
     const matchesArchive = filterArchive === "active" ? !player.archive_id :
                           filterArchive === "alle_archiviert" ? !!player.archive_id :
                           player.archive_id === filterArchive;
+    const matchesBox = !activeBox || (Array.isArray(player.player_boxes) && player.player_boxes.includes(activeBox));
 
-    return matchesSearch && matchesCategory && matchesPosition && matchesStatus && matchesFavorites && matchesHasMatches && matchesArchive;
+    return matchesSearch && matchesCategory && matchesPosition && matchesStatus && matchesFavorites && matchesHasMatches && matchesArchive && matchesBox;
   });
 
   const activePlayers = players.filter(p => !p.archive_id);
@@ -514,9 +514,17 @@ export default function Players() {
           ))}
         </div>
 
+        {/* Boxes bar */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+          <PlayerBoxesView
+            players={players}
+            activeBox={activeBox}
+            onBoxSelect={setActiveBox}
+          />
+        </div>
+
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
+          <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
               <TabsList className="bg-slate-100">
                 <TabsTrigger value="alle">Alle</TabsTrigger>
                 <TabsTrigger value="favoriten" className="flex items-center gap-2">
@@ -564,15 +572,6 @@ export default function Players() {
                 className={displayMode === 'table' ? 'bg-white shadow-sm' : ''}
               >
                 <List className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={displayMode === 'boxes' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setDisplayMode('boxes')}
-                className={displayMode === 'boxes' ? 'bg-white shadow-sm' : ''}
-                title="Boxen-Ansicht"
-              >
-                <LayoutGrid className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -663,147 +662,82 @@ export default function Players() {
           </Select>
           </div>
 
-        {displayMode === 'boxes' ? (
-          <PlayerBoxesView players={players.filter(p => !p.archive_id)} />
-        ) : displayMode === 'grid' ? (
+        {displayMode === 'grid' ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence>
-            {filteredPlayers.map(player => (
-              <motion.div
-                key={player.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                <Card 
-                  className={`hover:shadow-md transition-all duration-200 border bg-white dark:bg-slate-900 relative ${
-                    selectionMode && selectedPlayers.has(player.id) 
-                      ? 'border-blue-500 ring-2 ring-blue-200' 
-                      : 'border-slate-200 dark:border-slate-800'
-                  }`}
-                >
-                  {selectionMode ? (
-                    <div className="absolute top-3 right-3 z-10">
-                      <input
-                        type="checkbox"
-                        checked={selectedPlayers.has(player.id)}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          togglePlayerSelection(player.id);
-                        }}
-                        className="w-5 h-5 rounded border-slate-300"
-                      />
-                    </div>
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavoriteMutation.mutate(player.id);
-                      }}
-                      className="absolute top-3 right-3 z-10 p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                    >
-                      <Star 
-                        className={`w-5 h-5 ${userFavorites.includes(player.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`}
-                      />
-                    </button>
-                  )}
-                  <div onClick={() => {
-                    if (selectionMode) {
-                      togglePlayerSelection(player.id);
-                      return;
-                    }
-                    const params = new URLSearchParams();
-                    if (searchTerm) params.set('search', searchTerm);
-                    if (filterCategory !== 'alle') params.set('category', filterCategory);
-                    if (filterPosition !== 'alle') params.set('position', filterPosition);
-                    if (filterStatus !== 'alle') params.set('status', filterStatus);
-                    if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
-                    if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
-                    if (filterArchive !== 'active') params.set('archive', filterArchive);
-                    params.set('scrollY', window.scrollY.toString());
-                    navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
-                    }} className={selectionMode ? "cursor-pointer" : "cursor-pointer"}>
-                  <CardHeader className="pb-3">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="font-bold text-lg text-slate-900 dark:text-white">{player.name}</h3>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">{player.current_club}</p>
+            <AnimatePresence>
+              {filteredPlayers.map(player => (
+                <motion.div key={player.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                  <Card className={`hover:shadow-md transition-all duration-200 border bg-white dark:bg-slate-900 relative ${
+                    selectionMode && selectedPlayers.has(player.id) ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200 dark:border-slate-800'
+                  }`}>
+                    {selectionMode ? (
+                      <div className="absolute top-3 right-3 z-10">
+                        <input type="checkbox" checked={selectedPlayers.has(player.id)} onChange={(e) => { e.stopPropagation(); togglePlayerSelection(player.id); }} className="w-5 h-5 rounded border-slate-300" />
+                      </div>
+                    ) : (
+                      <button onClick={(e) => { e.stopPropagation(); toggleFavoriteMutation.mutate(player.id); }} className="absolute top-3 right-3 z-10 p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                        <Star className={`w-5 h-5 ${userFavorites.includes(player.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`} />
+                      </button>
+                    )}
+                    <div onClick={() => {
+                      if (selectionMode) { togglePlayerSelection(player.id); return; }
+                      const params = new URLSearchParams();
+                      if (searchTerm) params.set('search', searchTerm);
+                      if (filterCategory !== 'alle') params.set('category', filterCategory);
+                      if (filterPosition !== 'alle') params.set('position', filterPosition);
+                      if (filterStatus !== 'alle') params.set('status', filterStatus);
+                      if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+                      if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
+                      if (filterArchive !== 'active') params.set('archive', filterArchive);
+                      params.set('scrollY', window.scrollY.toString());
+                      navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                    }} className="cursor-pointer">
+                      <CardHeader className="pb-3">
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h3 className="font-bold text-lg text-slate-900 dark:text-white">{player.name}</h3>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">{player.current_club}</p>
+                            </div>
+                            {player.transfermarkt_url && (
+                              <a href={player.transfermarkt_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                                <ExternalLink className="w-4 h-4 text-slate-500" />
+                              </a>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="secondary" className={categoryColors[player.category] + " border"}>{player.category}</Badge>
+                            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 font-semibold">{player.position}</Badge>
+                            {Array.isArray(player.secondary_positions) && player.secondary_positions.map((pos) => (
+                              <Badge key={pos} variant="outline" className="border-slate-200 text-xs">{pos}</Badge>
+                            ))}
+                            <Badge variant="outline" className="border-slate-200 text-xs">{player.status?.replace(/_/g, ' ') || 'noch offen'}</Badge>
+                            {player.has_player_card && (
+                              <Badge className="bg-green-600 text-white text-xs flex items-center gap-1"><IdCard className="w-3 h-3" />Player Card</Badge>
+                            )}
+                          </div>
                         </div>
-                        {player.transfermarkt_url && (
-                          <a
-                            href={player.transfermarkt_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                          >
-                            <ExternalLink className="w-4 h-4 text-slate-500" />
-                          </a>
+                      </CardHeader>
+                      <CardContent className="pt-0 space-y-2">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div><p className="text-slate-600 dark:text-slate-400">Alter</p><p className="font-semibold text-slate-900 dark:text-white">{calculateAge(player.date_of_birth) || '-'}</p></div>
+                          <div><p className="text-slate-600 dark:text-slate-400">Nationalität</p><p className="font-semibold text-slate-900 dark:text-white">{player.nationality || '-'}</p></div>
+                          <div><p className="text-slate-600 dark:text-slate-400">Marktwert</p><p className="font-semibold text-slate-900 dark:text-white">{player.market_value ? `${(player.market_value / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : '-'}</p></div>
+                          <div><p className="text-slate-600 dark:text-slate-400">Vertrag bis</p><p className="font-semibold text-slate-900 dark:text-white">{player.contract_until ? format(new Date(player.contract_until), "MM/yyyy") : '-'}</p></div>
+                        </div>
+                        {allComments.filter(c => c.player_id === player.id).length > 0 && (
+                          <div className="flex items-center justify-end gap-1 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
+                            <MessageCircle className="w-4 h-4 text-red-500" />
+                            <span className="text-sm font-semibold text-red-600">{allComments.filter(c => c.player_id === player.id).length}</span>
+                            <span className="text-xs text-slate-500">Kommentare</span>
+                          </div>
                         )}
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary" className={categoryColors[player.category] + " border"}>
-                          {player.category}
-                        </Badge>
-                        <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 font-semibold">
-                          {player.position}
-                        </Badge>
-                        {Array.isArray(player.secondary_positions) && player.secondary_positions.map((pos) => (
-                          <Badge key={pos} variant="outline" className="border-slate-200 text-xs">
-                            {pos}
-                          </Badge>
-                        ))}
-                        <Badge variant="outline" className="border-slate-200 text-xs">
-                          {player.status?.replace(/_/g, ' ') || 'noch offen'}
-                        </Badge>
-                        {player.has_player_card && (
-                          <Badge className="bg-green-600 text-white text-xs flex items-center gap-1">
-                            <IdCard className="w-3 h-3" />
-                            Player Card
-                          </Badge>
-                        )}
-                        </div>
-                        </div>
-                        </CardHeader>
-                        <CardContent className="pt-0 space-y-2">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <p className="text-slate-600 dark:text-slate-400">Alter</p>
-                        <p className="font-semibold text-slate-900 dark:text-white">{calculateAge(player.date_of_birth) || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-600 dark:text-slate-400">Nationalität</p>
-                        <p className="font-semibold text-slate-900 dark:text-white">{player.nationality || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-600 dark:text-slate-400">Marktwert</p>
-                        <p className="font-semibold text-slate-900 dark:text-white">
-                          {player.market_value ? `${(player.market_value / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : '-'}
-                        </p>
-                      </div>
-                      <div>
-                       <p className="text-slate-600 dark:text-slate-400">Vertrag bis</p>
-                       <p className="font-semibold text-slate-900 dark:text-white">
-                         {player.contract_until ? format(new Date(player.contract_until), "MM/yyyy") : '-'}
-                       </p>
-                      </div>
-                      </div>
-                      {allComments.filter(c => c.player_id === player.id).length > 0 && (
-                      <div className="flex items-center justify-end gap-1 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
-                       <MessageCircle className="w-4 h-4 text-red-500" />
-                       <span className="text-sm font-semibold text-red-600">
-                         {allComments.filter(c => c.player_id === player.id).length}
-                       </span>
-                       <span className="text-xs text-slate-500">Kommentare</span>
-                      </div>
-                      )}
                       </CardContent>
-                      </div>
-                      </Card>
-                    </motion.div>
-            ))}
-          </AnimatePresence>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         ) : (
           <PlayersTableView players={filteredPlayers} />

@@ -1,14 +1,10 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, X, Pencil, GripVertical, Users, Boxes } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { Plus, X, Pencil, Boxes, Users, Check } from "lucide-react";
 import { differenceInYears } from "date-fns";
 
 const DEFAULT_BOXES = [
@@ -17,16 +13,15 @@ const DEFAULT_BOXES = [
 ];
 
 const BOX_COLORS = {
-  blue: { border: "border-blue-300", bg: "bg-blue-50 dark:bg-blue-950", header: "bg-blue-100 dark:bg-blue-900", text: "text-blue-800 dark:text-blue-200", badge: "bg-blue-600" },
-  green: { border: "border-green-300", bg: "bg-green-50 dark:bg-green-950", header: "bg-green-100 dark:bg-green-900", text: "text-green-800 dark:text-green-200", badge: "bg-green-600" },
-  purple: { border: "border-purple-300", bg: "bg-purple-50 dark:bg-purple-950", header: "bg-purple-100 dark:bg-purple-900", text: "text-purple-800 dark:text-purple-200", badge: "bg-purple-600" },
-  orange: { border: "border-orange-300", bg: "bg-orange-50 dark:bg-orange-950", header: "bg-orange-100 dark:bg-orange-900", text: "text-orange-800 dark:text-orange-200", badge: "bg-orange-600" },
-  red: { border: "border-red-300", bg: "bg-red-50 dark:bg-red-950", header: "bg-red-100 dark:bg-red-900", text: "text-red-800 dark:text-red-200", badge: "bg-red-600" },
-  slate: { border: "border-slate-300", bg: "bg-slate-50 dark:bg-slate-900", header: "bg-slate-100 dark:bg-slate-800", text: "text-slate-800 dark:text-slate-200", badge: "bg-slate-600" },
+  blue:   { border: "border-blue-300",   bg: "bg-blue-50 dark:bg-blue-950",     header: "bg-blue-100 dark:bg-blue-900",     text: "text-blue-800 dark:text-blue-200",   dot: "bg-blue-500" },
+  green:  { border: "border-green-300",  bg: "bg-green-50 dark:bg-green-950",   header: "bg-green-100 dark:bg-green-900",   text: "text-green-800 dark:text-green-200", dot: "bg-green-500" },
+  purple: { border: "border-purple-300", bg: "bg-purple-50 dark:bg-purple-950", header: "bg-purple-100 dark:bg-purple-900", text: "text-purple-800 dark:text-purple-200",dot: "bg-purple-500" },
+  orange: { border: "border-orange-300", bg: "bg-orange-50 dark:bg-orange-950", header: "bg-orange-100 dark:bg-orange-900", text: "text-orange-800 dark:text-orange-200",dot: "bg-orange-500" },
+  red:    { border: "border-red-300",    bg: "bg-red-50 dark:bg-red-950",       header: "bg-red-100 dark:bg-red-900",       text: "text-red-800 dark:text-red-200",     dot: "bg-red-500" },
+  slate:  { border: "border-slate-300",  bg: "bg-slate-50 dark:bg-slate-900",   header: "bg-slate-100 dark:bg-slate-800",   text: "text-slate-700 dark:text-slate-300", dot: "bg-slate-500" },
 };
 
 const COLOR_OPTIONS = ["blue", "green", "purple", "orange", "red", "slate"];
-
 const STORAGE_KEY = "player_boxes_config";
 
 function getStoredBoxes() {
@@ -41,28 +36,31 @@ function saveBoxes(boxes) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(boxes));
 }
 
-function calculateAge(dateOfBirth) {
-  if (!dateOfBirth) return null;
-  return differenceInYears(new Date(), new Date(dateOfBirth));
+function calculateAge(dob) {
+  if (!dob) return null;
+  return differenceInYears(new Date(), new Date(dob));
 }
 
-export default function PlayerBoxesView({ players, onPlayersChange }) {
-  const navigate = useNavigate();
+export default function PlayerBoxesView({ players, activeBox, onBoxSelect }) {
   const queryClient = useQueryClient();
   const [boxes, setBoxes] = useState(getStoredBoxes);
-  const [draggedPlayer, setDraggedPlayer] = useState(null);
-  const [dragOverBox, setDragOverBox] = useState(null);
+
+  // Dialog states
   const [showCreateBox, setShowCreateBox] = useState(false);
   const [newBoxName, setNewBoxName] = useState("");
   const [newBoxColor, setNewBoxColor] = useState("blue");
   const [editingBox, setEditingBox] = useState(null);
+  const [assignBox, setAssignBox] = useState(null); // box object for player-assign dialog
+  const [searchAssign, setSearchAssign] = useState("");
+
+  // Drag state
+  const [draggedPlayerId, setDraggedPlayerId] = useState(null);
+  const [dragOverBox, setDragOverBox] = useState(null);
 
   const updatePlayerMutation = useMutation({
-    mutationFn: ({ playerId, boxes }) =>
-      base44.entities.Player.update(playerId, { player_boxes: boxes }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["players"] });
-    },
+    mutationFn: ({ playerId, newBoxes }) =>
+      base44.entities.Player.update(playerId, { player_boxes: newBoxes }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["players"] }),
   });
 
   const updateBoxesState = (newBoxes) => {
@@ -70,66 +68,49 @@ export default function PlayerBoxesView({ players, onPlayersChange }) {
     saveBoxes(newBoxes);
   };
 
-  const handleDragStart = (e, player) => {
-    setDraggedPlayer(player);
+  // --- Drag & Drop ---
+  const handleDragStart = (e, playerId) => {
+    setDraggedPlayerId(playerId);
     e.dataTransfer.effectAllowed = "copy";
-  };
-
-  const handleDragOver = (e, boxId) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
-    setDragOverBox(boxId);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverBox(null);
   };
 
   const handleDrop = (e, boxId) => {
     e.preventDefault();
     setDragOverBox(null);
-    if (!draggedPlayer) return;
-
-    const currentBoxes = Array.isArray(draggedPlayer.player_boxes) ? draggedPlayer.player_boxes : [];
-    if (currentBoxes.includes(boxId)) return; // already in box
-
-    const newBoxes = [...currentBoxes, boxId];
-    updatePlayerMutation.mutate({ playerId: draggedPlayer.id, boxes: newBoxes });
-    setDraggedPlayer(null);
-  };
-
-  const handleDropOnUnassigned = (e) => {
-    e.preventDefault();
-    setDragOverBox(null);
-    if (!draggedPlayer) return;
-    if (!Array.isArray(draggedPlayer.player_boxes) || draggedPlayer.player_boxes.length === 0) return;
-    updatePlayerMutation.mutate({ playerId: draggedPlayer.id, boxes: [] });
-    setDraggedPlayer(null);
-  };
-
-  const removePlayerFromBox = (player, boxId) => {
+    if (!draggedPlayerId) return;
+    const player = players.find(p => p.id === draggedPlayerId);
+    if (!player) return;
     const current = Array.isArray(player.player_boxes) ? player.player_boxes : [];
-    updatePlayerMutation.mutate({ playerId: player.id, boxes: current.filter(b => b !== boxId) });
+    if (current.includes(boxId)) return;
+    updatePlayerMutation.mutate({ playerId: draggedPlayerId, newBoxes: [...current, boxId] });
+    setDraggedPlayerId(null);
   };
 
+  // --- Assign dialog helpers ---
+  const playersInBox = (boxId) =>
+    players.filter(p => !p.archive_id && Array.isArray(p.player_boxes) && p.player_boxes.includes(boxId));
+
+  const isInBox = (player, boxId) =>
+    Array.isArray(player.player_boxes) && player.player_boxes.includes(boxId);
+
+  const togglePlayerInBox = (player, boxId) => {
+    const current = Array.isArray(player.player_boxes) ? player.player_boxes : [];
+    const newBoxes = current.includes(boxId)
+      ? current.filter(b => b !== boxId)
+      : [...current, boxId];
+    updatePlayerMutation.mutate({ playerId: player.id, newBoxes });
+  };
+
+  const filteredAssignPlayers = players
+    .filter(p => !p.archive_id)
+    .filter(p => !searchAssign || p.name?.toLowerCase().includes(searchAssign.toLowerCase()) || p.current_club?.toLowerCase().includes(searchAssign.toLowerCase()));
+
+  // --- Box CRUD ---
   const createBox = () => {
     if (!newBoxName.trim()) return;
     const id = "box_" + Date.now();
-    const newBoxes = [...boxes, { id, name: newBoxName.trim(), color: newBoxColor }];
-    updateBoxesState(newBoxes);
-    setNewBoxName("");
-    setNewBoxColor("blue");
-    setShowCreateBox(false);
-  };
-
-  const deleteBox = (boxId) => {
-    updateBoxesState(boxes.filter(b => b.id !== boxId));
-    // Remove boxId from all players who have it
-    players.forEach(p => {
-      if (Array.isArray(p.player_boxes) && p.player_boxes.includes(boxId)) {
-        updatePlayerMutation.mutate({ playerId: p.id, boxes: p.player_boxes.filter(b => b !== boxId) });
-      }
-    });
+    updateBoxesState([...boxes, { id, name: newBoxName.trim(), color: newBoxColor }]);
+    setNewBoxName(""); setNewBoxColor("blue"); setShowCreateBox(false);
   };
 
   const saveEditBox = () => {
@@ -138,180 +119,181 @@ export default function PlayerBoxesView({ players, onPlayersChange }) {
     setEditingBox(null);
   };
 
-  const unassignedPlayers = players.filter(p => !p.archive_id && (!Array.isArray(p.player_boxes) || p.player_boxes.length === 0));
+  const deleteBox = (boxId) => {
+    updateBoxesState(boxes.filter(b => b.id !== boxId));
+    players.forEach(p => {
+      if (Array.isArray(p.player_boxes) && p.player_boxes.includes(boxId)) {
+        updatePlayerMutation.mutate({ playerId: p.id, newBoxes: p.player_boxes.filter(b => b !== boxId) });
+      }
+    });
+    if (activeBox === boxId) onBoxSelect(null);
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Spieler per Drag &amp; Drop in Boxen ziehen. Ein Spieler kann in mehreren Boxen sein.
-        </p>
-        <Button size="sm" onClick={() => setShowCreateBox(true)} variant="outline" className="gap-2">
-          <Plus className="w-4 h-4" />
-          Neue Box
-        </Button>
-      </div>
+    <>
+      {/* Box tiles */}
+      <div className="flex flex-wrap gap-3 items-center">
+        {/* "Alle" tile */}
+        <button
+          onClick={() => onBoxSelect(null)}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all font-medium text-sm ${
+            !activeBox
+              ? "border-slate-800 bg-slate-800 text-white dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900"
+              : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-400"
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Alle Spieler
+          <span className={`text-xs px-1.5 py-0.5 rounded-full ${!activeBox ? "bg-white/20" : "bg-slate-100 dark:bg-slate-800"}`}>
+            {players.filter(p => !p.archive_id).length}
+          </span>
+        </button>
 
-      {/* Boxes */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {boxes.map(box => {
           const colors = BOX_COLORS[box.color] || BOX_COLORS.blue;
-          const boxPlayers = players.filter(p => !p.archive_id && Array.isArray(p.player_boxes) && p.player_boxes.includes(box.id));
+          const count = playersInBox(box.id).length;
+          const isActive = activeBox === box.id;
           const isOver = dragOverBox === box.id;
 
           return (
             <div
               key={box.id}
-              onDragOver={(e) => handleDragOver(e, box.id)}
-              onDragLeave={handleDragLeave}
+              className="relative group"
+              onDragOver={(e) => { e.preventDefault(); setDragOverBox(box.id); }}
+              onDragLeave={() => setDragOverBox(null)}
               onDrop={(e) => handleDrop(e, box.id)}
-              className={`rounded-xl border-2 transition-all ${colors.border} ${colors.bg} ${isOver ? "ring-2 ring-offset-1 ring-blue-400 scale-[1.01]" : ""}`}
             >
-              {/* Box header */}
-              <div className={`flex items-center justify-between px-4 py-3 rounded-t-xl ${colors.header}`}>
-                <div className="flex items-center gap-2">
-                  <Boxes className={`w-4 h-4 ${colors.text}`} />
-                  <span className={`font-semibold ${colors.text}`}>{box.name}</span>
-                  <span className={`text-xs text-white px-1.5 py-0.5 rounded-full ${colors.badge}`}>
-                    {boxPlayers.length}
-                  </span>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => setEditingBox({ ...box })}
-                    className="p-1 hover:bg-white/40 rounded transition-colors"
-                    title="Box umbenennen"
-                  >
-                    <Pencil className={`w-3.5 h-3.5 ${colors.text}`} />
-                  </button>
-                  <button
-                    onClick={() => deleteBox(box.id)}
-                    className="p-1 hover:bg-red-100 rounded transition-colors"
-                    title="Box löschen"
-                  >
-                    <X className="w-3.5 h-3.5 text-red-500" />
-                  </button>
-                </div>
-              </div>
+              <button
+                onClick={() => onBoxSelect(isActive ? null : box.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all font-medium text-sm ${
+                  isActive
+                    ? `${colors.border} ${colors.bg} ${colors.text} shadow-sm`
+                    : `border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:${colors.border} hover:${colors.bg}`
+                } ${isOver ? "ring-2 ring-blue-400 scale-105" : ""}`}
+              >
+                <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
+                {box.name}
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/40 dark:bg-black/20" : "bg-slate-100 dark:bg-slate-800 text-slate-500"}`}>
+                  {count}
+                </span>
+              </button>
 
-              {/* Players in box */}
-              <div className="p-3 min-h-[80px] space-y-2">
-                {boxPlayers.length === 0 && (
-                  <div className={`text-xs text-center py-4 ${colors.text} opacity-50`}>
-                    Spieler hierher ziehen
-                  </div>
-                )}
-                {boxPlayers.map(player => (
-                  <div
-                    key={player.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, player)}
-                    className="flex items-center justify-between gap-2 bg-white dark:bg-slate-900 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing hover:shadow-sm transition-all group"
-                  >
-                    <div
-                      className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
-                      onClick={() => navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=/Players")}
-                    >
-                      <GripVertical className="w-3 h-3 text-slate-300 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{player.name}</p>
-                        <p className="text-xs text-slate-500 truncate">{player.position}{player.age || calculateAge(player.date_of_birth) ? ` · ${player.age || calculateAge(player.date_of_birth)} J.` : ""}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => removePlayerFromBox(player, box.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded transition-all"
-                      title="Aus dieser Box entfernen"
-                    >
-                      <X className="w-3 h-3 text-red-400" />
-                    </button>
-                  </div>
-                ))}
+              {/* Action buttons on hover */}
+              <div className="absolute -top-2 -right-2 hidden group-hover:flex gap-1 z-10">
+                <button
+                  onClick={() => { setAssignBox(box); setSearchAssign(""); }}
+                  className="w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow"
+                  title="Spieler zuweisen"
+                >
+                  <Users className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => setEditingBox({ ...box })}
+                  className="w-5 h-5 bg-slate-400 hover:bg-slate-500 text-white rounded-full flex items-center justify-center shadow"
+                  title="Umbenennen"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => deleteBox(box.id)}
+                  className="w-5 h-5 bg-red-400 hover:bg-red-500 text-white rounded-full flex items-center justify-center shadow"
+                  title="Box löschen"
+                >
+                  <X className="w-3 h-3" />
+                </button>
               </div>
             </div>
           );
         })}
+
+        {/* Add box */}
+        <button
+          onClick={() => setShowCreateBox(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:border-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-all text-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Neue Box
+        </button>
       </div>
 
-      {/* Unassigned players */}
-      <div
-        onDragOver={(e) => { e.preventDefault(); setDragOverBox("unassigned"); }}
-        onDragLeave={() => setDragOverBox(null)}
-        onDrop={handleDropOnUnassigned}
-        className={`rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 transition-all ${dragOverBox === "unassigned" ? "ring-2 ring-slate-400 bg-slate-50" : ""}`}
-      >
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-          <Users className="w-4 h-4 text-slate-400" />
-          <span className="font-semibold text-slate-600 dark:text-slate-300">Nicht zugeordnet</span>
-          <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-full">
-            {unassignedPlayers.length}
-          </span>
-        </div>
-        <div className="p-3 grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {unassignedPlayers.length === 0 && (
-            <div className="col-span-full text-xs text-center py-4 text-slate-400">
-              Alle aktiven Spieler sind einer Box zugeordnet
-            </div>
-          )}
-          {unassignedPlayers.map(player => (
-            <div
-              key={player.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, player)}
-              className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 border border-slate-200 dark:border-slate-700 cursor-grab active:cursor-grabbing hover:shadow-sm transition-all"
-            >
-              <GripVertical className="w-3 h-3 text-slate-300 flex-shrink-0" />
-              <div
-                className="min-w-0 flex-1 cursor-pointer"
-                onClick={() => navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=/Players")}
-              >
-                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{player.name}</p>
-                <p className="text-xs text-slate-500 truncate">{player.position}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Drag hint */}
+      {draggedPlayerId && (
+        <p className="text-xs text-slate-400 mt-1">Auf eine Box ziehen, um den Spieler zuzuweisen</p>
+      )}
+
+      {/* Assign Players Dialog */}
+      <Dialog open={!!assignBox} onOpenChange={() => setAssignBox(null)}>
+        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Spieler in „{assignBox?.name}" zuweisen</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Spieler suchen..."
+            value={searchAssign}
+            onChange={e => setSearchAssign(e.target.value)}
+            className="mt-2"
+          />
+          <div className="flex-1 overflow-y-auto mt-2 space-y-1">
+            {filteredAssignPlayers.length === 0 && (
+              <p className="text-sm text-slate-400 text-center py-6">Keine Spieler gefunden</p>
+            )}
+            {filteredAssignPlayers.map(player => {
+              const inBox = assignBox && isInBox(player, assignBox.id);
+              const age = player.age || calculateAge(player.date_of_birth);
+              return (
+                <label
+                  key={player.id}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                >
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${inBox ? "bg-blue-600 border-blue-600" : "border-slate-300 dark:border-slate-600"}`}
+                    onClick={() => assignBox && togglePlayerInBox(player, assignBox.id)}
+                  >
+                    {inBox && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                  <div className="flex-1 min-w-0" onClick={() => assignBox && togglePlayerInBox(player, assignBox.id)}>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{player.name}</p>
+                    <p className="text-xs text-slate-500 truncate">{player.position}{age ? ` · ${age} J.` : ""}{player.current_club ? ` · ${player.current_club}` : ""}</p>
+                  </div>
+                  {inBox && (
+                    <span className="text-xs text-blue-600 font-medium">✓ zugewiesen</span>
+                  )}
+                </label>
+              );
+            })}
+          </div>
+          <div className="mt-3 pt-3 border-t flex justify-between items-center">
+            <span className="text-xs text-slate-500">
+              {assignBox && playersInBox(assignBox.id).length} Spieler zugewiesen
+            </span>
+            <Button onClick={() => setAssignBox(null)}>Fertig</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Create Box Dialog */}
       <Dialog open={showCreateBox} onOpenChange={setShowCreateBox}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Neue Box erstellen</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Neue Box erstellen</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Name</label>
-              <Input
-                value={newBoxName}
-                onChange={(e) => setNewBoxName(e.target.value)}
-                placeholder="z.B. Leihspieler, Talente..."
-                onKeyDown={(e) => e.key === "Enter" && createBox()}
-              />
+              <label className="text-sm font-medium mb-1.5 block">Name</label>
+              <Input value={newBoxName} onChange={e => setNewBoxName(e.target.value)} placeholder="z.B. Leihspieler, Talente..." onKeyDown={e => e.key === "Enter" && createBox()} autoFocus />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Farbe</label>
+              <label className="text-sm font-medium mb-1.5 block">Farbe</label>
               <div className="flex gap-2">
-                {COLOR_OPTIONS.map(color => {
-                  const c = BOX_COLORS[color];
-                  return (
-                    <button
-                      key={color}
-                      onClick={() => setNewBoxColor(color)}
-                      className={`w-7 h-7 rounded-full border-2 ${c.badge.replace("bg-", "bg-")} ${newBoxColor === color ? "ring-2 ring-offset-2 ring-slate-400" : ""}`}
-                      style={{ backgroundColor: color === "slate" ? "#64748b" : color === "blue" ? "#2563eb" : color === "green" ? "#16a34a" : color === "purple" ? "#9333ea" : color === "orange" ? "#ea580c" : "#dc2626" }}
-                    />
-                  );
-                })}
+                {COLOR_OPTIONS.map(color => (
+                  <button key={color} onClick={() => setNewBoxColor(color)}
+                    className={`w-7 h-7 rounded-full border-2 border-transparent transition-all ${newBoxColor === color ? "ring-2 ring-offset-2 ring-slate-400 scale-110" : ""}`}
+                    style={{ backgroundColor: { blue: "#2563eb", green: "#16a34a", purple: "#9333ea", orange: "#ea580c", red: "#dc2626", slate: "#64748b" }[color] }}
+                  />
+                ))}
               </div>
             </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setShowCreateBox(false)}>Abbrechen</Button>
-            <Button onClick={createBox} disabled={!newBoxName.trim()} className="bg-blue-900 hover:bg-blue-800">
-              Erstellen
-            </Button>
+            <Button onClick={createBox} disabled={!newBoxName.trim()} className="bg-blue-900 hover:bg-blue-800">Erstellen</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -319,27 +301,19 @@ export default function PlayerBoxesView({ players, onPlayersChange }) {
       {/* Edit Box Dialog */}
       <Dialog open={!!editingBox} onOpenChange={() => setEditingBox(null)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Box bearbeiten</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Box bearbeiten</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Name</label>
-              <Input
-                value={editingBox?.name || ""}
-                onChange={(e) => setEditingBox({ ...editingBox, name: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && saveEditBox()}
-              />
+              <label className="text-sm font-medium mb-1.5 block">Name</label>
+              <Input value={editingBox?.name || ""} onChange={e => setEditingBox({ ...editingBox, name: e.target.value })} onKeyDown={e => e.key === "Enter" && saveEditBox()} autoFocus />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Farbe</label>
+              <label className="text-sm font-medium mb-1.5 block">Farbe</label>
               <div className="flex gap-2">
                 {COLOR_OPTIONS.map(color => (
-                  <button
-                    key={color}
-                    onClick={() => setEditingBox({ ...editingBox, color })}
-                    className={`w-7 h-7 rounded-full border-2 ${editingBox?.color === color ? "ring-2 ring-offset-2 ring-slate-400" : ""}`}
-                    style={{ backgroundColor: color === "slate" ? "#64748b" : color === "blue" ? "#2563eb" : color === "green" ? "#16a34a" : color === "purple" ? "#9333ea" : color === "orange" ? "#ea580c" : "#dc2626" }}
+                  <button key={color} onClick={() => setEditingBox({ ...editingBox, color })}
+                    className={`w-7 h-7 rounded-full border-2 border-transparent transition-all ${editingBox?.color === color ? "ring-2 ring-offset-2 ring-slate-400 scale-110" : ""}`}
+                    style={{ backgroundColor: { blue: "#2563eb", green: "#16a34a", purple: "#9333ea", orange: "#ea580c", red: "#dc2626", slate: "#64748b" }[color] }}
                   />
                 ))}
               </div>
@@ -351,6 +325,6 @@ export default function PlayerBoxesView({ players, onPlayersChange }) {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
