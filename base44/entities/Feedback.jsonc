@@ -1,0 +1,56 @@
+{
+  "name": "Feedback",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "verbesserung",
+        "fehler",
+        "frage",
+        "sonstiges"
+      ],
+      "default": "verbesserung",
+      "description": "Art des Feedbacks"
+    },
+    "message": {
+      "type": "string",
+      "description": "Feedback-Nachricht"
+    },
+    "page": {
+      "type": "string",
+      "description": "Seite auf der das Feedback gegeben wurde"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Benutzers"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Name des Benutzers"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "neu",
+        "in_bearbeitung",
+        "erledigt"
+      ],
+      "default": "neu",
+      "description": "Status des Feedbacks"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "niedrig",
+        "mittel",
+        "hoch"
+      ],
+      "default": "mittel"
+    }
+  },
+  "required": [
+    "type",
+    "message"
+  ]
+}

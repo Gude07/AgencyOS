@@ -22,6 +22,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import OnlineUsers from "@/components/OnlineUsers";
+import FeedbackButton from "@/components/FeedbackButton";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
 import AgencySwitcher from "@/components/AgencySwitcher";
 import { motion } from "framer-motion";
@@ -307,6 +308,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <FeedbackButton />
             <NotificationCenter />
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -329,7 +331,8 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden pb-16 lg:pb-0">
-        <div className="hidden lg:flex items-center justify-end px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+        <div className="hidden lg:flex items-center justify-end gap-2 px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+          <FeedbackButton />
           <NotificationCenter />
         </div>
         <div className="flex-1 overflow-auto" style={{ overscrollBehavior: 'none' }}>
