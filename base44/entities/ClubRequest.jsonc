@@ -1,0 +1,245 @@
+{
+  "name": "ClubRequest",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "club_name": {
+      "type": "string",
+      "description": "Name des Vereins"
+    },
+    "contact_person": {
+      "type": "string",
+      "description": "Ansprechpartner beim Verein"
+    },
+    "contact_email": {
+      "type": "string",
+      "description": "E-Mail des Ansprechpartners"
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Telefonnummer"
+    },
+    "position_needed": {
+      "type": "string",
+      "enum": [
+        "Alle Positionen",
+        "Torwart",
+        "Innenverteidiger",
+        "Au\u00dfenverteidiger",
+        "Linker Au\u00dfenverteidiger",
+        "Rechter Au\u00dfenverteidiger",
+        "Defensives Mittelfeld",
+        "Mittelfeld",
+        "Linkes Mittelfeld",
+        "Zentrales Mittelfeld",
+        "Rechtes Mittelfeld",
+        "Offensives Mittelfeld",
+        "Fl\u00fcgelspieler",
+        "Linksau\u00dfen",
+        "Rechtsau\u00dfen",
+        "St\u00fcrmer"
+      ],
+      "description": "Gesuchte Position (w\u00e4hle 'Alle Positionen' wenn Attribute wichtiger sind als Position)"
+    },
+    "sought_foot": {
+      "type": "string",
+      "enum": [
+        "links",
+        "rechts",
+        "beidf\u00fc\u00dfig"
+      ],
+      "description": "Gesuchter starker Fu\u00df (optional)"
+    },
+    "league": {
+      "type": "string",
+      "description": "Liga des Vereins"
+    },
+    "country": {
+      "type": "string",
+      "description": "Land"
+    },
+    "transfer_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "kauf",
+          "leihe",
+          "leihe_mit_kaufoption"
+        ]
+      },
+      "default": [
+        "kauf"
+      ],
+      "description": "Gew\u00fcnschte Transfer-Arten (Kauf, Leihe, Leihe mit Kaufoption)"
+    },
+    "budget_min": {
+      "type": "number",
+      "description": "Mindestbudget in Euro (f\u00fcr Kauf)"
+    },
+    "budget_max": {
+      "type": "number",
+      "description": "Maximalbudget in Euro (f\u00fcr Kauf)"
+    },
+    "loan_fee_budget": {
+      "type": "number",
+      "description": "Budget f\u00fcr Leihgeb\u00fchr in Euro"
+    },
+    "buy_option_budget": {
+      "type": "number",
+      "description": "Budget f\u00fcr Kaufoption in Euro (bei Leihe mit Kaufoption)"
+    },
+    "salary_min": {
+      "type": "number",
+      "description": "Mindestgehalt in Euro"
+    },
+    "salary_max": {
+      "type": "number",
+      "description": "Maximalgehalt in Euro"
+    },
+    "salary_period": {
+      "type": "string",
+      "enum": [
+        "monatlich",
+        "j\u00e4hrlich"
+      ],
+      "default": "j\u00e4hrlich",
+      "description": "Gehaltszeitraum"
+    },
+    "age_min": {
+      "type": "number",
+      "description": "Mindestalter"
+    },
+    "age_max": {
+      "type": "number",
+      "description": "Maximalalter"
+    },
+    "transfer_period": {
+      "type": "string",
+      "enum": [
+        "Winter 2025/26",
+        "Sommer 2026",
+        "Winter 2026/27"
+      ],
+      "description": "Transferperiode"
+    },
+    "requirements": {
+      "type": "string",
+      "description": "Weitere Anforderungen und Details"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "niedrig",
+        "mittel",
+        "hoch",
+        "dringend"
+      ],
+      "default": "mittel",
+      "description": "Priorit\u00e4t der Anfrage"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "in_bearbeitung",
+        "angebote_gesendet",
+        "abgeschlossen",
+        "abgelehnt"
+      ],
+      "default": "offen",
+      "description": "Status der Anfrage"
+    },
+    "assigned_to": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "E-Mails der zust\u00e4ndigen Teammitglieder"
+    },
+    "matched_players": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der zugeordneten Spieler"
+    },
+    "shortlist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der Spieler auf der Shortlist"
+    },
+    "matching_criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "criterion": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number"
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      },
+      "description": "Individuelle Matching-Kriterien mit Gewichtung"
+    },
+    "archive_id": {
+      "type": "string",
+      "description": "ID des Archiv-Ordners, falls archiviert"
+    },
+    "last_modified_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Datum der letzten \u00c4nderung"
+    },
+    "dropbox_documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "uploaded_date": {
+            "type": "string"
+          },
+          "uploaded_by": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "In Dropbox hochgeladene Dokumente"
+    }
+  },
+  "required": [
+    "agency_id",
+    "club_name",
+    "position_needed"
+  ]
+}

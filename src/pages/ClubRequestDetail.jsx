@@ -27,7 +27,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock, Sparkles, Send, FileText } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock, Sparkles, Send, FileText, Footprints } from "lucide-react";
+import { calculateDetailedMatchScore } from "../utils/matchmaking";
 import SendEmailDialog from "../components/outlook/SendEmailDialog";
 import AIMatchingAnalysis from "../components/clubRequests/AIMatchingAnalysis";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
@@ -188,121 +189,8 @@ export default function ClubRequestDetail() {
   const isFavorite = currentUser?.favorite_club_requests?.includes(requestId);
 
   const calculateMatchScore = (player) => {
-    if (!request) return 0;
-
-    const playerAge = player.date_of_birth ? 
-      Math.floor((new Date() - new Date(player.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000)) : 
-      null;
-
-    const checkPositionMatch = (playerPos, requestedPos) => {
-      if (playerPos === requestedPos) return 'main';
-
-      // Oberkategorie-Matching
-      if (requestedPos === "Außenverteidiger" && 
-          (playerPos === "Linker Außenverteidiger" || playerPos === "Rechter Außenverteidiger")) return 'main';
-      if (requestedPos === "Mittelfeld" && 
-          (playerPos === "Linkes Mittelfeld" || playerPos === "Rechtes Mittelfeld")) return 'main';
-      if (requestedPos === "Flügelspieler" && 
-          (playerPos === "Linksaußen" || playerPos === "Rechtsaußen")) return 'main';
-
-      return null;
-    };
-
-    const mainPositionMatch = checkPositionMatch(player.position, request.position_needed);
-    const secondaryPositionMatch = player.secondary_positions?.some(pos => 
-      checkPositionMatch(pos, request.position_needed)
-    );
-
-    if (!mainPositionMatch && !secondaryPositionMatch) {
-      return 0;
-    }
-    
-    if (!request.matching_criteria || request.matching_criteria.length === 0) {
-      let score = 0;
-      let maxScore = 3;
-
-      if (mainPositionMatch) {
-        score += 1.5;
-      } else if (secondaryPositionMatch) {
-        score += 0.75;
-      }
-
-      if (request.age_min && request.age_max && player.age >= request.age_min && player.age <= request.age_max) score += 0.75;
-      if (request.budget_max && player.market_value && player.market_value <= request.budget_max) score += 0.75;
-
-      return Math.round((score / maxScore) * 100);
-    }
-
-    let totalWeight = 0;
-    let achievedWeight = 0;
-
-    for (const criterion of request.matching_criteria) {
-      if (criterion.criterion === "position") {
-        totalWeight += criterion.weight;
-        if (mainPositionMatch) {
-          achievedWeight += criterion.weight;
-        } else if (secondaryPositionMatch) {
-          achievedWeight += criterion.weight * 0.5;
-          totalWeight -= criterion.weight * 0.5; 
-          }
-          continue;
-          }
-
-          totalWeight += criterion.weight;
-
-          let matches = false;
-          switch (criterion.criterion) {
-          case "age":
-          matches = playerAge && request.age_min && request.age_max && playerAge >= request.age_min && playerAge <= request.age_max;
-          break;
-        case "market_value":
-          matches = request.budget_max && player.market_value && player.market_value <= request.budget_max;
-          break;
-        case "nationality":
-          matches = player.nationality === request.country;
-          break;
-        case "foot":
-          matches = !!player.foot;
-          break;
-        case "height":
-          matches = !!player.height;
-          break;
-        case "speed":
-          matches = player.speed_rating >= 7;
-          break;
-        case "strength":
-          matches = player.strength_rating >= 7;
-          break;
-        case "stamina":
-          matches = player.stamina_rating >= 7;
-          break;
-        case "agility":
-          matches = player.agility_rating >= 7;
-          break;
-        case "personality":
-          matches = player.personality_traits?.length > 0;
-          break;
-        case "current_form":
-          matches = player.current_form === "ausgezeichnet" || player.current_form === "sehr_gut";
-          break;
-        case "contract_until":
-          matches = !!player.contract_until;
-          break;
-        case "category":
-          matches = player.category === "Wintertransferperiode" || player.category === "Sommertransferperiode";
-          break;
-        default:
-          matches = false;
-      }
-
-      if (matches) {
-        achievedWeight += criterion.weight;
-      } else if (criterion.required) {
-        return 0;
-      }
-    }
-    
-    return totalWeight > 0 ? Math.round((achievedWeight / totalWeight) * 100) : 0;
+    const { score } = calculateDetailedMatchScore(player, request);
+    return score;
   };
 
   if (isLoading) {
@@ -742,6 +630,37 @@ export default function ClubRequestDetail() {
                       <p className="text-sm text-slate-500 italic">Position oben ändern</p>
                     ) : (
                       <p className="font-semibold text-slate-900">{currentRequestData.position_needed}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-sm text-slate-600 mb-1.5 block flex items-center gap-1">
+                      Gesuchter starker Fuß
+                      <span className="text-xs text-slate-400">(optional)</span>
+                    </Label>
+                    {editMode ? (
+                      <Select
+                        value={editedRequest.sought_foot || ""}
+                        onValueChange={(value) => setEditedRequest({...editedRequest, sought_foot: value === 'keine_angabe' ? undefined : value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Kein Fuß bevorzugt" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="keine_angabe">Kein Fuß bevorzugt</SelectItem>
+                          <SelectItem value="rechts">Rechts</SelectItem>
+                          <SelectItem value="links">Links</SelectItem>
+                          <SelectItem value="beidfüßig">Beidfüßig</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      currentRequestData.sought_foot ? (
+                        <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 capitalize">
+                          🦶 {currentRequestData.sought_foot}
+                        </Badge>
+                      ) : (
+                        <p className="text-sm text-slate-400 italic">Kein Fuß bevorzugt</p>
+                      )
                     )}
                   </div>
 

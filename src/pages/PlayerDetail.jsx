@@ -32,6 +32,8 @@ import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, differenceInYears } from "date-fns";
+import { calculateDetailedMatchScore } from "../utils/matchmaking";
+import MatchScoreBreakdown from "../components/clubRequests/MatchScoreBreakdown";
 import { de } from "date-fns/locale";
 import PlayerPreferences from "../components/players/PlayerPreferences";
 import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
@@ -265,76 +267,8 @@ export default function PlayerDetail() {
   };
 
   const calculateBidirectionalMatchScore = (request) => {
-    if (!player || !request) return 0;
-
-    const playerAge = calculateAge(player.date_of_birth);
-
-    const checkPositionMatch = (playerPos, requestedPos) => {
-      if (playerPos === requestedPos) return true;
-
-      // Oberkategorie-Matching
-      if (requestedPos === "Außenverteidiger" && 
-          (playerPos === "Linker Außenverteidiger" || playerPos === "Rechter Außenverteidiger")) return true;
-      if (requestedPos === "Mittelfeld" && 
-          (playerPos === "Linkes Mittelfeld" || playerPos === "Rechtes Mittelfeld")) return true;
-      if (requestedPos === "Flügelspieler" && 
-          (playerPos === "Linksaußen" || playerPos === "Rechtsaußen")) return true;
-
-      return false;
-    };
-
-    const mainPositionMatch = checkPositionMatch(player.position, request.position_needed);
-    const secondaryPositionMatch = Array.isArray(player.secondary_positions) && 
-      player.secondary_positions.some(pos => checkPositionMatch(pos, request.position_needed));
-
-    if (!mainPositionMatch && !secondaryPositionMatch) {
-      return 0;
-    }
-
-    let totalWeight = 0;
-    let achievedWeight = 0;
-
-    totalWeight += 3;
-    if (mainPositionMatch) {
-      achievedWeight += 3;
-    } else if (secondaryPositionMatch) {
-      achievedWeight += 1.5;
-    }
-
-    if (playerAge && request.age_min && request.age_max && playerAge >= request.age_min && playerAge <= request.age_max) {
-      totalWeight += 2;
-      achievedWeight += 2;
-    } else if (request.age_min || request.age_max) {
-      totalWeight += 2;
-    }
-
-    if (request.budget_max && player.market_value && player.market_value <= request.budget_max) {
-      totalWeight += 2;
-      achievedWeight += 2;
-    } else if (request.budget_max) {
-      totalWeight += 2;
-    }
-
-    const prefs = player.preferences || {};
-    
-    if (prefs.excluded_clubs?.length > 0 && prefs.excluded_clubs.includes(request.club_name)) {
-      return 0;
-    }
-
-    if (prefs.preferred_leagues?.length > 0 || prefs.preferred_countries?.length > 0) {
-      totalWeight += 2;
-      if (prefs.preferred_leagues?.includes(request.league)) achievedWeight += 1;
-      if (prefs.preferred_countries?.includes(request.country)) achievedWeight += 1;
-    }
-
-    if (prefs.min_salary || prefs.max_salary) {
-      totalWeight += 1;
-      const budgetMatch = (!prefs.min_salary || request.budget_min >= prefs.min_salary) &&
-                         (!prefs.max_salary || request.budget_max <= prefs.max_salary);
-      if (budgetMatch) achievedWeight += 1;
-    }
-
-    return totalWeight > 0 ? Math.round((achievedWeight / totalWeight) * 100) : 0;
+    const { score } = calculateDetailedMatchScore(player, request);
+    return score;
   };
 
   if (isLoading) {
@@ -1381,10 +1315,7 @@ export default function PlayerDetail() {
                               >
                                 <Star className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
                               </button>
-                              <div className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg">
-                                <Star className="w-3 h-3 fill-current" />
-                                <span className="text-sm font-bold">{request.matchScore}%</span>
-                              </div>
+                              <MatchScoreBreakdown player={player} request={request} matchScore={request.matchScore} />
                             </div>
                           </div>
                           <div className="space-y-2">
