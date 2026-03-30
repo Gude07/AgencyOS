@@ -12,7 +12,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Archive } from "lucide-react";
-import { format, differenceInYears } from "date-fns";
+import { format, differenceInYears, differenceInMonths } from "date-fns";
+
+const isContractExpiringSoon = (contractUntil) => {
+  if (!contractUntil) return false;
+  const months = differenceInMonths(new Date(contractUntil), new Date());
+  return months >= 0 && months <= 6;
+};
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -202,10 +208,15 @@ export default function PlayersTableView({ players, searchTerm, filterCategory, 
                 <TableCell className="text-slate-700">
                   {player.current_club || "-"}
                 </TableCell>
-                <TableCell className="text-slate-700">
-                  {player.contract_until
-                    ? format(new Date(player.contract_until), "dd.MM.yyyy")
-                    : "-"}
+                <TableCell>
+                  <span className={`flex items-center gap-1.5 ${
+                    isContractExpiringSoon(player.contract_until) ? 'text-red-600 font-semibold' : 'text-slate-700'
+                  }`}>
+                    {player.contract_until ? format(new Date(player.contract_until), "dd.MM.yyyy") : "-"}
+                    {isContractExpiringSoon(player.contract_until) && (
+                      <span className="text-xs bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 rounded-full font-normal whitespace-nowrap">⚠️ läuft aus</span>
+                    )}
+                  </span>
                 </TableCell>
                 <TableCell className="text-right font-semibold text-slate-900 dark:text-white">
                   {formatCurrency(player.market_value)}

@@ -37,7 +37,7 @@ import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, Id
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { format, differenceInYears } from "date-fns";
+import { format, differenceInYears, differenceInMonths } from "date-fns";
 import { de } from "date-fns/locale";
 import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
 import TemplateManager from "../components/templates/TemplateManager";
@@ -68,6 +68,12 @@ const categoryAccentColors = {
   "Beobachtungsliste": "#94a3b8",
   "Top-Priorität": "#ef4444",
   "Vertragsende": "#22c55e",
+};
+
+const isContractExpiringSoon = (contractUntil) => {
+  if (!contractUntil) return false;
+  const months = differenceInMonths(new Date(contractUntil), new Date());
+  return months >= 0 && months <= 6;
 };
 
 export default function Players() {
@@ -787,7 +793,12 @@ export default function Players() {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-xs text-slate-400 uppercase tracking-wide">Vertrag bis</span>
-                            <span className="font-semibold text-slate-800 dark:text-white">{player.contract_until ? format(new Date(player.contract_until), "MM/yyyy") : '–'}</span>
+                            <span className={`font-semibold flex items-center gap-1 ${
+                              isContractExpiringSoon(player.contract_until) ? 'text-red-600' : 'text-slate-800 dark:text-white'
+                            }`}>
+                              {player.contract_until ? format(new Date(player.contract_until), "MM/yyyy") : '–'}
+                              {isContractExpiringSoon(player.contract_until) && <span className="text-xs bg-red-100 text-red-700 border border-red-200 px-1 rounded font-normal">⚠️ bald</span>}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
