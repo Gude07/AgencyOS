@@ -61,9 +61,10 @@ export function getTierLabel(tier) {
 /**
  * Berechnet den Liga-Tier-Fit-Score für einen Spieler.
  * Prüft ob der Marktwert des Spielers realistisch zur Liga passt.
+ * Bei jungen Spielern (< 22 Jahre) wird die Mindest-Schwelle reduziert.
  * @returns { score: 0-1, reason: string }
  */
-export function calcLeagueTierFit(playerMarketValue, league) {
+export function calcLeagueTierFit(playerMarketValue, league, playerAge) {
   const tier = getLeagueTier(league);
   if (!tier || !playerMarketValue) {
     return { score: 0.5, reason: 'Liga oder Marktwert unbekannt – kein Tier-Abgleich möglich', tier: null };
@@ -72,18 +73,29 @@ export function calcLeagueTierFit(playerMarketValue, league) {
   const range = TIER_MARKET_VALUE_RANGE[tier];
   const mv = playerMarketValue;
 
-  if (mv <= range.max && mv >= range.min) {
-    // Im Bereich – gut
-    return { score: 1, reason: `✅ Marktwert (${formatMV(mv)}) passt zur Liga-Klasse (${getTierLabel(tier)})`, tier };
-  } else if (mv > range.max) {
+  // Alterskorrektur: Sehr junge Spieler (Talente) haben naturgemäß niedrigere Marktwerte
+  // Unter 22: Mindest-Schwelle um 70% reduziert, unter 19: um 90% reduziert
+  let effectiveMin = range.min;
+  if (playerAge && playerAge < 19) effectiveMin = range.min * 0.1;
+  else if (playerAge && playerAge < 22) effectiveMin = range.min * 0.3;
+  else if (playerAge && playerAge < 25) effectiveMin = range.min * 0.6;
+
+  if (mv > range.max) {
     // Spieler zu wertvoll für die Liga
     const overFactor = mv / range.max;
     if (overFactor > 5) return { score: 0, reason: `❌ Marktwert (${formatMV(mv)}) deutlich zu hoch für ${getTierLabel(tier)} (max. realistisch: ${formatMV(range.max)})`, tier };
     if (overFactor > 2) return { score: 0.2, reason: `⚠️ Marktwert (${formatMV(mv)}) zu hoch für ${getTierLabel(tier)} (max. realistisch: ${formatMV(range.max)})`, tier };
     return { score: 0.6, reason: `⚠️ Marktwert (${formatMV(mv)}) leicht über Liga-Niveau (${getTierLabel(tier)})`, tier };
+  } else if (mv >= effectiveMin) {
+    // Im realistischen Bereich (ggf. alterskorrigiert)
+    const ageNote = (playerAge && playerAge < 22) ? ` (Talent-Bonus: Alterskorrektur für ${playerAge}J. angewendet)` : '';
+    return { score: 1, reason: `✅ Marktwert (${formatMV(mv)}) passt zur Liga-Klasse (${getTierLabel(tier)})${ageNote}`, tier };
   } else {
-    // Spieler günstiger als Liga-Norm – kein Problem
-    return { score: 1, reason: `✅ Marktwert (${formatMV(mv)}) im Rahmen für ${getTierLabel(tier)}`, tier };
+    // Marktwert zu niedrig für die Liga
+    const underFactor = effectiveMin / mv;
+    if (underFactor > 5) return { score: 0, reason: `❌ Marktwert (${formatMV(mv)}) deutlich zu niedrig für ${getTierLabel(tier)} (mind. realistisch: ${formatMV(effectiveMin)})`, tier };
+    if (underFactor > 2) return { score: 0.2, reason: `⚠️ Marktwert (${formatMV(mv)}) zu niedrig für ${getTierLabel(tier)} (Mindest-Niveau: ${formatMV(effectiveMin)})`, tier };
+    return { score: 0.6, reason: `⚠️ Marktwert (${formatMV(mv)}) leicht unter Liga-Niveau (${getTierLabel(tier)})`, tier };
   }
 }
 
@@ -198,7 +210,7 @@ export function calculateDetailedMatchScore(player, request) {
 
   // --- 4. LIGA-TIER FIT (15 Punkte) ---
   if (request.league) {
-    const tierFit = calcLeagueTierFit(player.market_value, request.league);
+    const tierFit = calcLeagueTierFit(player.market_value, request.league, playerAge);
     const tierScore = Math.round(tierFit.score * 15);
     breakdown.push({
       name: 'Liga-Niveau Fit',
