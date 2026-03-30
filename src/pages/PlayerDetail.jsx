@@ -69,6 +69,7 @@ export default function PlayerDetail() {
   const playerId = urlParams.get('id');
   const backUrl = urlParams.get('back');
 
+  const startEdit = urlParams.get('startEdit') === 'true';
   const [editMode, setEditMode] = useState(false);
   const [editedPlayer, setEditedPlayer] = useState(null);
   const [activeTab, setActiveTab] = useState(urlParams.get('tab') || "info");
@@ -164,6 +165,13 @@ export default function PlayerDetail() {
       navigate(createPageUrl("Players"));
     },
   });
+
+  useEffect(() => {
+    if (startEdit && player && !editMode) {
+      handleStartEdit();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player]);
 
   useEffect(() => {
     if (player && editMode) {
@@ -502,7 +510,12 @@ export default function PlayerDetail() {
                               className="mt-2"
                             />
                           ) : (
-                            <p className="text-slate-600 dark:text-slate-400 mt-1">{currentPlayerData?.current_club}</p>
+                                  <p className="text-slate-600 dark:text-slate-400 mt-1">{currentPlayerData?.current_club}</p>
+                          )}
+                          {!editMode && player?.created_date && (
+                            <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                              Erstellt: {format(new Date(player.created_date), "dd.MM.yyyy", { locale: de })}
+                            </p>
                           )}
                         </div>
                         {currentPlayerData?.transfermarkt_url && (
@@ -899,7 +912,12 @@ export default function PlayerDetail() {
                     </div>
 
                     <div>
-                      <Label className="text-sm font-semibold text-slate-700 mb-2 block">Notizen</Label>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-sm font-semibold text-slate-700">Notizen</Label>
+                        {!editMode && player?.updated_date && (
+                          <span className="text-xs text-slate-400">Zuletzt bearbeitet: {format(new Date(player.updated_date), "dd.MM.yyyy HH:mm", { locale: de })}</span>
+                        )}
+                      </div>
                       {editMode ? (
                         <Textarea
                           value={editedPlayer?.notes || ""}

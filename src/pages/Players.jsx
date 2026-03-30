@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List } from "lucide-react";
+import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -61,6 +61,15 @@ const categoryColors = {
   "Vertragsende": "bg-green-100 text-green-800 border-green-200",
 };
 
+const categoryAccentColors = {
+  "Wintertransferperiode": "#3b82f6",
+  "Sommertransferperiode": "#f97316",
+  "Zukunft": "#a855f7",
+  "Beobachtungsliste": "#94a3b8",
+  "Top-Priorität": "#ef4444",
+  "Vertragsende": "#22c55e",
+};
+
 export default function Players() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -84,7 +93,8 @@ export default function Players() {
   const [archiveToDelete, setArchiveToDelete] = useState(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [showComparisonTool, setShowComparisonTool] = useState(false);
-  const [displayMode, setDisplayMode] = useState(urlParams.get('display') || 'grid');
+  const [displayMode, setDisplayMode] = useState(() => localStorage.getItem('playersDisplayMode') || urlParams.get('display') || 'grid');
+  const [quickArchivePlayerId, setQuickArchivePlayerId] = useState(null);
   const [activeBox, setActiveBox] = useState(null);
 
   // Restore scroll position on mount
@@ -297,6 +307,7 @@ export default function Players() {
     if (newSearch !== currentSearch) {
       window.history.replaceState(null, '', `?${newSearch}`);
     }
+    localStorage.setItem('playersDisplayMode', displayMode);
   }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches, filterArchive, displayMode]);
 
   const filteredPlayers = players.filter(player => {
@@ -668,72 +679,130 @@ export default function Players() {
             <AnimatePresence>
               {filteredPlayers.map(player => (
                 <motion.div key={player.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                  <Card className={`hover:shadow-md transition-all duration-200 border bg-white dark:bg-slate-900 relative ${
-                    selectionMode && selectedPlayers.has(player.id) ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200 dark:border-slate-800'
+                  <Card className={`hover:shadow-xl transition-all duration-200 bg-white dark:bg-slate-900 relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 group ${
+                    selectionMode && selectedPlayers.has(player.id) ? 'ring-2 ring-blue-400' : ''
                   }`}>
+                    {/* Colored accent bar */}
+                    <div className="h-1 w-full" style={{ backgroundColor: categoryAccentColors[player.category] || '#e2e8f0' }} />
+
+                    {/* Action buttons */}
                     {selectionMode ? (
                       <div className="absolute top-3 right-3 z-10">
                         <input type="checkbox" checked={selectedPlayers.has(player.id)} onChange={(e) => { e.stopPropagation(); togglePlayerSelection(player.id); }} className="w-5 h-5 rounded border-slate-300" />
                       </div>
                     ) : (
-                      <button onClick={(e) => { e.stopPropagation(); toggleFavoriteMutation.mutate(player.id); }} className="absolute top-3 right-3 z-10 p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                        <Star className={`w-5 h-5 ${userFavorites.includes(player.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`} />
-                      </button>
+                      <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleFavoriteMutation.mutate(player.id); }}
+                          className="p-1.5 bg-white/95 hover:bg-yellow-50 rounded-lg shadow-sm border border-slate-200 transition-colors"
+                          title="Favorit"
+                        >
+                          <Star className={`w-3.5 h-3.5 ${userFavorites.includes(player.id) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'}`} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const params = new URLSearchParams();
+                            if (searchTerm) params.set('search', searchTerm);
+                            if (filterCategory !== 'alle') params.set('category', filterCategory);
+                            if (filterPosition !== 'alle') params.set('position', filterPosition);
+                            if (filterStatus !== 'alle') params.set('status', filterStatus);
+                            if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+                            if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
+                            if (filterArchive !== 'active') params.set('archive', filterArchive);
+                            params.set('scrollY', window.scrollY.toString());
+                            navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&startEdit=true&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                          }}
+                          className="p-1.5 bg-white/95 hover:bg-blue-50 rounded-lg shadow-sm border border-slate-200 transition-colors"
+                          title="Bearbeiten"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                        </button>
+                        {filterArchive === 'active' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setQuickArchivePlayerId(player.id); }}
+                            className="p-1.5 bg-white/95 hover:bg-orange-50 rounded-lg shadow-sm border border-slate-200 transition-colors"
+                            title="Archivieren"
+                          >
+                            <Archive className="w-3.5 h-3.5 text-slate-500" />
+                          </button>
+                        )}
+                      </div>
                     )}
-                    <div onClick={() => {
-                      if (selectionMode) { togglePlayerSelection(player.id); return; }
-                      const params = new URLSearchParams();
-                      if (searchTerm) params.set('search', searchTerm);
-                      if (filterCategory !== 'alle') params.set('category', filterCategory);
-                      if (filterPosition !== 'alle') params.set('position', filterPosition);
-                      if (filterStatus !== 'alle') params.set('status', filterStatus);
-                      if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
-                      if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
-                      if (filterArchive !== 'active') params.set('archive', filterArchive);
-                      params.set('scrollY', window.scrollY.toString());
-                      navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
-                    }} className="cursor-pointer">
-                      <CardHeader className="pb-3">
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3 className="font-bold text-lg text-slate-900 dark:text-white">{player.name}</h3>
-                              <p className="text-sm text-slate-600 dark:text-slate-400">{player.current_club}</p>
-                            </div>
+
+                    <div
+                      onClick={() => {
+                        if (selectionMode) { togglePlayerSelection(player.id); return; }
+                        const params = new URLSearchParams();
+                        if (searchTerm) params.set('search', searchTerm);
+                        if (filterCategory !== 'alle') params.set('category', filterCategory);
+                        if (filterPosition !== 'alle') params.set('position', filterPosition);
+                        if (filterStatus !== 'alle') params.set('status', filterStatus);
+                        if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+                        if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
+                        if (filterArchive !== 'active') params.set('archive', filterArchive);
+                        params.set('scrollY', window.scrollY.toString());
+                        navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <CardHeader className="pb-2 pt-3 px-4">
+                        <div className="pr-20">
+                          <h3 className="font-bold text-lg text-slate-900 dark:text-white leading-tight">{player.name}</h3>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
+                            {player.current_club || <span className="italic">Kein Verein</span>}
                             {player.transfermarkt_url && (
-                              <a href={player.transfermarkt_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                                <ExternalLink className="w-4 h-4 text-slate-500" />
+                              <a href={player.transfermarkt_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="hover:text-blue-600 transition-colors">
+                                <ExternalLink className="w-3 h-3" />
                               </a>
                             )}
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant="secondary" className={categoryColors[player.category] + " border"}>{player.category}</Badge>
-                            <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 font-semibold">{player.position}</Badge>
-                            {Array.isArray(player.secondary_positions) && player.secondary_positions.map((pos) => (
-                              <Badge key={pos} variant="outline" className="border-slate-200 text-xs">{pos}</Badge>
-                            ))}
-                            <Badge variant="outline" className="border-slate-200 text-xs">{player.status?.replace(/_/g, ' ') || 'noch offen'}</Badge>
-                            {player.has_player_card && (
-                              <Badge className="bg-green-600 text-white text-xs flex items-center gap-1"><IdCard className="w-3 h-3" />Player Card</Badge>
-                            )}
-                            <PlayerBoxBadges playerBoxes={player.player_boxes} />
-                          </div>
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          <Badge variant="secondary" className={categoryColors[player.category] + " border text-xs"}>{player.category}</Badge>
+                          <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-800 font-semibold text-xs">{player.position}</Badge>
+                          {Array.isArray(player.secondary_positions) && player.secondary_positions.slice(0, 1).map((pos) => (
+                            <Badge key={pos} variant="outline" className="border-slate-200 text-xs">{pos}</Badge>
+                          ))}
+                          {player.has_player_card && (
+                            <Badge className="bg-green-600 text-white text-xs flex items-center gap-1"><IdCard className="w-3 h-3" />Card</Badge>
+                          )}
+                          <PlayerBoxBadges playerBoxes={player.player_boxes} />
                         </div>
                       </CardHeader>
-                      <CardContent className="pt-0 space-y-2">
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div><p className="text-slate-600 dark:text-slate-400">Alter</p><p className="font-semibold text-slate-900 dark:text-white">{calculateAge(player.date_of_birth) || '-'}</p></div>
-                          <div><p className="text-slate-600 dark:text-slate-400">Nationalität</p><p className="font-semibold text-slate-900 dark:text-white">{player.nationality || '-'}</p></div>
-                          <div><p className="text-slate-600 dark:text-slate-400">Marktwert</p><p className="font-semibold text-slate-900 dark:text-white">{player.market_value ? `${(player.market_value / 1000000).toFixed(2).replace(/\.?0+$/, '')}M €` : '-'}</p></div>
-                          <div><p className="text-slate-600 dark:text-slate-400">Vertrag bis</p><p className="font-semibold text-slate-900 dark:text-white">{player.contract_until ? format(new Date(player.contract_until), "MM/yyyy") : '-'}</p></div>
-                        </div>
-                        {allComments.filter(c => c.player_id === player.id).length > 0 && (
-                          <div className="flex items-center justify-end gap-1 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800">
-                            <MessageCircle className="w-4 h-4 text-red-500" />
-                            <span className="text-sm font-semibold text-red-600">{allComments.filter(c => c.player_id === player.id).length}</span>
-                            <span className="text-xs text-slate-500">Kommentare</span>
+
+                      <CardContent className="pt-0 pb-3 px-4">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm border-t border-slate-100 dark:border-slate-800 pt-2.5">
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 uppercase tracking-wide">Alter</span>
+                            <span className="font-semibold text-slate-800 dark:text-white">{calculateAge(player.date_of_birth) || '–'}</span>
                           </div>
-                        )}
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 uppercase tracking-wide">Nationalität</span>
+                            <span className="font-semibold text-slate-800 dark:text-white truncate">{player.nationality || '–'}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 uppercase tracking-wide">Marktwert</span>
+                            <span className="font-semibold text-slate-800 dark:text-white">{player.market_value ? `${(player.market_value / 1000000).toFixed(1).replace(/\.0$/, '')}M €` : '–'}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs text-slate-400 uppercase tracking-wide">Vertrag bis</span>
+                            <span className="font-semibold text-slate-800 dark:text-white">{player.contract_until ? format(new Date(player.contract_until), "MM/yyyy") : '–'}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <span className="text-xs text-slate-400 flex items-center gap-1">
+                            <CalendarDays className="w-3 h-3" />
+                            {player.created_date ? format(new Date(player.created_date), "dd.MM.yyyy") : '–'}
+                          </span>
+                          {allComments.filter(c => c.player_id === player.id).length > 0 && (
+                            <div className="flex items-center gap-1">
+                              <MessageCircle className="w-3.5 h-3.5 text-red-500" />
+                              <span className="text-xs font-semibold text-red-600">{allComments.filter(c => c.player_id === player.id).length}</span>
+                            </div>
+                          )}
+                          <Badge variant="outline" className="text-xs border-slate-200 text-slate-500">{player.status?.replace(/_/g, ' ') || 'noch offen'}</Badge>
+                        </div>
                       </CardContent>
                     </div>
                   </Card>
@@ -742,7 +811,18 @@ export default function Players() {
             </AnimatePresence>
           </div>
         ) : (
-          <PlayersTableView players={filteredPlayers} />
+          <PlayersTableView
+            players={filteredPlayers}
+            searchTerm={searchTerm}
+            filterCategory={filterCategory}
+            filterPosition={filterPosition}
+            filterStatus={filterStatus}
+            filterFavorites={filterFavorites}
+            filterHasMatches={filterHasMatches}
+            filterArchive={filterArchive}
+            archives={archives}
+            onQuickArchive={(id) => setQuickArchivePlayerId(id)}
+          />
         )}
 
         {filteredPlayers.length === 0 && !isLoading && (
@@ -1158,6 +1238,60 @@ export default function Players() {
             onOpenChange={setShowComparisonTool}
             initialPlayerIds={[]}
           />
+
+          {/* Quick Archive Dialog */}
+          <Dialog open={!!quickArchivePlayerId} onOpenChange={() => setQuickArchivePlayerId(null)}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Spieler archivieren</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <p className="text-sm text-slate-600">In welches Archiv soll der Spieler verschoben werden?</p>
+                {archives.length === 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-slate-500">Noch kein Archiv vorhanden. Neues Archiv erstellen:</p>
+                    <Input
+                      value={newArchiveName}
+                      onChange={(e) => setNewArchiveName(e.target.value)}
+                      placeholder="Archivname eingeben..."
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setQuickArchivePlayerId(null)}>Abbrechen</Button>
+                      <Button
+                        disabled={!newArchiveName}
+                        className="bg-blue-900 hover:bg-blue-800"
+                        onClick={async () => {
+                          const archive = await createArchiveMutation.mutateAsync({ name: newArchiveName, type: 'player' });
+                          await archivePlayersMutation.mutateAsync({ playerIds: [quickArchivePlayerId], archiveId: archive.id });
+                          setNewArchiveName("");
+                          setQuickArchivePlayerId(null);
+                        }}
+                      >
+                        Archiv erstellen & archivieren
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {archives.map(archive => (
+                      <button
+                        key={archive.id}
+                        onClick={async () => {
+                          await archivePlayersMutation.mutateAsync({ playerIds: [quickArchivePlayerId], archiveId: archive.id });
+                          setQuickArchivePlayerId(null);
+                        }}
+                        className="w-full text-left p-3 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                      >
+                        <span className="font-medium text-slate-800">📁 {archive.name}</span>
+                        <span className="text-xs text-slate-500 block mt-0.5">{players.filter(p => p.archive_id === archive.id).length} Spieler</span>
+                      </button>
+                    ))}
+                    <Button variant="outline" className="w-full mt-2" onClick={() => { setQuickArchivePlayerId(null); setShowManageArchivesDialog(true); }}>+ Neues Archiv erstellen</Button>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
           </div>
           );
           }

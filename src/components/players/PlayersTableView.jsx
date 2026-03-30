@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Archive } from "lucide-react";
 import { format, differenceInYears } from "date-fns";
 
 const calculateAge = (dateOfBirth) => {
@@ -26,7 +27,7 @@ const formatCurrency = (value) => {
   return `${(value / 1000).toFixed(0)}k €`;
 };
 
-export default function PlayersTableView({ players }) {
+export default function PlayersTableView({ players, searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches, filterArchive, archives = [], onQuickArchive }) {
   const navigate = useNavigate();
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
@@ -98,15 +99,29 @@ export default function PlayersTableView({ players }) {
     });
   }, [players, sortConfig]);
 
+  const buildBackUrl = () => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.set('search', searchTerm);
+    if (filterCategory !== 'alle') params.set('category', filterCategory);
+    if (filterPosition !== 'alle') params.set('position', filterPosition);
+    if (filterStatus !== 'alle') params.set('status', filterStatus);
+    if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
+    if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
+    if (filterArchive !== 'active') params.set('archive', filterArchive);
+    params.set('scrollY', window.scrollY.toString());
+    return window.location.pathname + '?' + params.toString();
+  };
+
   const handleRowClick = (player) => {
-    const urlParams = new URLSearchParams(window.location.search);
-    urlParams.set('scrollY', window.scrollY.toString());
     navigate(
-      createPageUrl("PlayerDetail") +
-        "?id=" +
-        player.id +
-        "&back=" +
-        encodeURIComponent(window.location.pathname + "?" + urlParams.toString())
+      createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(buildBackUrl())
+    );
+  };
+
+  const handleEditClick = (e, player) => {
+    e.stopPropagation();
+    navigate(
+      createPageUrl("PlayerDetail") + "?id=" + player.id + "&startEdit=true&back=" + encodeURIComponent(buildBackUrl())
     );
   };
 
@@ -163,13 +178,14 @@ export default function PlayersTableView({ players }) {
                 </div>
               </TableHead>
               <TableHead className="dark:text-slate-300">Kategorie</TableHead>
+              <TableHead className="w-20"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedPlayers.map((player) => (
               <TableRow
                 key={player.id}
-                className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group"
                 onClick={() => handleRowClick(player)}
               >
                 <TableCell className="font-medium text-slate-900 dark:text-white">
@@ -200,6 +216,30 @@ export default function PlayersTableView({ players }) {
                       {player.category}
                     </Badge>
                   )}
+                </TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 hover:bg-blue-50"
+                      title="Bearbeiten"
+                      onClick={(e) => handleEditClick(e, player)}
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                    </Button>
+                    {filterArchive === 'active' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 hover:bg-orange-50"
+                        title="Archivieren"
+                        onClick={(e) => { e.stopPropagation(); onQuickArchive && onQuickArchive(player.id); }}
+                      >
+                        <Archive className="w-3.5 h-3.5 text-slate-500" />
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
