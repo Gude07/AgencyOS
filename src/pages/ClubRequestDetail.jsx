@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock, Sparkles, Send, FileText, Footprints } from "lucide-react";
-import { calculateDetailedMatchScore } from "../utils/matchmaking";
+import { calculateDetailedMatchScore, getLeagueTierInfo } from "../utils/matchmaking";
 import SendEmailDialog from "../components/outlook/SendEmailDialog";
 import AIMatchingAnalysis from "../components/clubRequests/AIMatchingAnalysis";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
@@ -95,6 +95,13 @@ export default function ClubRequestDetail() {
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
+
+  const { data: agencies = [] } = useQuery({
+    queryKey: ['agencies'],
+    queryFn: () => base44.entities.Agency.list(),
+  });
+
+  const agencyLeagueTierConfigs = agencies.find(a => a.id === currentUser?.agency_id)?.league_tier_configs;
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
@@ -189,7 +196,7 @@ export default function ClubRequestDetail() {
   const isFavorite = currentUser?.favorite_club_requests?.includes(requestId);
 
   const calculateMatchScore = (player) => {
-    const { score } = calculateDetailedMatchScore(player, request);
+    const { score } = calculateDetailedMatchScore(player, request, agencyLeagueTierConfigs);
     return score;
   };
 
@@ -428,6 +435,30 @@ export default function ClubRequestDetail() {
             </div>
           )}
         </div>
+
+        {request.league && (() => {
+          const tierInfo = getLeagueTierInfo(request.league, agencyLeagueTierConfigs);
+          if (tierInfo.source === 'unknown') {
+            return (
+              <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex items-start gap-3">
+                <span className="text-2xl">⚠️</span>
+                <div className="flex-1">
+                  <p className="font-semibold text-amber-900">Liga nicht erkannt: "{request.league}"</p>
+                  <p className="text-sm text-amber-700 mt-0.5">Diese Liga ist keinem Tier zugeordnet – der Liga-Niveau-Fit kann nicht berechnet werden. Bitte ordnen Sie die Liga manuell einem Tier zu.</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-400 text-amber-800 hover:bg-amber-100 flex-shrink-0"
+                  onClick={() => window.location.href = '/AgencyManagement'}
+                >
+                  Tier konfigurieren
+                </Button>
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">

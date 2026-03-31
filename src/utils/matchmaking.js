@@ -5,47 +5,82 @@
 
 // Liga-Tier-Definition (1 = Elite, 4 = Unterklasse)
 const LEAGUE_TIERS = {
-  // Tier 1 - Europäische Top-5 Ligen + Große Ligen
-  1: [
-    'bundesliga', '1. bundesliga', 'premier league', 'la liga', 'serie a', 'ligue 1',
-    'eredivisie', 'primeira liga', 'pro league', 'süper lig', 'russian premier league',
-    'scottish premiership', 'mls'
-  ],
-  // Tier 2 - Zweite Ligen / Starke Erstligen
-  2: [
-    '2. bundesliga', 'championship', 'segunda división', 'serie b', 'ligue 2',
-    'austrian bundesliga', 'swiss super league', 'czech liga', 'polish ekstraklasa',
-    'scottish championship', '2. liga', 'segunda liga', 'super league'
-  ],
-  // Tier 3 - Dritte Ligen / Mittlere Ligen
-  3: [
-    '3. liga', 'dritte liga', 'league one', 'segunda b', 'serie c', 'national league',
-    'national', 'liga 3', 'division 3', 'belgian first amateur', 'austrian second liga'
-  ],
-  // Tier 4 - Unterklassen
-  4: [
-    'regionalliga', 'oberliga', 'landesliga', 'bezirksliga', 'verbandsliga',
-    'league two', 'national league north', 'national league south', 'vierte liga'
-  ]
-};
-
-// Realistischer Marktwert-Bereich pro Tier (in Euro)
-const TIER_MARKET_VALUE_RANGE = {
   1: { min: 2_000_000,   max: 200_000_000, typical: 15_000_000 },
   2: { min: 300_000,     max: 15_000_000,  typical: 2_000_000  },
   3: { min: 50_000,      max: 3_000_000,   typical: 300_000    },
   4: { min: 0,           max: 500_000,     typical: 50_000     },
 };
 
-export function getLeagueTier(league) {
-  if (!league) return null;
+/**
+ * Standard-Tier-Konfiguration als Export (für LeagueTierEditor als Initialwert)
+ */
+export const DEFAULT_LEAGUE_TIER_CONFIGS = [
+  {
+    tier_number: 1,
+    tier_name: 'Top-Liga',
+    description: 'Europäische Top-5 Ligen und vergleichbare Erstliga-Wettbewerbe (Bundesliga, Premier League, La Liga, Serie A, Ligue 1, Eredivisie, etc.)',
+    leagues: ['bundesliga', '1. bundesliga', 'premier league', 'la liga', 'serie a', 'ligue 1', 'eredivisie', 'primeira liga', 'pro league', 'süper lig', 'russian premier league', 'scottish premiership', 'mls'],
+    min_market_value: 2_000_000,
+    max_market_value: 200_000_000,
+  },
+  {
+    tier_number: 2,
+    tier_name: '2. Liga / Starke Liga',
+    description: 'Zweite Ligen der Top-Nationen und starke Erstligen kleinerer Länder (2. Bundesliga, Championship, Serie B, Austrian Bundesliga, Swiss Super League, etc.)',
+    leagues: ['2. bundesliga', 'championship', 'segunda división', 'serie b', 'ligue 2', 'austrian bundesliga', 'swiss super league', 'czech liga', 'polish ekstraklasa', 'scottish championship', '2. liga', 'segunda liga', 'super league'],
+    min_market_value: 300_000,
+    max_market_value: 15_000_000,
+  },
+  {
+    tier_number: 3,
+    tier_name: '3. Liga / Mittlere Liga',
+    description: 'Dritte Ligen und mittlere Wettbewerbe (3. Liga, League One, Serie C, National League, etc.)',
+    leagues: ['3. liga', 'dritte liga', 'league one', 'segunda b', 'serie c', 'national league', 'national', 'liga 3', 'division 3', 'belgian first amateur', 'austrian second liga'],
+    min_market_value: 50_000,
+    max_market_value: 3_000_000,
+  },
+  {
+    tier_number: 4,
+    tier_name: 'Unterklasse',
+    description: 'Unterklassen und Amateur-Ligen (Regionalliga, Oberliga, Landesliga, League Two, etc.)',
+    leagues: ['regionalliga', 'oberliga', 'landesliga', 'bezirksliga', 'verbandsliga', 'league two', 'national league north', 'national league south', 'vierte liga'],
+    min_market_value: 0,
+    max_market_value: 500_000,
+  },
+];
+
+/**
+ * Gibt das Tier einer Liga zurück, optional aus einer benutzerdefinierten Konfiguration.
+ * @param {string} league
+ * @param {Array} customConfigs - league_tier_configs aus der Agency (optional)
+ * @returns {{ tier: number|null, source: 'custom'|'default'|'unknown' }}
+ */
+export function getLeagueTierInfo(league, customConfigs) {
+  if (!league) return { tier: null, source: 'unknown' };
   const lower = league.toLowerCase().trim();
+
+  // Zuerst benutzerdefinierte Konfiguration prüfen
+  if (customConfigs && customConfigs.length > 0) {
+    for (const config of customConfigs) {
+      const configLeagues = config.leagues || [];
+      if (configLeagues.some(l => lower.includes(l.toLowerCase()) || l.toLowerCase().includes(lower))) {
+        return { tier: config.tier_number, source: 'custom', config };
+      }
+    }
+    return { tier: null, source: 'unknown' };
+  }
+
+  // Fallback: interne Hardcoded-Liste
   for (const [tier, leagues] of Object.entries(LEAGUE_TIERS)) {
     if (leagues.some(l => lower.includes(l) || l.includes(lower))) {
-      return parseInt(tier);
+      return { tier: parseInt(tier), source: 'default' };
     }
   }
-  return null; // Unbekannte Liga
+  return { tier: null, source: 'unknown' };
+}
+
+export function getLeagueTier(league, customConfigs) {
+  return getLeagueTierInfo(league, customConfigs).tier;
 }
 
 export function getTierLabel(tier) {
@@ -64,13 +99,21 @@ export function getTierLabel(tier) {
  * Bei jungen Spielern (< 22 Jahre) wird die Mindest-Schwelle reduziert.
  * @returns { score: 0-1, reason: string }
  */
-export function calcLeagueTierFit(playerMarketValue, league, playerAge) {
-  const tier = getLeagueTier(league);
+export function calcLeagueTierFit(playerMarketValue, league, playerAge, customConfigs) {
+  const tierInfo = getLeagueTierInfo(league, customConfigs);
+  const tier = tierInfo.tier;
+  if (tierInfo.source === 'unknown') {
+    return { score: 0.5, reason: `⚠️ Liga "${league}" nicht im System bekannt – kein Tier-Abgleich möglich`, tier: null, unknownLeague: true };
+  }
   if (!tier || !playerMarketValue) {
     return { score: 0.5, reason: 'Liga oder Marktwert unbekannt – kein Tier-Abgleich möglich', tier: null };
   }
 
-  const range = TIER_MARKET_VALUE_RANGE[tier];
+  // Marktwert-Bereich: aus Custom-Config oder Standard
+  const customConfig = tierInfo.config;
+  const range = customConfig
+    ? { min: customConfig.min_market_value || 0, max: customConfig.max_market_value || 999_999_999 }
+    : TIER_MARKET_VALUE_RANGE[tier];
   const mv = playerMarketValue;
 
   // Alterskorrektur: Sehr junge Spieler (Talente) haben naturgemäß niedrigere Marktwerte
@@ -124,7 +167,7 @@ function checkPositionMatch(playerPos, requestedPos) {
  * 
  * @returns { score: number (0-100), breakdown: Array, disqualified: boolean }
  */
-export function calculateDetailedMatchScore(player, request) {
+export function calculateDetailedMatchScore(player, request, customConfigs) {
   if (!player || !request) return { score: 0, breakdown: [], disqualified: false };
 
   const playerAge = player.date_of_birth
@@ -210,7 +253,7 @@ export function calculateDetailedMatchScore(player, request) {
 
   // --- 4. LIGA-TIER FIT (15 Punkte) ---
   if (request.league) {
-    const tierFit = calcLeagueTierFit(player.market_value, request.league, playerAge);
+    const tierFit = calcLeagueTierFit(player.market_value, request.league, playerAge, customConfigs);
     const tierScore = Math.round(tierFit.score * 15);
     breakdown.push({
       name: 'Liga-Niveau Fit',

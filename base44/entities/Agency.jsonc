@@ -1,0 +1,75 @@
+{
+  "name": "Agency",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name der Agentur"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL zum Logo der Agentur"
+    },
+    "contact_email": {
+      "type": "string",
+      "description": "Kontakt-E-Mail"
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Telefonnummer"
+    },
+    "address": {
+      "type": "string",
+      "description": "Adresse"
+    },
+    "website": {
+      "type": "string",
+      "description": "Website"
+    },
+    "settings": {
+      "type": "object",
+      "description": "Agentur-spezifische Einstellungen",
+      "properties": {
+        "primary_color": {
+          "type": "string"
+        },
+        "secondary_color": {
+          "type": "string"
+        }
+      }
+    },
+    "league_tier_configs": {
+      "type": "array",
+      "description": "Manuelle Liga-Tier-Konfiguration der Agentur",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tier_number": {
+            "type": "number"
+          },
+          "tier_name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "leagues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "min_market_value": {
+            "type": "number"
+          },
+          "max_market_value": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

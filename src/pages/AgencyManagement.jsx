@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, Plus, Users, Pencil, Save, X } from "lucide-react";
+import { Building2, Plus, Users, Pencil, Save, X, Layers } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import LeagueTierEditor from "../components/agency/LeagueTierEditor";
 
 export default function AgencyManagement() {
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingAgency, setEditingAgency] = useState(null);
+  const [leagueTierAgencyId, setLeagueTierAgencyId] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     logo_url: "",
@@ -129,9 +131,14 @@ export default function AgencyManagement() {
                         </p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => startEdit(agency)} className="h-8 w-8">
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => setLeagueTierAgencyId(agency.id)} className="h-8 w-8" title="Liga-Tier konfigurieren">
+                        <Layers className="w-3.5 h-3.5 text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => startEdit(agency)} className="h-8 w-8">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 space-y-2 text-sm">
@@ -181,6 +188,24 @@ export default function AgencyManagement() {
             </CardContent>
           </Card>
         )}
+
+        {/* Liga-Tier Config Dialog */}
+        <Dialog open={!!leagueTierAgencyId} onOpenChange={(open) => { if (!open) setLeagueTierAgencyId(null); }}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-blue-600" />
+                Liga-Tier Konfiguration
+              </DialogTitle>
+            </DialogHeader>
+            {leagueTierAgencyId && (
+              <LeagueTierEditor
+                agencyId={leagueTierAgencyId}
+                onClose={() => setLeagueTierAgencyId(null)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Create Dialog */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
