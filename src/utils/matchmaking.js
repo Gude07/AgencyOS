@@ -62,7 +62,7 @@ export function getLeagueTierInfo(league, customConfigs) {
   // Zuerst benutzerdefinierte Konfiguration prüfen
   if (customConfigs && customConfigs.length > 0) {
     for (const config of customConfigs) {
-      const configLeagues = config.leagues || [];
+      const configLeagues = Array.isArray(config.leagues) ? config.leagues : [];
       if (configLeagues.some(l => lower.includes(l.toLowerCase()) || l.toLowerCase().includes(lower))) {
         return { tier: config.tier_number, source: 'custom', config };
       }
