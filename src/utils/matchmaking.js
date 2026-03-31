@@ -63,7 +63,7 @@ export function getLeagueTierInfo(league, customConfigs) {
   if (customConfigs && customConfigs.length > 0) {
     for (const config of customConfigs) {
       const configLeagues = Array.isArray(config.leagues) ? config.leagues : [];
-      if (configLeagues.some(l => lower.includes(l.toLowerCase()) || l.toLowerCase().includes(lower))) {
+      if (configLeagues.some(l => l.toLowerCase() === lower)) {
         return { tier: config.tier_number, source: 'custom', config };
       }
     }
@@ -73,7 +73,7 @@ export function getLeagueTierInfo(league, customConfigs) {
   // Fallback: DEFAULT_LEAGUE_TIER_CONFIGS
   for (const config of DEFAULT_LEAGUE_TIER_CONFIGS) {
     const configLeagues = Array.isArray(config.leagues) ? config.leagues : [];
-    if (configLeagues.some(l => lower.includes(l.toLowerCase()) || l.toLowerCase().includes(lower))) {
+    if (configLeagues.some(l => l.toLowerCase() === lower)) {
       return { tier: config.tier_number, source: 'default', config };
     }
   }
