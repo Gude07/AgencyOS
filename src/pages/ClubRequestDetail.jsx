@@ -307,7 +307,8 @@ export default function ClubRequestDetail() {
             <MatchScoreBreakdown 
               player={player} 
               request={request} 
-              matchScore={player.matchScore} 
+              matchScore={player.matchScore}
+              customConfigs={agencyLeagueTierConfigs}
             />
           )}
         </div>

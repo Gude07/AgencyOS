@@ -5,9 +5,9 @@ import { CheckCircle2, XCircle, AlertCircle, Info } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { calculateDetailedMatchScore } from "../../utils/matchmaking";
 
-export default function MatchScoreBreakdown({ player, request, matchScore }) {
+export default function MatchScoreBreakdown({ player, request, matchScore, customConfigs }) {
   const calculateBreakdown = () => {
-    const { breakdown } = calculateDetailedMatchScore(player, request);
+    const { breakdown } = calculateDetailedMatchScore(player, request, customConfigs);
     return breakdown;
   };
 
