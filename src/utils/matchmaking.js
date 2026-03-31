@@ -70,10 +70,11 @@ export function getLeagueTierInfo(league, customConfigs) {
     return { tier: null, source: 'unknown' };
   }
 
-  // Fallback: interne Hardcoded-Liste
-  for (const [tier, leagues] of Object.entries(LEAGUE_TIERS)) {
-    if (leagues.some(l => lower.includes(l) || l.includes(lower))) {
-      return { tier: parseInt(tier), source: 'default' };
+  // Fallback: DEFAULT_LEAGUE_TIER_CONFIGS
+  for (const config of DEFAULT_LEAGUE_TIER_CONFIGS) {
+    const configLeagues = Array.isArray(config.leagues) ? config.leagues : [];
+    if (configLeagues.some(l => lower.includes(l.toLowerCase()) || l.toLowerCase().includes(lower))) {
+      return { tier: config.tier_number, source: 'default', config };
     }
   }
   return { tier: null, source: 'unknown' };
@@ -113,7 +114,7 @@ export function calcLeagueTierFit(playerMarketValue, league, playerAge, customCo
   const customConfig = tierInfo.config;
   const range = customConfig
     ? { min: customConfig.min_market_value || 0, max: customConfig.max_market_value || 999_999_999 }
-    : TIER_MARKET_VALUE_RANGE[tier];
+    : { min: 0, max: 999_999_999 };
   const mv = playerMarketValue;
 
   // Alterskorrektur: Sehr junge Spieler (Talente) haben naturgemäß niedrigere Marktwerte
