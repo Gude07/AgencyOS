@@ -297,23 +297,21 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row w-full bg-slate-50 dark:bg-slate-950">
       {/* Mobile Header */}
-      <div className="lg:hidden sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+      <div className="lg:hidden sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: '0.75rem' }}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white dark:bg-slate-800">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-md flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
               <Building2 className="w-4 h-4 text-slate-400" />
             </div>
-            <div>
-              <h2 className="font-bold text-slate-900 dark:text-white text-sm">Agentur</h2>
-            </div>
+            <h2 className="font-bold text-slate-900 dark:text-white text-sm truncate">Agentur</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <FeedbackButton />
             <NotificationCenter />
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="w-6 h-6 dark:text-slate-300" />
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Menu className="w-5 h-5 dark:text-slate-300" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-[280px] dark:bg-slate-900">
@@ -338,10 +336,10 @@ export default function Layout({ children, currentPageName }) {
         <div className="flex-1 overflow-auto" style={{ overscrollBehavior: 'none' }}>
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.15 }}
           >
             {children}
           </motion.div>
@@ -350,21 +348,21 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Mobile Bottom Navigation */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
-        <div className="grid grid-cols-4 gap-1 px-2 pt-2">
+        <div className="grid grid-cols-4 gap-0 px-1 pt-1">
           {bottomNavItems.map((item) => {
             const isActive = location.pathname === item.url;
             return (
               <Link
                 key={item.title}
                 to={item.url}
-                className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-colors ${
+                className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg transition-colors ${
                   isActive 
                     ? 'text-blue-900 dark:text-blue-400 bg-blue-50 dark:bg-blue-950' 
-                    : 'text-slate-600 dark:text-slate-400'
+                    : 'text-slate-500 dark:text-slate-400 active:bg-slate-100'
                 }`}
               >
-                <item.icon className={`w-5 h-5 ${isActive ? 'text-blue-900 dark:text-blue-400' : ''}`} />
-                <span className="text-xs font-medium">{item.title}</span>
+                <item.icon className={`w-5 h-5 ${ isActive ? 'text-blue-900 dark:text-blue-400' : ''}`} />
+                <span className="text-xs font-medium leading-tight">{item.title}</span>
               </Link>
             );
           })}

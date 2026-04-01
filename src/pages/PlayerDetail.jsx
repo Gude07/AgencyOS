@@ -121,6 +121,13 @@ export default function PlayerDetail() {
     queryFn: () => base44.auth.me(),
   });
 
+  const { data: agencies = [] } = useQuery({
+    queryKey: ['agencies'],
+    queryFn: () => base44.entities.Agency.list(),
+  });
+
+  const agencyLeagueTierConfigs = agencies.find(a => a.id === currentUser?.agency_id)?.league_tier_configs;
+
   const toggleFavoriteMutation = useMutation({
     mutationFn: async () => {
       const favorites = currentUser?.favorite_players || [];
@@ -267,7 +274,7 @@ export default function PlayerDetail() {
   };
 
   const calculateBidirectionalMatchScore = (request) => {
-    const { score } = calculateDetailedMatchScore(player, request);
+    const { score } = calculateDetailedMatchScore(player, request, agencyLeagueTierConfigs);
     return score;
   };
 
@@ -1315,7 +1322,7 @@ export default function PlayerDetail() {
                               >
                                 <Star className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
                               </button>
-                              <MatchScoreBreakdown player={player} request={request} matchScore={request.matchScore} />
+                              <MatchScoreBreakdown player={player} request={request} matchScore={request.matchScore} customConfigs={agencyLeagueTierConfigs} />
                             </div>
                           </div>
                           <div className="space-y-2">
