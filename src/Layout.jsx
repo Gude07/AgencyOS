@@ -66,7 +66,6 @@ const transferItems = [
     url: createPageUrl("Coaches"),
     icon: UserCog,
   },
-
   {
     title: "Vereinsanfragen",
     url: createPageUrl("ClubRequests"),
@@ -78,6 +77,19 @@ const transferItems = [
     icon: Building2,
   },
   {
+    title: "Deals",
+    url: createPageUrl("Deals"),
+    icon: CheckSquare,
+  },
+];
+
+const aiItems = [
+  {
+    title: "KI-Scout Assistent",
+    url: createPageUrl("AIChat"),
+    icon: Sparkles,
+  },
+  {
     title: "KI-Vereinsanalyse",
     url: createPageUrl("ClubAnalysis"),
     icon: Sparkles,
@@ -87,16 +99,9 @@ const transferItems = [
     url: createPageUrl("PlayerComparison"),
     icon: Sparkles,
   },
-  {
-    title: "KI-Scout Assistent",
-    url: createPageUrl("AIChat"),
-    icon: Sparkles,
-  },
-  {
-    title: "Deals",
-    url: createPageUrl("Deals"),
-    icon: CheckSquare,
-  },
+];
+
+const adminItems = [
   {
     title: "Archive",
     url: createPageUrl("Archives"),
@@ -229,12 +234,56 @@ function SidebarNav({ onNavClick }) {
           </div>
         </div>
 
-        {user?.role === "admin" && (
-          <div className="mb-4">
-            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-2">
-              Administration
-            </div>
-            <div className="space-y-1">
+        <div className="mb-4">
+          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-2">
+            KI Funktionen
+          </div>
+          <div className="space-y-1">
+            {aiItems.map((item) => {
+              const isActive = location.pathname === item.url;
+              return (
+                <Link
+                  key={item.title}
+                  to={item.url}
+                  onClick={onNavClick}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-purple-700 dark:bg-purple-700 text-white' 
+                      : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-purple-500 dark:text-purple-400'}`} />
+                  <span className="font-medium">{item.title}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 mb-2">
+            Administration
+          </div>
+          <div className="space-y-1">
+            {adminItems.map((item) => {
+              const isActive = location.pathname === item.url;
+              return (
+                <Link
+                  key={item.title}
+                  to={item.url}
+                  onClick={onNavClick}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-blue-900 dark:bg-blue-700 text-white' 
+                      : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                  <span className="font-medium">{item.title}</span>
+                </Link>
+              );
+            })}
+            {user?.role === "admin" && (
               <Link
                 to={createPageUrl("AgencyManagement")}
                 onClick={onNavClick}
@@ -247,9 +296,9 @@ function SidebarNav({ onNavClick }) {
                 <Building2 className={`w-5 h-5 ${location.pathname === createPageUrl("AgencyManagement") ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span className="font-medium">Agenturen</span>
               </Link>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         <div className="hidden lg:block">
           <OnlineUsers />
