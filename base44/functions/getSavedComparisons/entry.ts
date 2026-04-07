@@ -5,10 +5,9 @@ Deno.serve(async (req) => {
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const records = await base44.entities.SavedPlayerComparison.filter(
-    { created_by_user: user.email },
+  const records = await base44.entities.SavedPlayerComparison.list(
     '-created_date',
-    50
+    100
   );
 
   const parsed = records.map(r => ({
