@@ -10,20 +10,25 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Save, Loader2, CheckCircle } from "lucide-react";
+import { Save, Loader2, CheckCircle, Copy, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AnalysisDocumentSaver({ 
   analysisContent, 
   analysisType, 
   entityType, 
-  entityId, 
+  entityId,
+  entityIds,
   defaultFileName,
   triggerButton 
 }) {
   const [open, setOpen] = useState(false);
   const [fileName, setFileName] = useState(defaultFileName || "");
   const [isSaving, setIsSaving] = useState(false);
+  const [savedUrl, setSavedUrl] = useState(null);
+
+  // Support both single entityId and multiple entityIds
+  const allEntityIds = entityIds || (entityId ? [entityId] : []);
 
   const handleSave = async () => {
     if (!fileName.trim()) {
@@ -168,22 +173,22 @@ export default function AnalysisDocumentSaver({
         type: 'analysis'
       };
 
-      // Aktualisiere Entity mit neuem Dokument
+      // Aktualisiere alle betroffenen Entities mit dem neuen Dokument
       const entity = await base44.entities[entityType].list();
-      const currentEntity = entity.find(e => e.id === entityId);
-      
-      const updatedDocuments = [
-        ...(currentEntity.dropbox_documents || []),
-        documentData
-      ];
+      for (const eid of allEntityIds) {
+        const currentEntity = entity.find(e => e.id === eid);
+        if (!currentEntity) continue;
+        const updatedDocuments = [
+          ...(currentEntity.dropbox_documents || []),
+          documentData
+        ];
+        await base44.entities[entityType].update(eid, {
+          dropbox_documents: updatedDocuments
+        });
+      }
 
-      await base44.entities[entityType].update(entityId, {
-        dropbox_documents: updatedDocuments
-      });
-
-      toast.success("Analyse erfolgreich gespeichert!");
-      setOpen(false);
-      setFileName(defaultFileName || "");
+      setSavedUrl(documentData.url);
+      toast.success(`Analyse bei ${allEntityIds.length} Spieler(n) gespeichert!`);
     } catch (error) {
       console.error("Fehler beim Speichern:", error);
       toast.error("Fehler beim Speichern der Analyse");
@@ -192,10 +197,18 @@ export default function AnalysisDocumentSaver({
     }
   };
 
+  const handleCopyLink = () => {
+    if (savedUrl) {
+      navigator.clipboard.writeText(savedUrl);
+      toast.success("Link kopiert!");
+    }
+  };
+
   return (
     <>
       <div onClick={() => {
         setFileName(defaultFileName || "");
+        setSavedUrl(null);
         setOpen(true);
       }}>
         {triggerButton || (
@@ -212,41 +225,71 @@ export default function AnalysisDocumentSaver({
             <DialogTitle>Analyse als Dokument speichern</DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <div>
-              <Label htmlFor="fileName">Dokumentname</Label>
-              <Input
-                id="fileName"
-                value={fileName}
-                onChange={(e) => setFileName(e.target.value)}
-                placeholder="z.B. Marktanalyse Max Mustermann März 2026"
-                className="mt-1.5"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Das Dokument wird als HTML-Datei in Dropbox gespeichert
-              </p>
-            </div>
+            {!savedUrl ? (
+              <div>
+                <Label htmlFor="fileName">Dokumentname</Label>
+                <Input
+                  id="fileName"
+                  value={fileName}
+                  onChange={(e) => setFileName(e.target.value)}
+                  placeholder="z.B. Vergleichsanalyse März 2026"
+                  className="mt-1.5"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Wird als Dokument bei {allEntityIds.length > 1 ? `allen ${allEntityIds.length} Spielern` : 'diesem Spieler'} unter Dokumente gespeichert
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-green-800">Erfolgreich gespeichert!</p>
+                    <p className="text-xs text-green-700 truncate">{savedUrl}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={handleCopyLink}
+                >
+                  <Copy className="w-4 h-4" />
+                  Direktlink kopieren (zum Teilen)
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => window.open(savedUrl, '_blank')}
+                >
+                  <Share2 className="w-4 h-4" />
+                  Dokument öffnen
+                </Button>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
-              Abbrechen
+              {savedUrl ? 'Schließen' : 'Abbrechen'}
             </Button>
-            <Button
-              onClick={handleSave}
-              disabled={!fileName.trim() || isSaving}
-              className="bg-blue-900 hover:bg-blue-800"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Wird gespeichert...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Speichern
-                </>
-              )}
-            </Button>
+            {!savedUrl && (
+              <Button
+                onClick={handleSave}
+                disabled={!fileName.trim() || isSaving}
+                className="bg-blue-900 hover:bg-blue-800"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Wird gespeichert...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Speichern
+                  </>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

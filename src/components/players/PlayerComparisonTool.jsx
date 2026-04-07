@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   X, 
   Sparkles, 
-  Users, 
+  Users,
+  Search, 
   TrendingUp, 
   Calendar,
   DollarSign,
@@ -56,8 +57,19 @@ export default function PlayerComparisonTool({ open, onOpenChange, initialPlayer
     queryFn: () => entityType === "Player" ? base44.entities.PlayerComment.list() : Promise.resolve([]),
   });
 
+  const [playerSearch, setPlayerSearch] = useState("");
+  const [positionFilter, setPositionFilter] = useState("alle");
+
   const selectedPlayers = allPlayers.filter(p => selectedPlayerIds.includes(p.id));
-  const availablePlayers = allPlayers.filter(p => !selectedPlayerIds.includes(p.id) && !p.archive_id);
+  const availablePlayers = allPlayers
+    .filter(p => !selectedPlayerIds.includes(p.id) && !p.archive_id)
+    .filter(p => {
+      const matchesSearch = !playerSearch || 
+        p.name?.toLowerCase().includes(playerSearch.toLowerCase()) ||
+        p.current_club?.toLowerCase().includes(playerSearch.toLowerCase());
+      const matchesPosition = positionFilter === "alle" || p.position === positionFilter;
+      return matchesSearch && matchesPosition;
+    });
 
   const addPlayer = (playerId) => {
     if (selectedPlayerIds.length < 5 && playerId) {
@@ -210,18 +222,55 @@ Sei konkret, sachlich und fundiert. Nutze die verfügbaren Daten (Statistiken, S
                   ))}
                 </div>
                 {selectedPlayerIds.length < 5 && (
-                  <Select onValueChange={addPlayer}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Spieler hinzufügen..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availablePlayers.map(player => (
-                        <SelectItem key={player.id} value={player.id}>
-                          {player.name} - {entityType === "Player" ? player.position : player.specialization} ({player.current_club})
-                        </SelectItem>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input
+                          placeholder="Spieler suchen..."
+                          value={playerSearch}
+                          onChange={e => setPlayerSearch(e.target.value)}
+                          className="pl-9"
+                        />
+                      </div>
+                      <Select value={positionFilter} onValueChange={setPositionFilter}>
+                        <SelectTrigger className="w-44">
+                          <SelectValue placeholder="Position" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alle">Alle Positionen</SelectItem>
+                          <SelectItem value="Torwart">Torwart</SelectItem>
+                          <SelectItem value="Innenverteidiger">Innenverteidiger</SelectItem>
+                          <SelectItem value="Außenverteidiger">Außenverteidiger</SelectItem>
+                          <SelectItem value="Linker Außenverteidiger">Linker AV</SelectItem>
+                          <SelectItem value="Rechter Außenverteidiger">Rechter AV</SelectItem>
+                          <SelectItem value="Defensives Mittelfeld">Def. Mittelfeld</SelectItem>
+                          <SelectItem value="Zentrales Mittelfeld">Zentr. Mittelfeld</SelectItem>
+                          <SelectItem value="Offensives Mittelfeld">Off. Mittelfeld</SelectItem>
+                          <SelectItem value="Linksaußen">Linksaußen</SelectItem>
+                          <SelectItem value="Rechtsaußen">Rechtsaußen</SelectItem>
+                          <SelectItem value="Stürmer">Stürmer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100">
+                      {availablePlayers.length === 0 ? (
+                        <p className="text-xs text-slate-500 p-3 text-center">Keine Spieler gefunden</p>
+                      ) : availablePlayers.map(player => (
+                        <button
+                          key={player.id}
+                          onClick={() => addPlayer(player.id)}
+                          className="w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors flex items-center justify-between gap-2"
+                        >
+                          <div className="min-w-0">
+                            <span className="font-medium text-sm text-slate-900">{player.name}</span>
+                            <span className="text-xs text-slate-500 ml-2">{player.current_club}</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs shrink-0">{player.position}</Badge>
+                        </button>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  </div>
                 )}
                 <p className="text-xs text-slate-500">
                   {selectedPlayerIds.length}/5 Spieler ausgewählt
@@ -278,7 +327,7 @@ Sei konkret, sachlich und fundiert. Nutze die verfügbaren Daten (Statistiken, S
                       analysisContent={aiRecommendation}
                       analysisType={`${entityType}-Vergleich`}
                       entityType={entityType}
-                      entityId={selectedPlayerIds[0]}
+                      entityIds={selectedPlayerIds}
                       defaultFileName={`Vergleich_${selectedPlayers.map(p => p.name).join('_vs_')}_${new Date().toISOString().split('T')[0]}`}
                     />
                   )}
