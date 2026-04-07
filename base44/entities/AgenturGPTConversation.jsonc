@@ -1,0 +1,30 @@
+{
+  "name": "AgenturGPTConversation",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titel des Gespr\u00e4chs"
+    },
+    "messages": {
+      "type": "string",
+      "description": "JSON-String der Nachrichten"
+    },
+    "folder_id": {
+      "type": "string",
+      "description": "Optionale Ordner-ID (lokal)"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "deep_research"
+      ],
+      "default": "normal",
+      "description": "Recherche-Modus"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

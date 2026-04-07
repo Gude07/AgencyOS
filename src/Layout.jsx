@@ -90,6 +90,11 @@ const aiItems = [
     icon: Sparkles,
   },
   {
+    title: "AgenturGPT",
+    url: createPageUrl("AgenturGPT"),
+    icon: Sparkles,
+  },
+  {
     title: "KI-Vereinsanalyse",
     url: createPageUrl("ClubAnalysis"),
     icon: Sparkles,

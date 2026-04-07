@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ClubAnalysis from './pages/ClubAnalysis';
 import AIChat from './pages/AIChat';
+import AgenturGPT from './pages/AgenturGPT';
 import ClubProfiles from './pages/ClubProfiles';
 import PlayerComparison from './pages/PlayerComparison';
 import SavedComparisons from './pages/SavedComparisons';
@@ -102,6 +103,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="AIChat">
             <AIChat />
+          </LayoutWrapper>
+        } 
+      />
+      <Route 
+        path="/AgenturGPT" 
+        element={
+          <LayoutWrapper currentPageName="AgenturGPT">
+            <AgenturGPT />
           </LayoutWrapper>
         } 
       />
