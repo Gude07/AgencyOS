@@ -88,6 +88,11 @@ const transferItems = [
     icon: Sparkles,
   },
   {
+    title: "KI-Scout Assistent",
+    url: createPageUrl("AIChat"),
+    icon: Sparkles,
+  },
+  {
     title: "Deals",
     url: createPageUrl("Deals"),
     icon: CheckSquare,

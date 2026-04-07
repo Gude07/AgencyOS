@@ -10,6 +10,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ClubAnalysis from './pages/ClubAnalysis';
+import AIChat from './pages/AIChat';
 import ClubProfiles from './pages/ClubProfiles';
 import PlayerComparison from './pages/PlayerComparison';
 import SavedComparisons from './pages/SavedComparisons';
@@ -93,6 +94,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="SavedComparisons">
             <SavedComparisons />
+          </LayoutWrapper>
+        } 
+      />
+      <Route 
+        path="/AIChat" 
+        element={
+          <LayoutWrapper currentPageName="AIChat">
+            <AIChat />
           </LayoutWrapper>
         } 
       />
