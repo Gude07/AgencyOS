@@ -95,45 +95,39 @@ export default function MarketValueChart({ playerId, currentMarketValue }) {
         </div>
       )}
 
-      {chartData.length > 1 ? (
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
-              tickLine={false}
-              axisLine={{ stroke: "#e2e8f0" }}
-            />
-            <YAxis
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
-              tickFormatter={formatValue}
-              tickLine={false}
-              axisLine={false}
-              width={80}
-            />
-            <Tooltip
-              formatter={(value) => [formatValue(value), "Marktwert"]}
-              labelStyle={{ color: "#475569", fontWeight: 600 }}
-              contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke="#1e40af"
-              strokeWidth={2}
-              dot={{ r: 4, fill: "#1e40af" }}
-              activeDot={{ r: 6, fill: "#1e40af" }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      ) : (
-        <div className="text-center py-4 text-sm text-slate-400">
-          Aktueller Marktwert: <span className="font-semibold text-slate-700">{formatValue(chartData[0].value)}</span>
-          <br />
-          <span className="text-xs">Der Graph wird nach der nächsten Änderung angezeigt.</span>
-        </div>
-      )}
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 11, fill: "#94a3b8" }}
+            tickLine={false}
+            axisLine={{ stroke: "#e2e8f0" }}
+          />
+          <YAxis
+            tick={{ fontSize: 11, fill: "#94a3b8" }}
+            tickFormatter={formatValue}
+            tickLine={false}
+            axisLine={false}
+            width={80}
+            domain={['auto', 'auto']}
+          />
+          <Tooltip
+            formatter={(value) => [formatValue(value), "Marktwert"]}
+            labelStyle={{ color: "#475569", fontWeight: 600 }}
+            contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13 }}
+          />
+          <Line
+            type="monotone"
+            dataKey="value"
+            stroke="#1e40af"
+            strokeWidth={2}
+            dot={{ r: 5, fill: "#1e40af" }}
+            activeDot={{ r: 7, fill: "#1e40af" }}
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }
