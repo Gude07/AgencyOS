@@ -164,6 +164,7 @@ export default function PlayerDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['player', playerId] });
       queryClient.invalidateQueries({ queryKey: ['players'] });
+      queryClient.invalidateQueries({ queryKey: ['playerMarketValueHistory', playerId] });
       setEditMode(false);
     },
   });

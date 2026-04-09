@@ -15,7 +15,10 @@ function formatValue(value) {
 export default function MarketValueChart({ playerId, currentMarketValue }) {
   const { data: history = [], isLoading } = useQuery({
     queryKey: ["playerMarketValueHistory", playerId],
-    queryFn: () => base44.entities.PlayerMarketValueHistory.filter({ player_id: playerId }, "date", 100),
+    queryFn: async () => {
+      const all = await base44.entities.PlayerMarketValueHistory.filter({ player_id: playerId });
+      return all;
+    },
     enabled: !!playerId,
   });
 
