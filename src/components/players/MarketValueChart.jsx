@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -20,17 +20,15 @@ export default function MarketValueChart({ playerId, currentMarketValue }) {
   });
 
   // Build chart data: history entries + current value
-  const chartData = React.useMemo(() => {
+  const chartData = useMemo(() => {
     const entries = history.map(h => ({
       date: new Date(h.date).getTime(),
       value: h.market_value,
       label: format(new Date(h.date), "dd.MM.yyyy", { locale: de })
     }));
 
-    // Sort by date ascending
     entries.sort((a, b) => a.date - b.date);
 
-    // If no history but we have a current value, show just one point
     if (entries.length === 0 && currentMarketValue) {
       return [{
         date: Date.now(),
@@ -43,7 +41,7 @@ export default function MarketValueChart({ playerId, currentMarketValue }) {
   }, [history, currentMarketValue]);
 
   // Calculate trend
-  const trend = React.useMemo(() => {
+  const trend = useMemo(() => {
     if (chartData.length < 2) return null;
     const first = chartData[0].value;
     const last = chartData[chartData.length - 1].value;
