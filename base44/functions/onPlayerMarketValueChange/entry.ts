@@ -4,30 +4,36 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-
     const { event, data, old_data } = body;
 
-    // Only process update events where market_value changed
-    if (event.type !== 'update') {
-      return Response.json({ skipped: true, reason: 'not an update event' });
+    if (event.type === 'create') {
+      if (data && data.market_value != null) {
+        await base44.asServiceRole.entities.PlayerMarketValueHistory.create({
+          player_id: event.entity_id,
+          market_value: data.market_value,
+          date: data.created_date || new Date().toISOString()
+        });
+        return Response.json({ success: true, event: 'create', player_id: event.entity_id });
+      }
+      return Response.json({ skipped: true, reason: 'no market_value on create' });
     }
 
-    const oldValue = old_data?.market_value;
-    const newValue = data?.market_value;
+    if (event.type === 'update') {
+      const oldValue = old_data ? old_data.market_value : null;
+      const newValue = data ? data.market_value : null;
 
-    // Skip if market_value didn't change or is not set
-    if (newValue == null || oldValue === newValue) {
+      if (newValue != null && oldValue !== newValue) {
+        await base44.asServiceRole.entities.PlayerMarketValueHistory.create({
+          player_id: event.entity_id,
+          market_value: newValue,
+          date: new Date().toISOString()
+        });
+        return Response.json({ success: true, event: 'update', player_id: event.entity_id, market_value: newValue });
+      }
       return Response.json({ skipped: true, reason: 'market_value unchanged' });
     }
 
-    // Create a history entry
-    await base44.asServiceRole.entities.PlayerMarketValueHistory.create({
-      player_id: event.entity_id,
-      market_value: newValue,
-      date: new Date().toISOString()
-    });
-
-    return Response.json({ success: true, player_id: event.entity_id, market_value: newValue });
+    return Response.json({ skipped: true, reason: 'unhandled event type' });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
