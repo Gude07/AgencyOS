@@ -47,6 +47,7 @@ import DocumentManager from "../components/documents/DocumentManager";
 import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
 import PlayerApiIdSuggestions from "../components/players/PlayerApiIdSuggestions";
 import MarketTrendAnalysis from "../components/ai/MarketTrendAnalysis";
+import MarketValueChart from "../components/players/MarketValueChart";
 import { PlayerBoxEditor } from "../components/players/PlayerBoxBadges";
 import PlayerBoxBadges from "../components/players/PlayerBoxBadges";
 
@@ -920,6 +921,15 @@ export default function PlayerDetail() {
               </div>
 
               <div className="space-y-6">
+                <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                  <CardHeader className="border-b border-slate-100 dark:border-slate-800">
+                    <CardTitle className="text-lg dark:text-white">📈 Marktwertentwicklung</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <MarketValueChart playerId={playerId} currentMarketValue={player?.market_value} />
+                  </CardContent>
+                </Card>
+
                 <Card className="border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/30">
                   <CardHeader className="border-b border-green-200 dark:border-green-900">
                     <div className="flex items-center gap-2">

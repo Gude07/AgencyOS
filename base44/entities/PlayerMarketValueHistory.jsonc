@@ -1,0 +1,24 @@
+{
+  "name": "PlayerMarketValueHistory",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "ID des Spielers"
+    },
+    "market_value": {
+      "type": "number",
+      "description": "Marktwert in Euro zum Zeitpunkt der \u00c4nderung"
+    },
+    "date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Datum der Marktwert\u00e4nderung"
+    }
+  },
+  "required": [
+    "player_id",
+    "market_value",
+    "date"
+  ]
+}
