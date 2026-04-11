@@ -174,7 +174,7 @@ Sei präzise, faktenbasiert und professionell. Gib IMMER echte Quell-URLs an, wo
       prompt,
       add_context_from_internet: true,
       response_json_schema: schema,
-      model: 'gemini_3_1_pro'
+      model: 'gemini_3_flash'
     });
     
     return Response.json({
