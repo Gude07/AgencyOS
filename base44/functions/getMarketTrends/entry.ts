@@ -40,8 +40,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Nicht genügend Informationen für Marktanalyse' }, { status: 400 });
     }
     
+    const today = new Date().toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric' });
+    
     const prompt = `
-Du bist ein professioneller Fußball-Scout und Transfermarkt-Experte. Erstelle eine umfassende, datenbasierte Markttrend-Analyse für folgenden Spieler:
+HEUTIGES DATUM: ${today}
+Du bist ein professioneller Fußball-Scout und Transfermarkt-Experte mit Zugang zu aktuellen Internetquellen.
+
+WICHTIG: Recherchiere NUR Informationen aus den letzten 3 Monaten (Stand: ${today}). Ignoriere alle Informationen, die älter als 3 Monate sind. Alle Transfers, Gerüchte und Marktwertangaben müssen aus dem Jahr 2026 oder Ende 2025 stammen. Gib KEIN Datum an, das vor Oktober 2025 liegt.
+
+Erstelle eine umfassende, datenbasierte Markttrend-Analyse für folgenden Spieler:
 
 SPIELER-PROFIL:
 - Name: ${name}
@@ -52,13 +59,13 @@ SPIELER-PROFIL:
 - Vertragsende: ${contract || 'unbekannt'}
 - Alter: ${playerAge || 'unbekannt'}
 
-Recherchiere und analysiere KONKRET mit echten Daten:
+Recherchiere und analysiere KONKRET mit echten Daten (Stand: ${today}):
 
-1. AKTUELLE NACHRICHTEN & GERÜCHTE: Suche nach aktuellen Transfernachrichten, Gerüchten und Berichten zu diesem Spieler. Gib für jede Nachricht eine konkrete Quelle (Transfermarkt, Sky Sports, Kicker, BILD, etc.) mit der URL an.
+1. AKTUELLE NACHRICHTEN & GERÜCHTE (nur aus 2026!): Suche nach aktuellen Transfernachrichten, Gerüchten und Berichten zu diesem Spieler. Gib für jede Nachricht eine konkrete Quelle (Transfermarkt, Sky Sports, Kicker, BILD, etc.) mit der URL an. Verwende KEIN Datum vor Oktober 2025.
 
-2. MARKTTRENDS FÜR POSITION ${pos || ''}: Wie entwickelt sich der Markt für diese Position? Was sind typische Ablösesummen? Welche Ligen zahlen am meisten?
+2. MARKTTRENDS FÜR POSITION ${pos || ''} (aktuell April 2026): Wie entwickelt sich der Markt für diese Position? Was sind typische Ablösesummen? Welche Ligen zahlen am meisten?
 
-3. VERGLEICHBARE TRANSFERS: Liste 3-5 konkrete, tatsächlich stattgefundene Transfers ähnlicher Spieler aus den letzten 18 Monaten mit echten Ablösesummen.
+3. VERGLEICHBARE TRANSFERS: Liste 3-5 konkrete, tatsächlich stattgefundene Transfers ähnlicher Spieler aus den letzten 12 Monaten (seit April 2025) mit echten Ablösesummen.
 
 4. MARKTWERT-ENTWICKLUNG: Analysiere realistische Marktwertentwicklung inkl. Prognose. Berücksichtige Alter, Vertragsende, Form und Marktlage.
 
@@ -66,13 +73,13 @@ Recherchiere und analysiere KONKRET mit echten Daten:
 
 6. VERLETZUNGS- & RISIKOANALYSE: Bekannte Verletzungsrisiken, Formkurve, Zuverlässigkeit.
 
-7. OPTIMALER TRANSFER-ZEITPUNKT: Wann ist der beste Zeitpunkt für einen Transfer? Berücksichtige Vertragsende, Transferfenster, Marktzyklus.
+7. OPTIMALER TRANSFER-ZEITPUNKT: Wann ist der beste Zeitpunkt für einen Transfer? Berücksichtige Vertragsende, Transferfenster, Marktzyklus. Das nächste Transferfenster ist Sommer 2026 (Juli-August 2026).
 
 8. CHANCEN & RISIKEN: Konkrete Chancen und Risiken für einen Transfer.
 
 9. GESAMTEMPFEHLUNG: Klare, handlungsorientierte Empfehlung für die Agentur.
 
-Sei präzise, faktenbasiert und professionell. Gib IMMER echte Quell-URLs an, wo möglich.
+Sei präzise, faktenbasiert und professionell. Alle Daten MÜSSEN aktuell sein (${today}). Gib IMMER echte Quell-URLs an.
     `;
     
     const schema = {
