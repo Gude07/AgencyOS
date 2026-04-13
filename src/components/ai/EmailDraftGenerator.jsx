@@ -13,7 +13,7 @@ export default function EmailDraftGenerator({ type, entityId, defaultRecipient }
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refineLoading, setRefineLoading] = useState(false);
-  const [mode, setMode] = useState('email'); // 'email' | 'whatsapp'
+  const [mode, setMode] = useState('email');
   const [recipient, setRecipient] = useState(defaultRecipient || '');
   const [tone, setTone] = useState('professional');
   const [draft, setDraft] = useState(null);
@@ -49,14 +49,7 @@ export default function EmailDraftGenerator({ type, entityId, defaultRecipient }
     setRefineLoading(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Du bist ein professioneller Texter für eine Spieleragentur.
-
-Aktueller Text:
-${editedBody}
-
-Anweisung des Nutzers: ${refineInstruction}
-
-Bitte überarbeite den Text entsprechend. Gib NUR den überarbeiteten Text zurück, ohne Erklärungen.`,
+        prompt: `Du bist ein professioneller Texter für eine Spieleragentur.\n\nAktueller Text:\n${editedBody}\n\nAnweisung des Nutzers: ${refineInstruction}\n\nBitte überarbeite den Text entsprechend. Gib NUR den überarbeiteten Text zurück, ohne Erklärungen.`,
       });
       setEditedBody(result);
       setRefineInstruction('');
@@ -207,141 +200,6 @@ Bitte überarbeite den Text entsprechend. Gib NUR den überarbeiteten Text zurü
                 <Button onClick={handleCopy} className="flex-1">
                   <Copy className="w-4 h-4 mr-2" />
                   Kopieren
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [recipient, setRecipient] = useState(defaultRecipient || '');
-  const [tone, setTone] = useState('professional');
-  const [draft, setDraft] = useState(null);
-
-  const handleGenerate = async () => {
-    setLoading(true);
-    try {
-      const response = await base44.functions.invoke('generateEmailDraft', {
-        type,
-        entityId,
-        recipientName: recipient,
-        tone
-      });
-      
-      if (response.data.success) {
-        setDraft(response.data.draft);
-        toast.success('E-Mail-Entwurf erstellt!');
-      } else {
-        toast.error('Erstellung fehlgeschlagen');
-      }
-    } catch (error) {
-      console.error('Error generating draft:', error);
-      toast.error('Fehler bei der Entwurfs-Erstellung');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCopy = () => {
-    if (draft) {
-      navigator.clipboard.writeText(draft.body_plain || draft.body_html);
-      toast.success('In Zwischenablage kopiert');
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Mail className="w-4 h-4 mr-2" />
-          KI-E-Mail-Entwurf
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>E-Mail-Entwurf generieren</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div>
-            <Label>Empfänger Name</Label>
-            <Input
-              value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
-              placeholder="z.B. Herr Müller"
-            />
-          </div>
-
-          <div>
-            <Label>Tonfall</Label>
-            <Select value={tone} onValueChange={setTone}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="professional">Professionell</SelectItem>
-                <SelectItem value="friendly">Freundlich</SelectItem>
-                <SelectItem value="formal">Förmlich</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {!draft ? (
-            <Button 
-              onClick={handleGenerate}
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generiere E-Mail...
-                </>
-              ) : (
-                <>
-                  <Mail className="w-4 h-4 mr-2" />
-                  E-Mail-Entwurf erstellen
-                </>
-              )}
-            </Button>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <Label>Betreff</Label>
-                <Input value={draft.subject} readOnly />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label>E-Mail-Text</Label>
-                  <Button variant="ghost" size="sm" onClick={handleCopy}>
-                    <Copy className="w-4 h-4 mr-1" />
-                    Kopieren
-                  </Button>
-                </div>
-                <div 
-                  className="p-4 border rounded-lg bg-slate-50 max-h-96 overflow-y-auto"
-                  dangerouslySetInnerHTML={{ __html: draft.body_html }}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => setDraft(null)}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Neu generieren
-                </Button>
-                <Button 
-                  onClick={handleCopy}
-                  className="flex-1"
-                >
-                  Text kopieren
                 </Button>
               </div>
             </div>
