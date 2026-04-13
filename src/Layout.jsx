@@ -16,7 +16,8 @@ import {
   Moon,
   Sun,
   Briefcase,
-  Sparkles
+  Sparkles,
+  Newspaper
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,11 @@ const navigationItems = [
 ];
 
 const transferItems = [
+  {
+    title: "Transfer-News",
+    url: createPageUrl("TransferNews"),
+    icon: Newspaper,
+  },
   {
     title: "Spieler",
     url: createPageUrl("Players"),
