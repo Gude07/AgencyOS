@@ -288,7 +288,7 @@ export default function CoachDetail() {
                       />
                     ) : (
                       <p className="font-semibold text-slate-900">
-                        {currentCoachData?.date_of_birth 
+                        {currentCoachData?.date_of_birth && !isNaN(new Date(currentCoachData.date_of_birth))
                           ? format(new Date(currentCoachData.date_of_birth), "dd.MM.yyyy")
                           : '-'
                         }
@@ -362,7 +362,7 @@ export default function CoachDetail() {
                       />
                     ) : (
                       <p className="font-semibold text-slate-900">
-                        {currentCoachData?.contract_until 
+                        {currentCoachData?.contract_until && !isNaN(new Date(currentCoachData.contract_until))
                           ? format(new Date(currentCoachData.contract_until), "MM/yyyy")
                           : '-'
                         }
