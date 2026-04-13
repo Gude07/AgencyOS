@@ -1,0 +1,41 @@
+{
+  "name": "UserActivity",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Benutzers"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Name des Benutzers"
+    },
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "page_name": {
+      "type": "string",
+      "description": "Besuchte Seite"
+    },
+    "duration_seconds": {
+      "type": "number",
+      "description": "Zeit auf der Seite in Sekunden"
+    },
+    "session_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Session"
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Letzter Zeitstempel auf dieser Seite"
+    }
+  },
+  "required": [
+    "user_email",
+    "page_name",
+    "session_date"
+  ]
+}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -11,12 +11,18 @@ import {
   Clock, 
   AlertTriangle,
   TrendingUp,
-  ArrowRight
+  ArrowRight,
+  Users,
+  Building2,
+  Briefcase
 } from "lucide-react";
 import { motion } from "framer-motion";
 import TaskCard from "../components/tasks/TaskCard";
 import DashboardWidgetCustomizer from "../components/dashboard/DashboardWidgetCustomizer";
 import DashboardWidget from "../components/dashboard/DashboardWidget";
+import QuickActions from "../components/dashboard/QuickActions";
+import TeamActivityPanel from "../components/dashboard/TeamActivityPanel";
+import AIInsights from "../components/dashboard/AIInsights";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -42,6 +48,24 @@ export default function Dashboard() {
       if (!user) return [];
       const allWidgets = await base44.entities.DashboardWidget.filter({ user_email: user.email });
       return allWidgets.sort((a, b) => (a.position || 0) - (b.position || 0));
+    },
+    enabled: !!user
+  });
+
+  const { data: players = [] } = useQuery({
+    queryKey: ['players-dashboard'],
+    queryFn: async () => {
+      const all = await base44.entities.Player.list('-created_date');
+      return all.filter(p => p.agency_id === user?.agency_id);
+    },
+    enabled: !!user
+  });
+
+  const { data: clubRequests = [] } = useQuery({
+    queryKey: ['club-requests-dashboard'],
+    queryFn: async () => {
+      const all = await base44.entities.ClubRequest.list('-created_date');
+      return all.filter(r => r.agency_id === user?.agency_id);
     },
     enabled: !!user
   });
@@ -186,6 +210,8 @@ export default function Dashboard() {
           ))}
         </div>
 
+        <QuickActions />
+
         {widgets.length > 0 ? (
           <div className="grid lg:grid-cols-2 gap-6">
             {widgets.map(widget => (
@@ -249,6 +275,11 @@ export default function Dashboard() {
             </Card>
           </div>
         )}
+
+        <div className="grid lg:grid-cols-2 gap-6">
+          <AIInsights tasks={tasks} players={players} clubRequests={clubRequests} />
+          <TeamActivityPanel agencyId={user?.agency_id} />
+        </div>
       </div>
     </div>
   );
