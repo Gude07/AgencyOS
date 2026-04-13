@@ -60,13 +60,15 @@ export default function CoachDetail() {
   const [editedCoach, setEditedCoach] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const { data: coach, isLoading } = useQuery({
+  const { data: coach, isLoading, isFetching } = useQuery({
     queryKey: ['coach', coachId],
     queryFn: async () => {
       const coaches = await base44.entities.Coach.list();
       return coaches.find(c => c.id === coachId);
     },
     enabled: !!coachId,
+    placeholderData: (prev) => prev,
+    staleTime: 30000,
   });
 
   const updateCoachMutation = useMutation({
@@ -111,7 +113,7 @@ export default function CoachDetail() {
     );
   }
 
-  if (!coach) {
+  if (!coach && !isLoading && !isFetching) {
     return (
       <div className="p-8 text-center">
         <p className="text-slate-600">Trainer nicht gefunden</p>
