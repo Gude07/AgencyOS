@@ -9,10 +9,10 @@ Deno.serve(async (req) => {
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('outlook');
 
     const [emailsRes, calendarRes] = await Promise.all([
-      fetch('https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=20&$select=id,subject,from,receivedDateTime,isRead,bodyPreview&$orderby=receivedDateTime desc', {
+      fetch('https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=20&$select=id,subject,from,receivedDateTime,isRead,bodyPreview,webLink&$orderby=receivedDateTime desc', {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       }),
-      fetch(`https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${new Date().toISOString()}&endDateTime=${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()}&$select=id,subject,start,end,location,bodyPreview,organizer&$orderby=start/dateTime`, {
+      fetch(`https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${new Date().toISOString()}&endDateTime=${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()}&$select=id,subject,start,end,location,bodyPreview,organizer,webLink&$orderby=start/dateTime`, {
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Prefer': 'outlook.timezone="Europe/Berlin"' }
       })
     ]);
