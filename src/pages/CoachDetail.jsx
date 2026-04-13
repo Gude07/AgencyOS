@@ -32,6 +32,7 @@ import LanguagesEditor from "../components/coaches/LanguagesEditor";
 import DocumentManager from "../components/documents/DocumentManager";
 import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
 import CoachClubAnalysis from "../components/coaches/CoachClubAnalysis";
+import CoachCVImport from "../components/coaches/CoachCVImport";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const calculateAge = (dateOfBirth) => {
@@ -451,6 +452,11 @@ export default function CoachDetail() {
           </div>
 
           <div className="space-y-6">
+            {editMode && (
+              <CoachCVImport
+                onExtracted={(data) => setEditedCoach(prev => ({ ...prev, ...data }))}
+              />
+            )}
             <Card className="border-slate-200 bg-white">
              <CardHeader className="border-b border-slate-100 dark:border-slate-800">
                <CardTitle className="text-lg dark:text-white">Kontakt</CardTitle>
