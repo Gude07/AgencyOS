@@ -3,9 +3,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 const RSS_FEEDS = [
   { name: "Kicker", url: "https://www.kicker.de/news/fussball/bundesliga/transfers/rss/transfers.rss" },
   { name: "Transfermarkt", url: "https://www.transfermarkt.de/rss/news" },
-  { name: "Sky Sports", url: "https://www.skysports.com/rss/12040" },
-  { name: "Goal.com", url: "https://www.goal.com/feeds/en/news" },
-  { name: "Sport1", url: "https://www.sport1.de/news/fussball.rss" },
 ];
 
 async function fetchRSS(feed) {
@@ -18,29 +15,20 @@ async function fetchRSS(feed) {
     const text = await res.text();
     const items = [];
     const rawItems = text.split('<item>').slice(1);
-    const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000; // 14 days ago
+    const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
 
-    for (const item of rawItems.slice(0, 20)) {
+    for (const item of rawItems.slice(0, 30)) {
       const title = (/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/.exec(item) || /<title>([^<]*)<\/title>/.exec(item) || [])[1] || "";
 
-      // Try to get direct article link (not homepage)
-      // Priority: <link> CDATA, plain <link>, guid isPermaLink, guid plain
       const linkMatch =
         /<link><!\[CDATA\[([^\]]+)\]\]><\/link>/.exec(item) ||
-        /<link>https?:\/\/[^<]+<\/link>/.exec(item) ||
-        /<guid\s[^>]*isPermaLink="true"[^>]*>([^<]+)<\/guid>/.exec(item) ||
+        /<link>(https?:\/\/[^<]+)<\/link>/.exec(item) ||
+        /<guid[^>]*isPermaLink="true"[^>]*>([^<]+)<\/guid>/.exec(item) ||
         /<guid>([^<]+)<\/guid>/.exec(item);
-      let link = "";
-      if (linkMatch) {
-        // Extract URL from match
-        const raw = linkMatch[0];
-        const urlMatch = /https?:\/\/[^\s<\]]+/.exec(raw);
-        link = urlMatch ? urlMatch[0].trim() : "";
-      }
+      let link = linkMatch ? linkMatch[1].trim() : "";
 
       const description = (/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/.exec(item) || /<description>([^<]*)<\/description>/.exec(item) || [])[1] || "";
 
-      // Date filtering — skip articles older than 14 days
       const pubDateStr = (/<pubDate>([^<]+)<\/pubDate>/.exec(item) || [])[1] || "";
       if (pubDateStr) {
         const pubDate = new Date(pubDateStr).getTime();
@@ -57,7 +45,7 @@ async function fetchRSS(feed) {
         });
       }
     }
-    return items.slice(0, 15);
+    return items;
   } catch (e) {
     console.log(`RSS fetch failed for ${feed.name}: ${e.message}`);
     return [];
@@ -72,47 +60,34 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const clubFilter = body.club || null;
-    const leagueFilter = body.league || null;
 
-    // Fetch all RSS feeds in parallel
+    // Fetch RSS feeds from Kicker and Transfermarkt
     const feedResults = await Promise.all(RSS_FEEDS.map(fetchRSS));
     const allItems = feedResults.flat();
 
-    const transferKeywords = ["transfer", "wechsel", "ablöse", "leihe", "verpflichtung", "verhandlung", "interesse", "angebot", "signing", "move", "deal", "loan", "bid", "rumour", "rumor", "fee"];
-    const relevantItems = allItems.filter(item => {
-      const text = (item.title + " " + item.description).toLowerCase();
-      return transferKeywords.some(kw => text.includes(kw));
-    });
-
-    const contextItems = relevantItems.slice(0, 30);
-
-    let focusInstruction = "";
-    if (clubFilter && leagueFilter) {
-      focusInstruction = `Focus specifically on transfers involving the club "${clubFilter}" or from the league "${leagueFilter}".`;
-    } else if (clubFilter) {
-      focusInstruction = `Focus specifically on transfers involving the club "${clubFilter}".`;
-    } else if (leagueFilter) {
-      focusInstruction = `Focus specifically on transfers in the "${leagueFilter}" league.`;
-    }
-
-    const newsContext = contextItems.length > 0
-      ? contextItems.map(i => `[${i.source}] ${i.title}: ${i.description} (URL: ${i.link || "n/a"})`).join("\n\n")
-      : "No RSS data available.";
+    const newsContext = allItems
+      .map(i => `[${i.source}] ${i.title}: ${i.description} (URL: ${i.link || "n/a"})`)
+      .join("\n\n");
 
     const today = new Date().toISOString().split('T')[0];
-    const prompt = `You are a football transfer intelligence analyst. Today's date is ${today}. ${focusInstruction}
 
-Analyze the following recent news articles (from the last 14 days) and extract structured transfer rumors.
-CRITICAL RULES:
-- Only include rumors that are CURRENT as of ${today} (2025/2026 season, Winter 2025/26 or Sommer 2026 window)
-- For "source_url": use EXACTLY the direct article URL provided in (URL: ...) field. Do NOT use a homepage like kicker.de or skysports.com. If the URL starts with "http" and contains a path (e.g. /news/...), it is valid. If no valid direct URL exists, leave source_url empty.
-- Only include REAL, named players with REAL club names — do not invent anything
-- Supplement with current rumors from your knowledge if the RSS articles are insufficient, but only include rumors from the last 3 months
+    const clubInstruction = clubFilter
+      ? `IMPORTANT: Only extract rumors that directly involve the club "${clubFilter}" — either as the buying or selling club. Ignore all other rumors.`
+      : `Extract all transfer rumors you find in the articles.`;
 
-NEWS ARTICLES:
+    const prompt = `You are a football transfer expert analyzing news from Kicker and Transfermarkt (Germany's most reliable transfer sources).
+Today is ${today}.
+
+${clubInstruction}
+
+Analyze these recent articles and extract concrete transfer rumors:
 ${newsContext}
 
-Extract up to 10 concrete, current transfer rumors.`;
+RULES:
+- Only include rumors from the current transfer window (Winter 2025/26 or Sommer 2026)
+- For source_url: use EXACTLY the direct article URL from (URL: ...). Never use a homepage. If no valid path URL exists, leave it empty.
+- Only real, named players and real clubs. Do not invent anything.
+- Use internet search to verify and supplement with the most current rumors from Kicker and Transfermarkt if the RSS data is insufficient.`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
@@ -148,7 +123,7 @@ Extract up to 10 concrete, current transfer rumors.`;
 
     const rumors = result.rumors || [];
 
-    // Get existing rumors to avoid duplicates
+    // Get existing to avoid duplicates
     const existing = await base44.asServiceRole.entities.TransferRumor.filter({ agency_id: user.agency_id });
     const existingNames = new Set(existing.map(r => r.player_name?.toLowerCase()));
 
@@ -157,12 +132,10 @@ Extract up to 10 concrete, current transfer rumors.`;
       if (!rumor.player_name) continue;
       if (existingNames.has(rumor.player_name.toLowerCase())) continue;
 
-      // Validate source_url: must be a full URL with a path (not just a homepage)
       let sourceUrl = rumor.source_url || "";
       if (sourceUrl) {
         try {
           const u = new URL(sourceUrl);
-          // Reject if path is "/" or empty (just a homepage)
           if (u.pathname === "/" || u.pathname === "") sourceUrl = "";
         } catch {
           sourceUrl = "";
@@ -189,8 +162,7 @@ Extract up to 10 concrete, current transfer rumors.`;
 
     return Response.json({
       success: true,
-      total_analyzed: allItems.length,
-      relevant_articles: contextItems.length,
+      total_articles: allItems.length,
       rumors_found: rumors.length,
       created,
     });
