@@ -31,7 +31,7 @@ import {
   SelectLabel,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import ClubRequestsMap from "../components/clubRequests/ClubRequestsMap";
+
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User, MessageCircle, Download } from "lucide-react";
@@ -646,7 +646,7 @@ export default function ClubRequests() {
                   <Star className="w-4 h-4" />
                   Favoriten ({userFavorites.length})
                 </TabsTrigger>
-                <TabsTrigger value="karte">🗺️ Karte</TabsTrigger>
+
               </TabsList>
             <div className="flex gap-2">
               {filterFavorites === "favoriten" && userFavorites.length > 0 && (
@@ -1202,12 +1202,10 @@ export default function ClubRequests() {
             </div>
           </TabsContent>
 
-          <TabsContent value="karte" className="mt-6">
-            <ClubRequestsMap requests={filteredRequests} />
-          </TabsContent>
+
         </Tabs>
 
-        {filteredRequests.length === 0 && !isLoading && filterFavorites !== 'karte' && (
+        {filteredRequests.length === 0 && !isLoading && (
           <div className="text-center py-16">
             <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Anfragen gefunden</p>
