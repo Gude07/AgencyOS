@@ -330,7 +330,7 @@ export default function Coaches() {
                       <div>
                         <p className="text-slate-600">Vertrag bis</p>
                         <p className="font-semibold text-slate-900">
-                          {coach.contract_until ? format(new Date(coach.contract_until), "MM/yyyy") : '-'}
+                          {coach.contract_until && !isNaN(new Date(coach.contract_until)) ? format(new Date(coach.contract_until), "MM/yyyy") : '-'}
                         </p>
                       </div>
                     </div>
