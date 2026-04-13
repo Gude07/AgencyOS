@@ -57,22 +57,15 @@ export default function CoachClubAnalysis({ coach, coachId }) {
   const saveAsDocument = async () => {
     setIsSaving(true);
     try {
-      const content = generateHTML(analysis);
-      const blob = new Blob([content], { type: 'text/html' });
-      const file = new File([blob], `KI-Vereinsanalyse_${coach?.name}_${format(new Date(), 'yyyy-MM-dd')}.html`);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-
-      const existing = Array.isArray(coach?.documents) ? coach.documents : [];
-      const newDoc = {
-        id: `analysis_${Date.now()}`,
-        name: `KI-Vereinsanalyse ${format(new Date(), 'dd.MM.yyyy')}`,
-        url: file_url,
-        uploaded_date: new Date().toISOString(),
-        type: 'ki_analyse'
-      };
-      await base44.entities.Coach.update(coachId, {
-        documents: [...existing, newDoc]
+      const htmlContent = generateHTML(analysis);
+      const fileName = `KI-Vereinsanalyse_${coach?.name}_${format(new Date(), 'yyyy-MM-dd')}.html`;
+      const res = await base44.functions.invoke('saveAnalysisToDropbox', {
+        htmlContent,
+        fileName,
+        coachId,
+        entityType: 'Coach'
       });
+      if (!res.data.success) throw new Error(res.data.error);
       setSaved(true);
     } finally {
       setIsSaving(false);
