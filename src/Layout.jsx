@@ -17,7 +17,8 @@ import {
   Sun,
   Briefcase,
   Sparkles,
-  Newspaper
+  Newspaper,
+  MailOpen
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,11 @@ const navigationItems = [
     title: "Meine Aktivitäten",
     url: createPageUrl("MyActivity"),
     icon: TrendingUp,
+  },
+  {
+    title: "Posteingang",
+    url: createPageUrl("Inbox"),
+    icon: MailOpen,
   },
 ];
 

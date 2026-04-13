@@ -15,7 +15,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, User, Mail, Shield, Trash2 } from "lucide-react";
+import { ArrowLeft, User, Mail, Shield, Trash2, Bell } from "lucide-react";
+import OutlookConnectionCard from "@/components/settings/OutlookConnectionCard";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -105,6 +108,27 @@ export default function AccountSettings() {
                 </span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <OutlookConnectionCard />
+
+        <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <Bell className="w-5 h-5 text-blue-900 dark:text-blue-400" />
+              <CardTitle className="text-slate-900 dark:text-white">Benachrichtigungen</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+              Passe an, für welche Ereignisse du Benachrichtigungen erhältst und über welche Kanäle.
+            </p>
+            <Link to={createPageUrl("NotificationSettings")}>
+              <button className="text-sm text-blue-700 dark:text-blue-400 font-medium hover:underline flex items-center gap-1">
+                Benachrichtigungseinstellungen öffnen →
+              </button>
+            </Link>
           </CardContent>
         </Card>
 

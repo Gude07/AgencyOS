@@ -12,6 +12,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ClubAnalysis from './pages/ClubAnalysis';
 import AIChat from './pages/AIChat';
 import AgenturGPT from './pages/AgenturGPT';
+import Inbox from './pages/Inbox';
 import ClubProfiles from './pages/ClubProfiles';
 import PlayerComparison from './pages/PlayerComparison';
 import SavedComparisons from './pages/SavedComparisons';
@@ -112,6 +113,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="AgenturGPT">
             <AgenturGPT />
+          </LayoutWrapper>
+        } 
+      />
+      <Route 
+        path="/Inbox" 
+        element={
+          <LayoutWrapper currentPageName="Inbox">
+            <Inbox />
           </LayoutWrapper>
         } 
       />

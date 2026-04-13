@@ -5,7 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Bell, Mail, Smartphone, Save } from "lucide-react";
+import { Bell, Mail, Smartphone, Save, Clock } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const notificationTypes = [
   {
@@ -52,6 +53,14 @@ const notificationTypes = [
   }
 ];
 
+const reminderOptions = [
+  { value: "15", label: "15 Minuten vorher" },
+  { value: "30", label: "30 Minuten vorher" },
+  { value: "60", label: "1 Stunde vorher" },
+  { value: "120", label: "2 Stunden vorher" },
+  { value: "1440", label: "1 Tag vorher" },
+];
+
 const defaultSettings = {
   neue_aufgabe: { in_app: true, email: true },
   neue_anfrage: { in_app: true, email: true },
@@ -60,6 +69,7 @@ const defaultSettings = {
   deadline_erinnerung: { in_app: true, email: true },
   spieler_update: { in_app: true, email: false },
   match_vorschlag: { in_app: true, email: true },
+  reminder_minutes: "30",
 };
 
 export default function NotificationSettings() {
@@ -164,6 +174,36 @@ export default function NotificationSettings() {
           </CardContent>
         </Card>
 
+
+        <Card className="border-slate-200 bg-white">
+          <CardHeader className="border-b border-slate-100">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-900" />
+              Erinnerungs-Timing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-slate-800">Termin-Erinnerungen erhalten</p>
+                <p className="text-sm text-slate-500 mt-0.5">Wie frühzeitig möchtest du an Termine erinnert werden?</p>
+              </div>
+              <Select
+                value={settings.reminder_minutes || "30"}
+                onValueChange={(val) => { setSettings(p => ({ ...p, reminder_minutes: val })); setHasChanges(true); }}
+              >
+                <SelectTrigger className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {reminderOptions.map(o => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
         {hasChanges && (
           <div className="sticky bottom-4 flex justify-end">
