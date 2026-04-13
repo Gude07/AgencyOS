@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical, MessageCircle } from "lucide-react";
+import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical, MessageCircle, Search, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { formatInGermanTime } from "@/components/utils/dateUtils";
@@ -71,6 +71,7 @@ export default function OrganizationalOverview() {
     description: "",
     color: "blue",
   });
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: notes = [] } = useQuery({
     queryKey: ['internalNotes'],
@@ -208,9 +209,16 @@ export default function OrganizationalOverview() {
     });
   };
 
-  const filteredNotes = selectedFolder 
+  const folderFilteredNotes = selectedFolder
     ? notes.filter(note => note.folder_id === selectedFolder)
     : notes.filter(note => !note.folder_id);
+
+  const filteredNotes = searchQuery.trim()
+    ? notes.filter(note =>
+        note.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        note.content?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : folderFilteredNotes;
 
   const pinnedNotes = filteredNotes.filter(note => note.pinned);
   const regularNotes = filteredNotes.filter(note => !note.pinned);
@@ -227,6 +235,26 @@ export default function OrganizationalOverview() {
 
         {/* Zuständigkeiten Übersicht */}
         <AssignmentOverview />
+
+        {/* Suchleiste */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Notizen durchsuchen (Titel, Inhalt)…"
+            className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-900/30 focus:border-blue-900 transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
 
         {/* Ordner Section */}
         <div className="space-y-4">
@@ -304,7 +332,7 @@ export default function OrganizationalOverview() {
             <div className="flex items-center gap-2">
               <StickyNote className="w-5 h-5 text-slate-700" />
               <h2 className="text-xl font-bold text-slate-900">
-                Notizen {selectedFolder && `in ${folders.find(f => f.id === selectedFolder)?.name}`}
+                {searchQuery ? `Suchergebnisse für „${searchQuery}“ (${filteredNotes.length})` : `Notizen ${selectedFolder ? `in ${folders.find(f => f.id === selectedFolder)?.name}` : ""}`}
               </h2>
             </div>
             <Button 
