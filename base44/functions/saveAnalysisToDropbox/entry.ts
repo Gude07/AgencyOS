@@ -45,8 +45,8 @@ Deno.serve(async (req) => {
 
     const uploadResult = await uploadResponse.json();
 
-    // Create shared link
-    let sharedUrl = null;
+    // Create shared link for Dropbox
+    let dropboxShareUrl = null;
     const shareLinkResponse = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
       method: 'POST',
       headers: {
@@ -61,9 +61,8 @@ Deno.serve(async (req) => {
 
     if (shareLinkResponse.ok) {
       const linkResult = await shareLinkResponse.json();
-      sharedUrl = linkResult.url.replace('?dl=0', '?raw=1');
+      dropboxShareUrl = linkResult.url.replace('?dl=0', '?dl=1');
     } else {
-      // Try to get existing link
       const listRes = await fetch('https://api.dropboxapi.com/2/sharing/list_shared_links', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
@@ -71,20 +70,29 @@ Deno.serve(async (req) => {
       });
       if (listRes.ok) {
         const listData = await listRes.json();
-        if (listData.links?.length > 0) {
-          sharedUrl = listData.links[0].url.replace('?dl=0', '?raw=1');
-        }
+        if (listData.links?.length > 0) dropboxShareUrl = listData.links[0].url.replace('?dl=0', '?dl=1');
       }
     }
 
-    // Save to Coach's dropbox_documents
+    // Also upload to Base44 for direct HTML rendering (correct content-type)
+    const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+    const htmlFile = new File([htmlBlob], fileName, { type: 'text/html' });
+    let base44Url = null;
+    try {
+      const uploadResult2 = await base44.asServiceRole.integrations.Core.UploadFile({ file: htmlFile });
+      base44Url = uploadResult2.file_url;
+    } catch (e) {
+      console.error('Base44 upload failed, using dropbox URL:', e.message);
+    }
+
+    // Save to entity's dropbox_documents - use base44 URL for viewing, dropbox path for storage
     const entity = await base44.asServiceRole.entities[entityType].get(coachId);
     const existingDocs = Array.isArray(entity?.dropbox_documents) ? entity.dropbox_documents : [];
     const newDoc = {
       id: uploadResult.id,
       name: fileName.replace('.html', ''),
       path: uploadResult.path_display,
-      url: sharedUrl,
+      url: base44Url || dropboxShareUrl,
       size: uploadResult.size,
       uploaded_date: new Date().toISOString(),
       uploaded_by: user.email,

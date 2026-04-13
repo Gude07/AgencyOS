@@ -137,18 +137,14 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
   };
 
   const handleView = async (doc) => {
-    // Direktes URL-Dokument (z.B. KI-Analyse)
-    if (doc.url && !doc.path) {
+    // Dokument mit direkter URL (KI-Analyse oder einfaches URL-Dokument)
+    if (doc.url) {
       window.open(doc.url, '_blank');
       return;
     }
     try {
       toast.loading('Dokument wird geladen...', { id: 'doc-view' });
-      
-      const response = await base44.functions.invoke('getDropboxFileLink', {
-        filePath: doc.path
-      });
-
+      const response = await base44.functions.invoke('getDropboxFileLink', { filePath: doc.path });
       if (response.data.success) {
         window.open(response.data.previewUrl, '_blank');
         toast.success('Dokument geöffnet', { id: 'doc-view' });
@@ -156,22 +152,29 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
         throw new Error(response.data.error || 'Fehler beim Laden');
       }
     } catch (error) {
-      console.error('View error:', error);
       toast.error('Dokument konnte nicht geöffnet werden', { id: 'doc-view' });
     }
   };
 
   const handleDownload = async (doc) => {
-    // Direktes URL-Dokument (z.B. KI-Analyse)
-    if (doc.url && !doc.path) {
-      const link = document.createElement('a');
-      link.href = doc.url;
-      link.download = doc.name;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success('Download gestartet');
+    // Dokument mit direkter URL: fetch + blob für korrekten Download
+    if (doc.url) {
+      try {
+        toast.loading('Download wird vorbereitet...', { id: 'doc-dl' });
+        const res = await fetch(doc.url);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = (doc.name || 'Dokument') + '.html';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+        toast.success('Download gestartet', { id: 'doc-dl' });
+      } catch {
+        toast.error('Download fehlgeschlagen', { id: 'doc-dl' });
+      }
       return;
     }
 
@@ -202,15 +205,13 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
   };
 
   const handleShare = async (doc) => {
-    // Direktes URL-Dokument (z.B. KI-Analyse)
-    if (doc.url && !doc.path) {
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: doc.name, url: doc.url });
-        } catch (e) { if (e.name !== 'AbortError') throw e; }
-      } else {
+    // Dokument mit direkter URL (KI-Analyse)
+    if (doc.url && doc.type === 'ki_analyse') {
+      try {
         await navigator.clipboard.writeText(doc.url);
         toast.success('Link in Zwischenablage kopiert');
+      } catch {
+        toast.error('Link konnte nicht kopiert werden');
       }
       return;
     }
