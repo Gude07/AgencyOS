@@ -93,11 +93,12 @@ Antworte auf Deutsch und sei so spezifisch und fundiert wie möglich.`;
       }
     });
 
-    result.analysiert_am = new Date().toISOString();
-    result.trainer_name = coach.name;
-    result.ziel_ligen = targetLeagues || [];
+    const analysis = result.response || result;
+    analysis.analysiert_am = new Date().toISOString();
+    analysis.trainer_name = coach.name;
+    analysis.ziel_ligen = targetLeagues || [];
 
-    return Response.json({ analysis: result });
+    return Response.json({ analysis });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
