@@ -31,6 +31,7 @@ import { format, differenceInYears } from "date-fns";
 import LanguagesEditor from "../components/coaches/LanguagesEditor";
 import DocumentManager from "../components/documents/DocumentManager";
 import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
+import CoachClubAnalysis from "../components/coaches/CoachClubAnalysis";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const calculateAge = (dateOfBirth) => {
@@ -163,8 +164,9 @@ export default function CoachDetail() {
         </div>
 
         <Tabs defaultValue="info" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="info">Trainerinfo</TabsTrigger>
+            <TabsTrigger value="ki-analyse">KI-Vereinsanalyse</TabsTrigger>
             <TabsTrigger value="documents">Dokumente</TabsTrigger>
           </TabsList>
 
@@ -525,6 +527,10 @@ export default function CoachDetail() {
             </Card>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="ki-analyse">
+            <CoachClubAnalysis coach={coach} coachId={coachId} />
           </TabsContent>
 
           <TabsContent value="documents">
