@@ -15,6 +15,7 @@ import AgenturGPT from './pages/AgenturGPT';
 import ClubProfiles from './pages/ClubProfiles';
 import PlayerComparison from './pages/PlayerComparison';
 import SavedComparisons from './pages/SavedComparisons';
+import TransferNews from './pages/TransferNews';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -111,6 +112,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="AgenturGPT">
             <AgenturGPT />
+          </LayoutWrapper>
+        } 
+      />
+      <Route 
+        path="/TransferNews" 
+        element={
+          <LayoutWrapper currentPageName="TransferNews">
+            <TransferNews />
           </LayoutWrapper>
         } 
       />
