@@ -20,7 +20,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical, MessageCircle, Search, X } from "lucide-react";
+import { Plus, Pin, Trash2, FileText, Calendar, Info, AlertCircle, StickyNote, Folder as FolderIcon, Edit2, MoreVertical, MessageCircle, Search, X, Eye, BarChart2, Clock } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { formatInGermanTime } from "@/components/utils/dateUtils";
@@ -72,6 +73,9 @@ export default function OrganizationalOverview() {
     color: "blue",
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("alle");
+  const [previewNote, setPreviewNote] = useState(null);
+  const [deleteConfirmNote, setDeleteConfirmNote] = useState(null);
 
   const { data: notes = [] } = useQuery({
     queryKey: ['internalNotes'],
@@ -171,7 +175,13 @@ export default function OrganizationalOverview() {
     mutationFn: (id) => base44.entities.InternalNote.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['internalNotes'] });
+      setDeleteConfirmNote(null);
     },
+  });
+
+  const moveNoteMutation = useMutation({
+    mutationFn: ({ id, folder_id }) => base44.entities.InternalNote.update(id, { folder_id }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['internalNotes'] }),
   });
 
   const handleCreateNote = () => {
@@ -213,12 +223,16 @@ export default function OrganizationalOverview() {
     ? notes.filter(note => note.folder_id === selectedFolder)
     : notes.filter(note => !note.folder_id);
 
-  const filteredNotes = searchQuery.trim()
-    ? notes.filter(note =>
-        note.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        note.content?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : folderFilteredNotes;
+  const filteredNotes = (() => {
+    let result = searchQuery.trim()
+      ? notes.filter(note =>
+          note.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          note.content?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : folderFilteredNotes;
+    if (categoryFilter !== "alle") result = result.filter(n => n.category === categoryFilter);
+    return result;
+  })();
 
   const pinnedNotes = filteredNotes.filter(note => note.pinned);
   const regularNotes = filteredNotes.filter(note => !note.pinned);
@@ -233,27 +247,43 @@ export default function OrganizationalOverview() {
           </div>
         </div>
 
+        {/* Statistik-Leiste */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Notizen gesamt", value: notes.length, color: "text-blue-900" },
+            { label: "Angepinnt", value: notes.filter(n => n.pinned).length, color: "text-yellow-600" },
+            { label: "Ordner", value: folders.length, color: "text-green-700" },
+            { label: "Kommentare", value: allNoteComments.length, color: "text-purple-700" },
+          ].map(stat => (
+            <div key={stat.label} className="bg-white rounded-lg border border-slate-200 px-4 py-3 flex items-center gap-3">
+              <BarChart2 className={`w-5 h-5 ${stat.color} flex-shrink-0`} />
+              <div>
+                <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
+                <p className="text-xs text-slate-500">{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* Zuständigkeiten Übersicht */}
         <AssignmentOverview />
 
-        {/* Suchleiste */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Notizen durchsuchen (Titel, Inhalt)…"
-            className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-900/30 focus:border-blue-900 transition-colors"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+        {/* Suche & Kategorie-Filter */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Notizen durchsuchen (Titel, Inhalt)…" className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-900/30 focus:border-blue-900 transition-colors" />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"><X className="w-4 h-4" /></button>
+            )}
+          </div>
+          <div className="flex gap-1 flex-wrap">
+            {["alle", ...Object.keys(categoryConfig)].map(key => (
+              <Button key={key} size="sm" variant={categoryFilter === key ? "default" : "outline"} onClick={() => setCategoryFilter(key)} className={categoryFilter === key ? "bg-blue-900 hover:bg-blue-800" : ""}>
+                {key === "alle" ? "Alle" : categoryConfig[key].label}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {/* Ordner Section */}
@@ -376,43 +406,23 @@ export default function OrganizationalOverview() {
                                 <CategoryIcon className="w-3 h-3 mr-1" />
                                 {config.label}
                               </Badge>
-                              <span className="text-xs text-slate-500">
-                                 {formatInGermanTime(note.created_date, "dd.MM.yyyy")}
+                              <span className="text-xs text-slate-500 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {formatInGermanTime(note.updated_date || note.created_date, "dd.MM.yyyy HH:mm")}
                               </span>
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                togglePinMutation.mutate({ id: note.id, pinned: false });
-                              }}
-                              className="h-8 w-8"
-                            >
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); togglePinMutation.mutate({ id: note.id, pinned: false }); }} className="h-8 w-8">
                               <Pin className="w-4 h-4 fill-yellow-600 text-yellow-600" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingNote(note);
-                              }}
-                              className="h-8 w-8"
-                            >
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setPreviewNote(note); }} className="h-8 w-8">
+                              <Eye className="w-4 h-4 text-slate-400" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingNote(note); }} className="h-8 w-8">
                               <Edit2 className="w-4 h-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteNoteMutation.mutate(note.id);
-                              }}
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteConfirmNote(note); }} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -467,37 +477,16 @@ export default function OrganizationalOverview() {
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                togglePinMutation.mutate({ id: note.id, pinned: true });
-                              }}
-                              className="h-8 w-8"
-                            >
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); togglePinMutation.mutate({ id: note.id, pinned: true }); }} className="h-8 w-8">
                               <Pin className="w-4 h-4 text-slate-400" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingNote(note);
-                              }}
-                              className="h-8 w-8"
-                            >
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setPreviewNote(note); }} className="h-8 w-8">
+                              <Eye className="w-4 h-4 text-slate-400" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingNote(note); }} className="h-8 w-8">
                               <Edit2 className="w-4 h-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteNoteMutation.mutate(note.id);
-                              }}
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteConfirmNote(note); }} className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -513,7 +502,7 @@ export default function OrganizationalOverview() {
                           </div>
                         )}
                         <div className="flex items-center justify-between mt-3 text-xs text-slate-500">
-                          <span>{formatInGermanTime(note.created_date, "dd.MM.yyyy")}</span>
+                           <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatInGermanTime(note.updated_date || note.created_date, "dd.MM.yyyy HH:mm")}</span>
                           <span>{note.created_by}</span>
                         </div>
                       </CardContent>
@@ -620,6 +609,23 @@ export default function OrganizationalOverview() {
                     style={{ height: '200px', marginBottom: '50px' }}
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label>Ordner</Label>
+                <Select
+                  value={(editingNote ? editingNote.folder_id : newNote.folder_id) || "none"}
+                  onValueChange={(value) => {
+                    const fid = value === "none" ? null : value;
+                    editingNote ? setEditingNote({...editingNote, folder_id: fid}) : setNewNote({...newNote, folder_id: fid});
+                  }}
+                >
+                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="Kein Ordner" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Kein Ordner</SelectItem>
+                    {folders.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex items-center gap-2">
@@ -746,6 +752,49 @@ export default function OrganizationalOverview() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Vorschau Modal */}
+      <Dialog open={!!previewNote} onOpenChange={(open) => { if (!open) setPreviewNote(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">{previewNote?.title}</DialogTitle>
+            {previewNote && (
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <Badge variant="secondary" className={categoryConfig[previewNote.category]?.color + " border text-xs"}>{categoryConfig[previewNote.category]?.label}</Badge>
+                <span className="text-xs text-slate-500 flex items-center gap-1"><Clock className="w-3 h-3" />{formatInGermanTime(previewNote.updated_date || previewNote.created_date, "dd.MM.yyyy HH:mm")}</span>
+                <span className="text-xs text-slate-500">von {previewNote.created_by}</span>
+              </div>
+            )}
+          </DialogHeader>
+          <div className="prose prose-slate max-w-none mt-4" dangerouslySetInnerHTML={{ __html: previewNote?.content }} />
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 mt-4">
+            <Button variant="outline" onClick={() => setPreviewNote(null)}>Schließen</Button>
+            <Button className="bg-blue-900 hover:bg-blue-800" onClick={() => { setEditingNote(previewNote); setPreviewNote(null); }}>
+              <Edit2 className="w-4 h-4 mr-2" />Bearbeiten
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Löschen Bestätigung */}
+      <AlertDialog open={!!deleteConfirmNote} onOpenChange={(open) => { if (!open) setDeleteConfirmNote(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Notiz löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie die Notiz <strong>„{deleteConfirmNote?.title}“</strong> wirklich löschen? Diese Aktion kann nicht rükgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => deleteNoteMutation.mutate(deleteConfirmNote?.id)}>
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+    </div>
     </div>
   );
 }
