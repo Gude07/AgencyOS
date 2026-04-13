@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Bell, Mail, Smartphone, Save, Clock } from "lucide-react";
+import { Bell, Mail, Smartphone, Save, Clock, MoonStar, Layers } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const notificationTypes = [
@@ -61,6 +61,12 @@ const reminderOptions = [
   { value: "1440", label: "1 Tag vorher" },
 ];
 
+const digestOptions = [
+  { value: "sofort", label: "Sofort" },
+  { value: "taeglich", label: "Tägliche Zusammenfassung" },
+  { value: "woechentlich", label: "Wöchentliche Zusammenfassung" },
+];
+
 const defaultSettings = {
   neue_aufgabe: { in_app: true, email: true },
   neue_anfrage: { in_app: true, email: true },
@@ -70,6 +76,10 @@ const defaultSettings = {
   spieler_update: { in_app: true, email: false },
   match_vorschlag: { in_app: true, email: true },
   reminder_minutes: "30",
+  digest_frequency: "sofort",
+  dnd_enabled: false,
+  dnd_start: "22:00",
+  dnd_end: "08:00",
 };
 
 export default function NotificationSettings() {
@@ -202,6 +212,79 @@ export default function NotificationSettings() {
                 </SelectContent>
               </Select>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200 bg-white">
+          <CardHeader className="border-b border-slate-100">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Layers className="w-5 h-5 text-blue-900" />
+              E-Mail Digest
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-slate-800">Benachrichtigungsfrequenz</p>
+                <p className="text-sm text-slate-500 mt-0.5">Wie oft möchtest du E-Mail-Benachrichtigungen erhalten?</p>
+              </div>
+              <Select
+                value={settings.digest_frequency || "sofort"}
+                onValueChange={(val) => { setSettings(p => ({ ...p, digest_frequency: val })); setHasChanges(true); }}
+              >
+                <SelectTrigger className="w-52">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {digestOptions.map(o => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200 bg-white">
+          <CardHeader className="border-b border-slate-100">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <MoonStar className="w-5 h-5 text-blue-900" />
+              Bitte nicht stören
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6 space-y-4">
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <p className="font-medium text-slate-800">Nicht-stören aktivieren</p>
+                <p className="text-sm text-slate-500 mt-0.5">Keine Benachrichtigungen in bestimmten Zeiten</p>
+              </div>
+              <Switch
+                checked={settings.dnd_enabled ?? false}
+                onCheckedChange={(val) => { setSettings(p => ({ ...p, dnd_enabled: val })); setHasChanges(true); }}
+              />
+            </div>
+            {settings.dnd_enabled && (
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div>
+                  <Label className="text-sm text-slate-700 mb-1 block">Von</Label>
+                  <input
+                    type="time"
+                    value={settings.dnd_start || "22:00"}
+                    onChange={(e) => { setSettings(p => ({ ...p, dnd_start: e.target.value })); setHasChanges(true); }}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm text-slate-700 mb-1 block">Bis</Label>
+                  <input
+                    type="time"
+                    value={settings.dnd_end || "08:00"}
+                    onChange={(e) => { setSettings(p => ({ ...p, dnd_end: e.target.value })); setHasChanges(true); }}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
