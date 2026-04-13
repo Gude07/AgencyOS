@@ -58,11 +58,6 @@ const navigationItems = [
 
 const transferItems = [
   {
-    title: "Transfer-News",
-    url: createPageUrl("TransferNews"),
-    icon: Newspaper,
-  },
-  {
     title: "Spieler",
     url: createPageUrl("Players"),
     icon: Users,
