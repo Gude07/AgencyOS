@@ -137,6 +137,11 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
   };
 
   const handleView = async (doc) => {
+    // Direktes URL-Dokument (z.B. KI-Analyse)
+    if (doc.url && !doc.path) {
+      window.open(doc.url, '_blank');
+      return;
+    }
     try {
       toast.loading('Dokument wird geladen...', { id: 'doc-view' });
       
@@ -145,11 +150,9 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
       });
 
       if (response.data.success) {
-        // Mobile: Nutze location.href für bessere Kompatibilität
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
           window.location.href = response.data.previewUrl;
         } else {
-          // Desktop: Öffne in neuem Tab
           window.open(response.data.previewUrl, '_blank');
         }
         toast.success('Dokument geöffnet', { id: 'doc-view' });
@@ -163,6 +166,19 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
   };
 
   const handleDownload = async (doc) => {
+    // Direktes URL-Dokument (z.B. KI-Analyse)
+    if (doc.url && !doc.path) {
+      const link = document.createElement('a');
+      link.href = doc.url;
+      link.download = doc.name;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Download gestartet');
+      return;
+    }
+
     try {
       toast.loading('Download wird vorbereitet...', { id: 'doc-download' });
       
@@ -197,6 +213,18 @@ export default function DropboxDocumentManager({ entityType, entityId }) {
   };
 
   const handleShare = async (doc) => {
+    // Direktes URL-Dokument (z.B. KI-Analyse)
+    if (doc.url && !doc.path) {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: doc.name, url: doc.url });
+        } catch (e) { if (e.name !== 'AbortError') throw e; }
+      } else {
+        await navigator.clipboard.writeText(doc.url);
+        toast.success('Link in Zwischenablage kopiert');
+      }
+      return;
+    }
     try {
       const response = await base44.functions.invoke('getDropboxFileLink', {
         filePath: doc.path
