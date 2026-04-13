@@ -16,17 +16,45 @@ async function fetchRSS(feed) {
     });
     if (!res.ok) return [];
     const text = await res.text();
-    // Parse items from RSS
     const items = [];
-    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-    let match;
-    while ((match = itemRegex.exec(text)) !== null) {
-      const item = match[1];
-      const title = (/<title><!\[CDATA\[(.*?)\]\]><\/title>/.exec(item) || /<title>(.*?)<\/title>/.exec(item) || [])[1] || "";
-      const link = (/<link>(.*?)<\/link>/.exec(item) || [])[1] || "";
-      const description = (/<description><!\[CDATA\[(.*?)\]\]><\/description>/.exec(item) || /<description>(.*?)<\/description>/.exec(item) || [])[1] || "";
-      if (title) {
-        items.push({ title: title.trim(), link: link.trim(), description: description.replace(/<[^>]+>/g, "").trim().slice(0, 500), source: feed.name });
+    const rawItems = text.split('<item>').slice(1);
+    const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000; // 14 days ago
+
+    for (const item of rawItems.slice(0, 20)) {
+      const title = (/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/.exec(item) || /<title>([^<]*)<\/title>/.exec(item) || [])[1] || "";
+
+      // Try to get direct article link (not homepage)
+      // Priority: <link> CDATA, plain <link>, guid isPermaLink, guid plain
+      const linkMatch =
+        /<link><!\[CDATA\[([^\]]+)\]\]><\/link>/.exec(item) ||
+        /<link>https?:\/\/[^<]+<\/link>/.exec(item) ||
+        /<guid\s[^>]*isPermaLink="true"[^>]*>([^<]+)<\/guid>/.exec(item) ||
+        /<guid>([^<]+)<\/guid>/.exec(item);
+      let link = "";
+      if (linkMatch) {
+        // Extract URL from match
+        const raw = linkMatch[0];
+        const urlMatch = /https?:\/\/[^\s<\]]+/.exec(raw);
+        link = urlMatch ? urlMatch[0].trim() : "";
+      }
+
+      const description = (/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/.exec(item) || /<description>([^<]*)<\/description>/.exec(item) || [])[1] || "";
+
+      // Date filtering — skip articles older than 14 days
+      const pubDateStr = (/<pubDate>([^<]+)<\/pubDate>/.exec(item) || [])[1] || "";
+      if (pubDateStr) {
+        const pubDate = new Date(pubDateStr).getTime();
+        if (!isNaN(pubDate) && pubDate < cutoff) continue;
+      }
+
+      if (title.trim()) {
+        items.push({
+          title: title.trim(),
+          link,
+          description: description.replace(/<[^>]+>/g, "").trim().slice(0, 500),
+          source: feed.name,
+          pubDate: pubDateStr,
+        });
       }
     }
     return items.slice(0, 15);
@@ -50,15 +78,7 @@ Deno.serve(async (req) => {
     const feedResults = await Promise.all(RSS_FEEDS.map(fetchRSS));
     const allItems = feedResults.flat();
 
-    if (allItems.length === 0) {
-      // Fallback: use LLM directly without RSS
-      console.log("RSS feeds returned no items, using LLM direct search");
-    }
-
-    // Build prompt for LLM to extract transfer rumors
     const transferKeywords = ["transfer", "wechsel", "ablöse", "leihe", "verpflichtung", "verhandlung", "interesse", "angebot", "signing", "move", "deal", "loan", "bid", "rumour", "rumor", "fee"];
-
-    // Filter items that are likely transfer related
     const relevantItems = allItems.filter(item => {
       const text = (item.title + " " + item.description).toLowerCase();
       return transferKeywords.some(kw => text.includes(kw));
@@ -68,38 +88,31 @@ Deno.serve(async (req) => {
 
     let focusInstruction = "";
     if (clubFilter && leagueFilter) {
-      focusInstruction = `Focus specifically on transfers involving the club "${clubFilter}" or from the league "${leagueFilter}". Only include rumors directly related to these.`;
+      focusInstruction = `Focus specifically on transfers involving the club "${clubFilter}" or from the league "${leagueFilter}".`;
     } else if (clubFilter) {
-      focusInstruction = `Focus specifically on transfers involving the club "${clubFilter}". Only include rumors directly related to this club.`;
+      focusInstruction = `Focus specifically on transfers involving the club "${clubFilter}".`;
     } else if (leagueFilter) {
-      focusInstruction = `Focus specifically on transfers in the "${leagueFilter}" league. Only include rumors from players or clubs in this league.`;
+      focusInstruction = `Focus specifically on transfers in the "${leagueFilter}" league.`;
     }
 
     const newsContext = contextItems.length > 0
-      ? contextItems.map(i => `[${i.source}] ${i.title}: ${i.description} (URL: ${i.link})`).join("\n\n")
-      : "No RSS data available - use your knowledge of current transfer market.";
+      ? contextItems.map(i => `[${i.source}] ${i.title}: ${i.description} (URL: ${i.link || "n/a"})`).join("\n\n")
+      : "No RSS data available.";
 
-    const prompt = `You are a football transfer intelligence analyst. ${focusInstruction}
+    const today = new Date().toISOString().split('T')[0];
+    const prompt = `You are a football transfer intelligence analyst. Today's date is ${today}. ${focusInstruction}
 
-Analyze the following recent news articles and extract structured transfer rumors. If RSS data is sparse, supplement with your knowledge of current (2025/2026 season) transfer rumors and market activity.
+Analyze the following recent news articles (from the last 14 days) and extract structured transfer rumors.
+CRITICAL RULES:
+- Only include rumors that are CURRENT as of ${today} (2025/2026 season, Winter 2025/26 or Sommer 2026 window)
+- For "source_url": use EXACTLY the direct article URL provided in (URL: ...) field. Do NOT use a homepage like kicker.de or skysports.com. If the URL starts with "http" and contains a path (e.g. /news/...), it is valid. If no valid direct URL exists, leave source_url empty.
+- Only include REAL, named players with REAL club names — do not invent anything
+- Supplement with current rumors from your knowledge if the RSS articles are insufficient, but only include rumors from the last 3 months
 
 NEWS ARTICLES:
 ${newsContext}
 
-Extract up to 10 concrete transfer rumors. For each rumor, identify:
-- The player involved
-- Their current club (from_club)  
-- The interested/target club (to_club)
-- Player position
-- League of the target club
-- A brief summary (2-3 sentences in German)
-- Estimated transfer fee in millions of euros (if mentioned)
-- Confidence score (0-100) based on how concrete the rumor is
-- Transfer period (Winter 2025/26, Sommer 2026, or Winter 2026/27)
-- Source URL
-- Source name
-
-Only include REAL, specific players with REAL club names. Do not invent players. If you cannot find enough from the RSS, use well-known current transfer rumors from your training data for this transfer window.`;
+Extract up to 10 concrete, current transfer rumors.`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
@@ -144,6 +157,18 @@ Only include REAL, specific players with REAL club names. Do not invent players.
       if (!rumor.player_name) continue;
       if (existingNames.has(rumor.player_name.toLowerCase())) continue;
 
+      // Validate source_url: must be a full URL with a path (not just a homepage)
+      let sourceUrl = rumor.source_url || "";
+      if (sourceUrl) {
+        try {
+          const u = new URL(sourceUrl);
+          // Reject if path is "/" or empty (just a homepage)
+          if (u.pathname === "/" || u.pathname === "") sourceUrl = "";
+        } catch {
+          sourceUrl = "";
+        }
+      }
+
       await base44.asServiceRole.entities.TransferRumor.create({
         agency_id: user.agency_id,
         player_name: rumor.player_name,
@@ -155,7 +180,7 @@ Only include REAL, specific players with REAL club names. Do not invent players.
         fee_estimate: rumor.fee_estimate || null,
         confidence_score: rumor.confidence_score || 50,
         transfer_period: rumor.transfer_period || "Sommer 2026",
-        source_url: rumor.source_url || "",
+        source_url: sourceUrl,
         source_name: rumor.source_name || "",
         status: "neu",
       });
