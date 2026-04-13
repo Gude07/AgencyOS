@@ -40,6 +40,7 @@ export default function ClubAnalysis() {
   const [deleteId, setDeleteId] = useState(null);
   const [selectedFolderId, setSelectedFolderId] = useState(null);
   const [saveFolderId, setSaveFolderId] = useState(null);
+  const [similarPlayersResult, setSimilarPlayersResult] = useState(null);
   const [manualPositions, setManualPositions] = useState([]);
   const [posInput, setPosInput] = useState("");
   const [criteriaWeights, setCriteriaWeights] = useState(DEFAULT_WEIGHTS);
@@ -191,7 +192,8 @@ export default function ClubAnalysis() {
       club_profile: currentClubProfile,
       recommended_players: currentRecommendations.recommendations,
       analysis_summary: currentRecommendations.summary,
-      total_players_analyzed: currentRecommendations.analyzedPlayers
+      total_players_analyzed: currentRecommendations.analyzedPlayers,
+      similar_players_result: similarPlayersResult || undefined
     });
   };
 
@@ -201,6 +203,7 @@ export default function ClubAnalysis() {
     setClubName(analysis.club_name);
     setMatchedRequests([]);
     setFeedback({});
+    setSimilarPlayersResult(analysis.similar_players_result || null);
   };
 
   return (
@@ -496,7 +499,12 @@ export default function ClubAnalysis() {
 
               {/* Similar Players Tab */}
               <TabsContent value="similar">
-                <SimilarPlayersSearch players={allPlayers} />
+                <SimilarPlayersSearch
+                  players={allPlayers}
+                  clubProfile={currentClubProfile}
+                  savedResult={similarPlayersResult}
+                  onResult={setSimilarPlayersResult}
+                />
               </TabsContent>
             </Tabs>
           </div>

@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Nicht autorisiert' }, { status: 401 });
 
-    const { referencePlayerName, referencePlayerId, budget_max, budget_min, age_min, age_max, position } = await req.json();
+    const { referencePlayerName, referencePlayerId, budget_max, budget_min, age_min, age_max, position, club_league, club_name } = await req.json();
     if (!referencePlayerName) return Response.json({ error: 'Spielername fehlt' }, { status: 400 });
 
     const allPlayers = await base44.asServiceRole.entities.Player.filter({ agency_id: user.agency_id });
@@ -83,7 +83,27 @@ Antworte als JSON:
     };
 
     // STEP 2: Find similar players from our system (top half)
-    const budgetFilter = budget_max ? `Budget max: €${budget_max.toLocaleString()}` : 'Kein Budget-Limit';
+    // Derive reasonable budget range from club league if not explicitly set
+    let effectiveBudgetMax = budget_max;
+    let effectiveBudgetMin = budget_min;
+    if (!effectiveBudgetMax && club_league) {
+      // Heuristic budget caps by league tier
+      const leagueLower = club_league.toLowerCase();
+      if (leagueLower.includes('champions') || leagueLower.includes('premier') || leagueLower.includes('bundesliga') || leagueLower.includes('la liga') || leagueLower.includes('serie a') || leagueLower.includes('ligue 1')) {
+        effectiveBudgetMax = 80_000_000;
+      } else if (leagueLower.includes('2. bundesliga') || leagueLower.includes('championship') || leagueLower.includes('serie b') || leagueLower.includes('segunda')) {
+        effectiveBudgetMax = 8_000_000;
+      } else if (leagueLower.includes('3') || leagueLower.includes('third') || leagueLower.includes('dritte')) {
+        effectiveBudgetMax = 2_000_000;
+      } else {
+        effectiveBudgetMax = 20_000_000;
+      }
+    }
+
+    const budgetInfo = effectiveBudgetMax
+      ? `Budget-Rahmen des Vereins (${club_name || 'Verein'} in ${club_league || 'unbekannte Liga'}): max. €${effectiveBudgetMax.toLocaleString()}${effectiveBudgetMin ? `, min. €${effectiveBudgetMin.toLocaleString()}` : ''}. NUR Spieler vorschlagen, die in diesen Budget-Rahmen passen!`
+      : 'Kein Budget-Limit gesetzt';
+    const budgetFilter = budgetInfo;
     const ageFilter = (age_min || age_max) ? `Alter: ${age_min || 0}-${age_max || 40} Jahre` : '';
 
     const systemPlayers = allPlayers.filter(p => p.id !== referencePlayer?.id).map(p => ({
@@ -136,7 +156,7 @@ ANTWORTE NUR mit JSON:
 }`;
 
     // STEP 3: Find similar players from internet (other half)
-    const internetPrompt = `Du bist Fußball-Scout-Experte. Suche im Internet nach realen Fußballspielern, die dem folgenden Spielerprofil ähneln.
+    const internetPrompt = `Du bist Fußball-Scout-Experte. Suche im Internet nach realen Fußballspielern, die dem folgenden Spielerprofil ähneln und zum Budget des anfragenden Vereins passen.
 
 REFERENZSPIELER (recherchiertes Profil):
 Name: ${refProfile.full_name || referencePlayerName}
@@ -154,6 +174,8 @@ SUCHKRITERIEN:
 - Ähnliche Position und Spielstil wie der Referenzspieler
 - Spieler aus dem Profi-Fußball weltweit (Ligen: Bundesliga, Premier League, Serie A, La Liga, Ligue 1, Eredivisie, etc.)
 - NICHT den Referenzspieler selbst vorschlagen
+- NUR Spieler vorschlagen, deren Marktwert realistisch zum Budget passt!
+- Ein 2.-Liga-Verein kann sich keinen 20-Mio-Spieler leisten!
 
 Finde genau 4 real existierende Spieler, die dem Referenzspieler ähneln, die sich auch im Budget-Rahmen befinden könnten.
 Recherchiere aktuelle Informationen zu jedem gefundenen Spieler.

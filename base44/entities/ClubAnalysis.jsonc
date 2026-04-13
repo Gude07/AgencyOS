@@ -16,110 +16,18 @@
     },
     "club_profile": {
       "type": "object",
-      "properties": {
-        "playing_style": {
-          "type": "string"
-        },
-        "formations": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "key_attributes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "coach_philosophy": {
-          "type": "string"
-        },
-        "current_coach": {
-          "type": "string"
-        },
-        "transfer_trends": {
-          "type": "string"
-        },
-        "current_reports": {
-          "type": "string"
-        },
-        "injury_situation": {
-          "type": "string"
-        },
-        "target_positions": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "league": {
-          "type": "string"
-        },
-        "country": {
-          "type": "string"
-        }
-      },
       "description": "Von der KI generiertes Vereinsprofil"
     },
     "recommended_players": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "player_id": {
-            "type": "string"
-          },
-          "player_name": {
-            "type": "string"
-          },
-          "match_score": {
-            "type": "number"
-          },
-          "reasoning": {
-            "type": "string"
-          },
-          "key_strengths": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "risk_factors": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "culture_fit": {
-            "type": "string"
-          },
-          "radar_scores": {
-            "type": "object",
-            "properties": {
-              "position": {
-                "type": "number"
-              },
-              "style": {
-                "type": "number"
-              },
-              "physical": {
-                "type": "number"
-              },
-              "technical": {
-                "type": "number"
-              },
-              "mental": {
-                "type": "number"
-              },
-              "culture": {
-                "type": "number"
-              }
-            }
-          }
-        }
+        "type": "object"
       },
       "description": "Liste der empfohlenen Spieler mit Begr\u00fcndung"
+    },
+    "similar_players_result": {
+      "type": "object",
+      "description": "Gespeichertes Ergebnis der \u00c4hnliche-Spieler-Suche"
     },
     "analysis_summary": {
       "type": "string",

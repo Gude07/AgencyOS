@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { GitCompare, Loader2, Search, Globe, Database, ExternalLink } from "lucide-react";
+import { GitCompare, Loader2, Search, Globe, Database } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
@@ -35,7 +35,7 @@ function PlayerCard({ sp, isExternal }) {
       </div>
 
       {isExternal && (sp.age || sp.position || sp.market_value_eur) && (
-        <div className="flex gap-3 text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
           {sp.age && <span>Alter: {sp.age}</span>}
           {sp.position && <span>Position: {sp.position}</span>}
           {sp.market_value_eur && <span>Marktwert: €{(sp.market_value_eur / 1_000_000).toFixed(1)}M</span>}
@@ -63,23 +63,32 @@ function PlayerCard({ sp, isExternal }) {
   );
 }
 
-export default function SimilarPlayersSearch({ players = [] }) {
-  const [query, setQuery] = useState("");
+export default function SimilarPlayersSearch({ players = [], clubProfile = null, savedResult = null, onResult }) {
+  const [query, setQuery] = useState(savedResult?.referencePlayer?.name || savedResult?.referencePlayer?.full_name || "");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(savedResult);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
-    setResult(null);
     try {
       const refPlayer = players.find(p => p.name.toLowerCase().includes(query.toLowerCase()));
+
+      // Extract budget from club profile if available
+      const budgetMax = clubProfile?.realistic_budget?.max || null;
+      const budgetMin = clubProfile?.realistic_budget?.min || null;
+
       const response = await base44.functions.invoke('findSimilarPlayers', {
         referencePlayerName: query,
-        referencePlayerId: refPlayer?.id
+        referencePlayerId: refPlayer?.id,
+        budget_max: budgetMax,
+        budget_min: budgetMin,
+        club_league: clubProfile?.league || null,
+        club_name: clubProfile?.club_name || null
       });
       if (response.data.success) {
         setResult(response.data);
+        onResult?.(response.data);
       } else {
         toast.error(response.data.error || 'Fehler');
       }
@@ -99,10 +108,16 @@ export default function SimilarPlayersSearch({ players = [] }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {clubProfile?.realistic_budget && (
+          <div className="text-xs text-slate-500 bg-slate-50 dark:bg-slate-800 rounded px-3 py-2 flex items-center gap-2">
+            💰 Budget des Vereins wird berücksichtigt: €{(clubProfile.realistic_budget.min / 1_000_000)?.toFixed(1)}M – €{(clubProfile.realistic_budget.max / 1_000_000)?.toFixed(1)}M
+          </div>
+        )}
+
         <div className="space-y-2">
           <div className="flex gap-2">
             <Input
-              placeholder="Spieler eingeben (z.B. Erling Haaland)..."
+              placeholder="Referenzspieler eingeben (z.B. Erling Haaland)..."
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
