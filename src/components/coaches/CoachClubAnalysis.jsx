@@ -62,7 +62,7 @@ export default function CoachClubAnalysis({ coach, coachId }) {
       const file = new File([blob], `KI-Vereinsanalyse_${coach?.name}_${format(new Date(), 'yyyy-MM-dd')}.txt`);
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      const existing = Array.isArray(coach?.dropbox_documents) ? coach.dropbox_documents : [];
+      const existing = Array.isArray(coach?.documents) ? coach.documents : [];
       const newDoc = {
         id: `analysis_${Date.now()}`,
         name: `KI-Vereinsanalyse ${format(new Date(), 'dd.MM.yyyy')}`,
@@ -71,7 +71,7 @@ export default function CoachClubAnalysis({ coach, coachId }) {
         type: 'ki_analyse'
       };
       await base44.entities.Coach.update(coachId, {
-        dropbox_documents: [...existing, newDoc]
+        documents: [...existing, newDoc]
       });
       setSaved(true);
     } finally {
