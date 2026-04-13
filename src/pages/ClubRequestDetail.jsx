@@ -400,22 +400,20 @@ export default function ClubRequestDetail() {
               >
                 <Star className={`w-5 h-5 ${isFavorite ? 'fill-yellow-400' : ''}`} />
               </Button>
+              <EmailDraftGenerator 
+                type="club_request"
+                entityId={requestId}
+                defaultRecipient={request.contact_person}
+              />
               {request.contact_email && (
-                <>
-                  <EmailDraftGenerator 
-                    type="club_request"
-                    entityId={requestId}
-                    defaultRecipient={request.contact_person}
-                  />
-                  <Button 
-                    onClick={() => setShowEmailDialog(true)} 
-                    variant="outline"
-                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    E-Mail
-                  </Button>
-                </>
+                <Button 
+                  onClick={() => setShowEmailDialog(true)} 
+                  variant="outline"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  E-Mail
+                </Button>
               )}
               <Button onClick={() => setShowDeleteDialog(true)} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                 <Trash2 className="w-4 h-4 mr-2" />
