@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Bell, Mail, Smartphone, Save, MessageCircle, ExternalLink, Bot } from "lucide-react";
+import { Bell, Mail, Smartphone, Save } from "lucide-react";
 
 const notificationTypes = [
   {
@@ -96,7 +96,7 @@ export default function NotificationSettings() {
     setHasChanges(true);
   };
 
-  const whatsappUrl = base44.agents.getWhatsAppConnectURL('notification_manager');
+
 
   const handleSave = () => {
     updateSettingsMutation.mutate(settings);
@@ -164,49 +164,6 @@ export default function NotificationSettings() {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 bg-gradient-to-br from-green-50 to-white">
-          <CardHeader className="border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <MessageCircle className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">WhatsApp App-Assistent</CardTitle>
-                <p className="text-sm text-slate-600">Ihr persönlicher Helfer für die Spieleragentur</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <Bot className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-slate-900">Was kann der WhatsApp-Assistent?</p>
-                  <p className="text-sm text-slate-600 mt-1">
-                    Verwalten Sie Ihre Spieleragentur direkt über WhatsApp:
-                  </p>
-                  <ul className="text-sm text-slate-600 mt-2 space-y-1 ml-4">
-                    <li>📋 Aufgaben verwalten und erstellen</li>
-                    <li>⚽ Spieler und Trainer finden</li>
-                    <li>🏢 Vereinsanfragen und Matches anzeigen</li>
-                    <li>📅 Kalender und Termine prüfen</li>
-                    <li>🔔 Benachrichtigungen und Updates erhalten</li>
-                    <li>💬 Tägliche Briefings anfordern</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="block">
-              <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                <MessageCircle className="w-4 h-4 mr-2" />
-                WhatsApp-Assistenten verbinden
-              </Button>
-            </a>
-            <p className="text-xs text-slate-500 text-center">
-              Sie werden zu WhatsApp weitergeleitet und können direkt mit dem Assistenten chatten. Fragen Sie einfach nach dem, was Sie brauchen!
-            </p>
-          </CardContent>
-        </Card>
 
         {hasChanges && (
           <div className="sticky bottom-4 flex justify-end">

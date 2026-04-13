@@ -11,8 +11,7 @@ import {
   Clock, 
   AlertTriangle,
   TrendingUp,
-  ArrowRight,
-  MessageCircle
+  ArrowRight
 } from "lucide-react";
 import { motion } from "framer-motion";
 import TaskCard from "../components/tasks/TaskCard";
@@ -152,16 +151,6 @@ export default function Dashboard() {
             <p className="text-slate-600 dark:text-slate-400 mt-1">Willkommen zurück, {user?.full_name}</p>
           </div>
           <div className="flex gap-3">
-            <a 
-              href={base44.agents.getWhatsAppConnectURL('communication_agent')} 
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                <MessageCircle className="w-4 h-4 mr-2" />
-                WhatsApp-Agent
-              </Button>
-            </a>
             <DashboardWidgetCustomizer />
             <Link to={createPageUrl("Tasks") + "?new=true"}>
               <Button className="bg-blue-900 hover:bg-blue-800 shadow-sm">
