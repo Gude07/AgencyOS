@@ -57,9 +57,9 @@ export default function CoachClubAnalysis({ coach, coachId }) {
   const saveAsDocument = async () => {
     setIsSaving(true);
     try {
-      const content = generateMarkdown(analysis);
-      const blob = new Blob([content], { type: 'text/plain' });
-      const file = new File([blob], `KI-Vereinsanalyse_${coach?.name}_${format(new Date(), 'yyyy-MM-dd')}.txt`);
+      const content = generateHTML(analysis);
+      const blob = new Blob([content], { type: 'text/html' });
+      const file = new File([blob], `KI-Vereinsanalyse_${coach?.name}_${format(new Date(), 'yyyy-MM-dd')}.html`);
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
       const existing = Array.isArray(coach?.documents) ? coach.documents : [];
@@ -79,7 +79,81 @@ export default function CoachClubAnalysis({ coach, coachId }) {
     }
   };
 
-  const generateMarkdown = (a) => {
+  const generateHTML = (a) => {
+    if (!a) return '';
+    const date = a.analysiert_am ? format(new Date(a.analysiert_am), 'dd.MM.yyyy HH:mm', { locale: de }) : '-';
+    const ligen = (a.ziel_ligen || []).join(', ') || 'Alle Ligen';
+
+    const scoreColor = (s) => s >= 75 ? '#16a34a' : s >= 50 ? '#d97706' : '#dc2626';
+    const scoreBar = (s) => `<div style="background:#f1f5f9;border-radius:999px;height:10px;margin:6px 0"><div style="background:${scoreColor(s)};height:10px;border-radius:999px;width:${s}%"></div></div>`;
+
+    const vereineHTML = (a.top_vereine || []).map((v, i) => `
+      <div style="border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:16px;background:#fff">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div>
+            <div style="font-size:18px;font-weight:700;color:#1e293b">
+              <span style="color:#7c3aed">#${i+1}</span> ${v.verein}
+            </div>
+            ${v.liga ? `<span style="font-size:12px;color:#64748b;border:1px solid #e2e8f0;border-radius:6px;padding:2px 8px;display:inline-block;margin-top:4px">${v.liga}</span>` : ''}
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:28px;font-weight:900;color:#7c3aed">${v.match_score}</div>
+            <div style="font-size:11px;color:#94a3b8">Match-Score</div>
+          </div>
+        </div>
+        ${scoreBar(v.match_score)}
+        ${v.begruendung ? `<p style="font-size:14px;color:#475569;line-height:1.6;margin:12px 0">${v.begruendung}</p>` : ''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
+          ${v.vorteile?.length ? `<div><div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:6px">✅ Vorteile</div>${(v.vorteile).map(x => `<div style="font-size:13px;color:#475569;margin-bottom:4px">+ ${x}</div>`).join('')}</div>` : ''}
+          ${v.risiken?.length ? `<div><div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:6px">⚠️ Risiken</div>${(v.risiken).map(x => `<div style="font-size:13px;color:#475569;margin-bottom:4px">- ${x}</div>`).join('')}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    return `<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KI-Vereinsanalyse: ${a.trainer_name}</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:860px;margin:0 auto;padding:32px 24px;background:#f8fafc;color:#1e293b}
+  h1{font-size:28px;font-weight:800;margin:0 0 4px}
+  .meta{font-size:14px;color:#64748b;margin-bottom:32px}
+  .section{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px;margin-bottom:20px}
+  .section-title{font-size:16px;font-weight:700;color:#1e293b;margin:0 0 16px;display:flex;align-items:center;gap:8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .label{font-size:13px;font-weight:600;color:#475569;margin-bottom:6px}
+  ul{margin:0;padding-left:20px}li{font-size:14px;color:#475569;margin-bottom:4px;line-height:1.5}
+  @media(max-width:600px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:16px;padding:32px;margin-bottom:28px;color:#fff">
+  <div style="font-size:13px;opacity:0.8;margin-bottom:8px">🤖 KI-Vereinsanalyse</div>
+  <h1 style="color:#fff">${a.trainer_name}</h1>
+  <div style="font-size:14px;opacity:0.85;margin-top:8px">Analysiert am ${date} · Ligen: ${ligen}</div>
+</div>
+
+<div class="section">
+  <div class="section-title">📊 Spielsystem & Gesamtbewertung</div>
+  ${a.trainer_bewertung?.spielsystem_analyse ? `<div class="label">Spielsystem-Analyse</div><p style="font-size:14px;color:#475569;line-height:1.6;margin-bottom:16px">${a.trainer_bewertung.spielsystem_analyse}</p>` : ''}
+  ${a.trainer_bewertung?.gesamtbewertung ? `<div class="label">Gesamtbewertung</div><p style="font-size:14px;color:#475569;line-height:1.6;margin-bottom:16px">${a.trainer_bewertung.gesamtbewertung}</p>` : ''}
+  <div class="grid2">
+    ${a.trainer_bewertung?.staerken?.length ? `<div><div style="font-size:13px;font-weight:700;color:#16a34a;margin-bottom:8px">✅ Stärken</div><ul>${a.trainer_bewertung.staerken.map(s => `<li>${s}</li>`).join('')}</ul></div>` : ''}
+    ${a.trainer_bewertung?.schwaechen?.length ? `<div><div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:8px">⚠️ Schwächen</div><ul>${a.trainer_bewertung.schwaechen.map(s => `<li>${s}</li>`).join('')}</ul></div>` : ''}
+  </div>
+</div>
+
+${vereineHTML ? `<div class="section-title" style="font-size:18px;font-weight:700;margin:24px 0 12px">🏆 Top passende Vereine</div>${vereineHTML}` : ''}
+
+<div class="grid2">
+  ${a.liga_empfehlungen?.length ? `<div class="section"><div class="section-title">📈 Liga-Empfehlungen</div><ul>${a.liga_empfehlungen.map(l => `<li>${l}</li>`).join('')}</ul></div>` : ''}
+  ${a.handlungsempfehlungen?.length ? `<div class="section"><div class="section-title">📋 Handlungsempfehlungen</div><ol style="margin:0;padding-left:20px">${a.handlungsempfehlungen.map(h => `<li style="font-size:14px;color:#475569;margin-bottom:6px;line-height:1.5">${h}</li>`).join('')}</ol></div>` : ''}
+</div>
+
+</body></html>`;
+  };
+
+
     if (!a) return '';
     let txt = `KI-VEREINSANALYSE: ${a.trainer_name}\n`;
     txt += `Analysiert am: ${a.analysiert_am ? format(new Date(a.analysiert_am), "dd.MM.yyyy HH:mm", { locale: de }) : '-'}\n`;
