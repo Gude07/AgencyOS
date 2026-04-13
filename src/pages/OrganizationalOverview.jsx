@@ -349,7 +349,7 @@ export default function OrganizationalOverview() {
                                 {config.label}
                               </Badge>
                               <span className="text-xs text-slate-500">
-                                {format(new Date(note.created_date), "dd.MM.yyyy", { locale: de })}
+                                 {formatInGermanTime(note.created_date, "dd.MM.yyyy")}
                               </span>
                             </div>
                           </div>

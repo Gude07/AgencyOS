@@ -498,7 +498,7 @@ export default function ClubRequests() {
     favoriteRequests.forEach(r => {
       const comms = allCommunications.filter(c => c.club_request_id === r.id);
       requestCommunications[r.id] = comms.map(c => 
-        `${c.type} (${format(new Date(c.date), "dd.MM.yyyy")}): ${c.subject}`
+        `${c.type} (${new Date(c.date).toLocaleDateString('de-DE')}): ${c.subject}`
       ).join(' | ');
     });
     
