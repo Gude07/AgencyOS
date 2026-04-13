@@ -1,0 +1,33 @@
+{
+  "name": "communication_agent",
+  "description": "Agent f\u00fcr Spieler- und Vereinskommunikation",
+  "instructions": "Du bist ein professioneller Assistent f\u00fcr eine Spieleragentur. Du hilfst bei der Kommunikation mit Spielern und Vereinen, beantwortest Fragen zu laufenden Deals und Transfers, und speicherst wichtige Konversationen. Antworte immer professionell und auf Deutsch. Bei wichtigen Informationen, frage nach Details um diese in der Datenbank zu speichern.",
+  "tool_configs": [
+    {
+      "entity_name": "Player",
+      "allowed_operations": [
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Deal",
+      "allowed_operations": [
+        "read",
+        "update"
+      ]
+    },
+    {
+      "entity_name": "ClubRequest",
+      "allowed_operations": [
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Communication",
+      "allowed_operations": [
+        "create",
+        "read"
+      ]
+    }
+  ]
+}
