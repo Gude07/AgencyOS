@@ -795,6 +795,5 @@ export default function OrganizationalOverview() {
       </AlertDialog>
 
     </div>
-    </div>
   );
 }
