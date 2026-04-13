@@ -19,6 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import MatchingCriteriaWeights from "@/components/clubAnalysis/MatchingCriteriaWeights";
+import AnalysisFolderManager from "@/components/clubAnalysis/AnalysisFolderManager";
 import WhatIfScenario from "@/components/clubAnalysis/WhatIfScenario";
 import SimilarPlayersSearch from "@/components/clubAnalysis/SimilarPlayersSearch";
 import PlayerRadarChart from "@/components/clubAnalysis/PlayerRadarChart";
@@ -37,6 +38,8 @@ export default function ClubAnalysis() {
   const [isAnalyzingClub, setIsAnalyzingClub] = useState(false);
   const [isMatchingPlayers, setIsMatchingPlayers] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [selectedFolderId, setSelectedFolderId] = useState(null);
+  const [saveFolderId, setSaveFolderId] = useState(null);
   const [manualPositions, setManualPositions] = useState([]);
   const [posInput, setPosInput] = useState("");
   const [criteriaWeights, setCriteriaWeights] = useState(DEFAULT_WEIGHTS);
@@ -53,6 +56,12 @@ export default function ClubAnalysis() {
     queryFn: () => base44.entities.Player.filter({ agency_id: user.agency_id }),
     enabled: !!user?.agency_id
   });
+  const { data: analysisFolders = [] } = useQuery({
+    queryKey: ['analysisFolders', user?.agency_id],
+    queryFn: () => base44.entities.AnalysisFolder.filter({ agency_id: user.agency_id }),
+    enabled: !!user?.agency_id,
+  });
+
   const { data: savedAnalyses = [] } = useQuery({
     queryKey: ['clubAnalyses', user?.agency_id],
     queryFn: () => base44.entities.ClubAnalysis.filter({ agency_id: user.agency_id }, '-created_date'),
@@ -178,6 +187,7 @@ export default function ClubAnalysis() {
     saveAnalysisMutation.mutate({
       agency_id: user.agency_id,
       club_name: currentClubProfile.club_name,
+      folder_id: saveFolderId || undefined,
       club_profile: currentClubProfile,
       recommended_players: currentRecommendations.recommendations,
       analysis_summary: currentRecommendations.summary,
@@ -277,9 +287,21 @@ export default function ClubAnalysis() {
                   {isMatchingPlayers ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analysiere...</> : <><Users className="w-4 h-4 mr-2" />Spieler-Matching</>}
                 </Button>
                 {currentRecommendations && (
-                  <Button onClick={handleSaveAnalysis} disabled={saveAnalysisMutation.isPending} variant="outline">
-                    <Save className="w-4 h-4 mr-2" />Speichern
-                  </Button>
+                  <>
+                    <select
+                      value={saveFolderId || ''}
+                      onChange={e => setSaveFolderId(e.target.value || null)}
+                      className="text-sm border rounded px-2 py-1 bg-white dark:bg-slate-800 dark:border-slate-600"
+                    >
+                      <option value="">Kein Ordner</option>
+                      {analysisFolders.map(f => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                    <Button onClick={handleSaveAnalysis} disabled={saveAnalysisMutation.isPending} variant="outline">
+                      <Save className="w-4 h-4 mr-2" />Speichern
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -483,10 +505,15 @@ export default function ClubAnalysis() {
         {/* Saved Analyses */}
         {savedAnalyses.length > 0 && (
           <Card>
-            <CardHeader><CardTitle>Gespeicherte Analysen ({savedAnalyses.length})</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Gespeicherte Analysen ({savedAnalyses.length})</CardTitle>
+              <div className="mt-2">
+                <AnalysisFolderManager agencyId={user?.agency_id} selectedFolderId={selectedFolderId} onSelectFolder={setSelectedFolderId} />
+              </div>
+            </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {savedAnalyses.map(analysis => (
+                {savedAnalyses.filter(a => selectedFolderId === null || a.folder_id === selectedFolderId).map(analysis => (
                   <div key={analysis.id} className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900">
                     <div className="flex-1 cursor-pointer" onClick={() => loadSavedAnalysis(analysis)}>
                       <h4 className="font-semibold text-slate-900 dark:text-white">{analysis.club_name}</h4>

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { GitCompare, Loader2, Search } from "lucide-react";
+import { GitCompare, Loader2, Search, Globe } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
@@ -43,20 +43,28 @@ export default function SimilarPlayersSearch({ players = [] }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Referenzspieler eingeben..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            list="players-list"
-          />
-          <datalist id="players-list">
-            {players.map(p => <option key={p.id} value={p.name} />)}
-          </datalist>
-          <Button onClick={handleSearch} disabled={loading || !query.trim()} size="sm">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          </Button>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Spieler eingeben (z.B. Erling Haaland)..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+              list="players-list"
+            />
+            <datalist id="players-list">
+              {players.map(p => <option key={p.id} value={p.name} />)}
+            </datalist>
+            <Button onClick={handleSearch} disabled={loading || !query.trim()} size="sm">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            </Button>
+          </div>
+          {query && !players.find(p => p.name.toLowerCase().includes(query.toLowerCase())) && (
+            <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
+              <Globe className="w-3 h-3" />
+              Spieler nicht im System — KI sucht Informationen aus dem Internet
+            </p>
+          )}
         </div>
 
         {result && (

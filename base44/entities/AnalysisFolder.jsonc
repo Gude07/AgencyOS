@@ -1,0 +1,35 @@
+{
+  "name": "AnalysisFolder",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name des Ordners"
+    },
+    "color": {
+      "type": "string",
+      "enum": [
+        "blue",
+        "green",
+        "purple",
+        "orange",
+        "red",
+        "gray"
+      ],
+      "default": "blue",
+      "description": "Farbe des Ordners"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung des Ordners"
+    }
+  },
+  "required": [
+    "agency_id",
+    "name"
+  ]
+}

@@ -1,4 +1,4 @@
-import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
 
 const LABELS = {
   position: "Position",
@@ -25,8 +25,9 @@ export default function PlayerRadarChart({ radarScores, playerName }) {
         <RadarChart data={data}>
           <PolarGrid />
           <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10 }} />
+          <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
           <Radar name={playerName} dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.4} />
-          <Tooltip />
+          <Tooltip formatter={(val) => [`${val}/10`, playerName]} />
         </RadarChart>
       </ResponsiveContainer>
     </div>
