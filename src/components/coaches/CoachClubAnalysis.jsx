@@ -153,27 +153,6 @@ ${vereineHTML ? `<div class="section-title" style="font-size:18px;font-weight:70
 </body></html>`;
   };
 
-
-    if (!a) return '';
-    let txt = `KI-VEREINSANALYSE: ${a.trainer_name}\n`;
-    txt += `Analysiert am: ${a.analysiert_am ? format(new Date(a.analysiert_am), "dd.MM.yyyy HH:mm", { locale: de }) : '-'}\n`;
-    txt += `Ziel-Ligen: ${(a.ziel_ligen || []).join(', ') || 'Alle'}\n\n`;
-    txt += `=== SPIELSYSTEM & BEWERTUNG ===\n${a.trainer_bewertung?.spielsystem_analyse || ''}\n\n`;
-    txt += `Gesamtbewertung: ${a.trainer_bewertung?.gesamtbewertung || ''}\n\n`;
-    txt += `Stärken: ${(a.trainer_bewertung?.staerken || []).join(', ')}\n`;
-    txt += `Schwächen: ${(a.trainer_bewertung?.schwaechen || []).join(', ')}\n\n`;
-    txt += `=== TOP-VEREINE ===\n`;
-    (a.top_vereine || []).forEach((v, i) => {
-      txt += `\n${i + 1}. ${v.verein} (${v.liga}) — Match-Score: ${v.match_score}/100\n`;
-      txt += `Begründung: ${v.begruendung}\n`;
-      txt += `Vorteile: ${(v.vorteile || []).join(', ')}\n`;
-      txt += `Risiken: ${(v.risiken || []).join(', ')}\n`;
-    });
-    txt += `\n=== LIGA-EMPFEHLUNGEN ===\n${(a.liga_empfehlungen || []).join('\n')}\n\n`;
-    txt += `=== HANDLUNGSEMPFEHLUNGEN ===\n${(a.handlungsempfehlungen || []).join('\n')}\n`;
-    return txt;
-  };
-
   return (
     <div className="space-y-6">
       {/* Input Card */}
