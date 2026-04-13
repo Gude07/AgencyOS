@@ -1,8 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users, Clock, Monitor } from "lucide-react";
+import { Users, Clock, Monitor, ChevronRight, X, BarChart2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 
 const PAGE_LABELS = {
   Dashboard: "Dashboard",
@@ -43,6 +45,7 @@ function formatLastSeen(dateStr) {
 }
 
 export default function TeamActivityPanel({ agencyId }) {
+  const [selectedUser, setSelectedUser] = useState(null);
   const today = new Date().toISOString().split("T")[0];
 
   const { data: activities = [], isLoading } = useQuery({
@@ -85,6 +88,21 @@ export default function TeamActivityPanel({ agencyId }) {
     return Object.values(map).sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
   }, [activities]);
 
+  // Per-page breakdown for selected user
+  const userPageBreakdown = useMemo(() => {
+    if (!selectedUser) return [];
+    const userActivities = activities.filter(a => a.user_email === selectedUser.email);
+    const pageMap = {};
+    for (const a of userActivities) {
+      if (!pageMap[a.page_name]) pageMap[a.page_name] = 0;
+      pageMap[a.page_name] += a.duration_seconds || 0;
+    }
+    const total = Object.values(pageMap).reduce((s, v) => s + v, 0);
+    return Object.entries(pageMap)
+      .map(([page, seconds]) => ({ page, seconds, percent: total > 0 ? Math.round((seconds / total) * 100) : 0 }))
+      .sort((a, b) => b.seconds - a.seconds);
+  }, [selectedUser, activities]);
+
   if (isLoading) {
     return (
       <Card className="border-slate-200 dark:border-slate-800">
@@ -110,7 +128,11 @@ export default function TeamActivityPanel({ agencyId }) {
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {userStats.map((u) => (
-              <div key={u.email} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <div
+                key={u.email}
+                onClick={() => setSelectedUser(u)}
+                className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+              >
                 <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
                   <span className="text-blue-700 dark:text-blue-300 font-bold text-sm">
                     {u.name?.[0]?.toUpperCase() || "?"}
@@ -129,21 +151,47 @@ export default function TeamActivityPanel({ agencyId }) {
                   </span>
                   <span className="text-xs text-slate-400">{formatLastSeen(u.lastSeen)}</span>
                 </div>
-                <div className="hidden sm:flex flex-wrap gap-1 max-w-[120px]">
-                  {[...u.pagesVisited].slice(0, 3).map((p) => (
-                    <span key={p} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded">
-                      {PAGE_LABELS[p] || p}
-                    </span>
-                  ))}
-                  {u.pagesVisited.size > 3 && (
-                    <span className="text-xs text-slate-400">+{u.pagesVisited.size - 3}</span>
-                  )}
-                </div>
+                <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
               </div>
             ))}
           </div>
         )}
       </CardContent>
     </Card>
+
+    {/* Detail Dialog */}
+    <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-blue-600" />
+            Aktivität heute – {selectedUser?.name}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-1 py-2">
+          <div className="flex justify-between text-xs text-slate-500 mb-3">
+            <span>Gesamtzeit heute</span>
+            <span className="font-semibold text-slate-700">{formatDuration(selectedUser?.totalSeconds)}</span>
+          </div>
+          {userPageBreakdown.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-4">Keine Seitendetails verfügbar</p>
+          ) : (
+            <div className="space-y-3">
+              {userPageBreakdown.map(({ page, seconds, percent }) => (
+                <div key={page}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      {PAGE_LABELS[page] || page}
+                    </span>
+                    <span className="text-slate-500 text-xs">{formatDuration(seconds)} ({percent}%)</span>
+                  </div>
+                  <Progress value={percent} className="h-2" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
