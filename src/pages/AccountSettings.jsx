@@ -18,7 +18,6 @@ import {
 import { ArrowLeft, User, Mail, Shield, Trash2, Bell } from "lucide-react";
 import OutlookConnectionCard from "@/components/settings/OutlookConnectionCard";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
