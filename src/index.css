@@ -156,3 +156,168 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+/* ===== GLOBAL DARK MODE OVERRIDES ===== */
+.dark {
+  color-scheme: dark;
+}
+
+/* Dialogs & Modals */
+.dark [role="dialog"],
+.dark [data-radix-popper-content-wrapper],
+.dark [data-radix-dialog-content] {
+  background-color: hsl(222 47% 8%) !important;
+  color: hsl(210 40% 98%) !important;
+}
+
+/* All white/light backgrounds */
+.dark .bg-white {
+  background-color: hsl(222 47% 11%) !important;
+  color: hsl(210 40% 98%) !important;
+}
+
+.dark .bg-gray-50,
+.dark .bg-slate-50 {
+  background-color: hsl(222 47% 9%) !important;
+}
+
+.dark .bg-gray-100,
+.dark .bg-slate-100 {
+  background-color: hsl(222 47% 14%) !important;
+}
+
+.dark .bg-gray-200,
+.dark .bg-slate-200 {
+  background-color: hsl(222 47% 18%) !important;
+}
+
+/* Text colors */
+.dark .text-gray-900,
+.dark .text-slate-900 {
+  color: hsl(210 40% 96%) !important;
+}
+
+.dark .text-gray-800,
+.dark .text-slate-800 {
+  color: hsl(210 40% 90%) !important;
+}
+
+.dark .text-gray-700,
+.dark .text-slate-700 {
+  color: hsl(210 40% 84%) !important;
+}
+
+.dark .text-gray-600,
+.dark .text-slate-600 {
+  color: hsl(210 30% 72%) !important;
+}
+
+.dark .text-gray-500,
+.dark .text-slate-500 {
+  color: hsl(210 20% 60%) !important;
+}
+
+/* Borders */
+.dark .border-gray-200,
+.dark .border-slate-200 {
+  border-color: hsl(222 47% 22%) !important;
+}
+
+.dark .border-gray-100,
+.dark .border-slate-100 {
+  border-color: hsl(222 47% 18%) !important;
+}
+
+/* Inputs & Textareas */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: hsl(222 47% 13%) !important;
+  color: hsl(210 40% 96%) !important;
+  border-color: hsl(222 47% 24%) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: hsl(210 20% 50%) !important;
+}
+
+/* Cards */
+.dark .rounded-lg.border,
+.dark .rounded-xl.border {
+  background-color: hsl(222 47% 11%);
+  border-color: hsl(222 47% 20%);
+}
+
+/* Tables */
+.dark table thead tr {
+  background-color: hsl(222 47% 13%) !important;
+}
+
+.dark table tbody tr {
+  background-color: hsl(222 47% 11%) !important;
+  color: hsl(210 40% 90%) !important;
+}
+
+.dark table tbody tr:hover {
+  background-color: hsl(222 47% 15%) !important;
+}
+
+.dark td, .dark th {
+  border-color: hsl(222 47% 20%) !important;
+  color: hsl(210 40% 88%) !important;
+}
+
+/* Dropdowns / Select Content */
+.dark [data-radix-select-content],
+.dark [data-radix-dropdown-menu-content],
+.dark [data-radix-popover-content] {
+  background-color: hsl(222 47% 11%) !important;
+  border-color: hsl(222 47% 22%) !important;
+  color: hsl(210 40% 96%) !important;
+}
+
+.dark [data-radix-select-item]:hover,
+.dark [data-radix-dropdown-menu-item]:hover {
+  background-color: hsl(222 47% 18%) !important;
+}
+
+/* Hover states */
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-slate-50:hover {
+  background-color: hsl(222 47% 15%) !important;
+}
+
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-slate-100:hover {
+  background-color: hsl(222 47% 17%) !important;
+}
+
+/* Sheets / Sidebars */
+.dark [data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Badges with light backgrounds */
+.dark .bg-blue-50 { background-color: hsl(222 70% 15%) !important; }
+.dark .bg-green-50 { background-color: hsl(140 50% 10%) !important; }
+.dark .bg-red-50 { background-color: hsl(0 50% 12%) !important; }
+.dark .bg-yellow-50 { background-color: hsl(45 50% 12%) !important; }
+.dark .bg-purple-50 { background-color: hsl(270 50% 14%) !important; }
+.dark .bg-orange-50 { background-color: hsl(25 50% 12%) !important; }
+
+.dark .text-blue-900 { color: hsl(217 91% 75%) !important; }
+.dark .text-green-900 { color: hsl(142 60% 65%) !important; }
+.dark .text-red-900 { color: hsl(0 70% 70%) !important; }
+
+/* Scrollbars */
+.dark ::-webkit-scrollbar-track {
+  background: hsl(222 47% 9%);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(222 47% 28%);
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(222 47% 38%);
+}
