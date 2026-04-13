@@ -112,6 +112,7 @@ export default function TeamActivityPanel({ agencyId }) {
   }
 
   return (
+    <>
     <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <CardHeader className="border-b border-slate-100 dark:border-slate-800">
         <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
@@ -193,5 +194,6 @@ export default function TeamActivityPanel({ agencyId }) {
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
