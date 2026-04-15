@@ -543,26 +543,25 @@ export default function Players() {
 
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-4">
           <Tabs value={filterFavorites} onValueChange={setFilterFavorites}>
-              <TabsList className="bg-slate-100">
-                <TabsTrigger value="alle">Alle</TabsTrigger>
-                <TabsTrigger value="favoriten" className="flex items-center gap-2">
-                  <Star className="w-4 h-4" />
-                  Favoriten ({userFavorites.length})
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            {filterFavorites === "favoriten" && userFavorites.length > 0 && (
-              <Button
-                onClick={exportFavoritePlayers}
-                variant="outline"
-                size="sm"
-                className="gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Export CSV
-              </Button>
-            )}
-          </div>
+            <TabsList className="bg-slate-100">
+              <TabsTrigger value="alle">Alle</TabsTrigger>
+              <TabsTrigger value="favoriten" className="flex items-center gap-2">
+                <Star className="w-4 h-4" />
+                Favoriten ({userFavorites.length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {filterFavorites === "favoriten" && userFavorites.length > 0 && (
+            <Button
+              onClick={exportFavoritePlayers}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </Button>
+          )}
 
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -678,7 +677,7 @@ export default function Players() {
               ))}
             </SelectContent>
           </Select>
-          </div>
+        </div>
 
         {displayMode === 'grid' ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
