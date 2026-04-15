@@ -35,20 +35,21 @@ Deno.serve(async (req) => {
       player.favorite_matches?.includes(req.id)
     );
 
-    // Extract document contents
+    // Extract document contents (only supported file types via Dropbox path)
     const documentContents = [];
-    if (player.dropbox_documents && player.dropbox_documents.length > 0) {
-      const { accessToken } = await base44.asServiceRole.connectors.getConnection("dropbox");
+    const supportedExtensions = ['.pdf', '.docx', '.xlsx', '.csv', '.txt', '.json', '.png', '.jpg', '.jpeg'];
+    const docsWithPath = (player.dropbox_documents || []).filter(doc => {
+      if (!doc.path) return false;
+      const lower = (doc.name || '').toLowerCase();
+      return supportedExtensions.some(ext => lower.endsWith(ext));
+    });
 
-      for (const doc of player.dropbox_documents.slice(0, 5)) {
-        try {
-          let fileUrl = null;
+    if (docsWithPath.length > 0) {
+      try {
+        const { accessToken } = await base44.asServiceRole.connectors.getConnection("dropbox");
 
-          if (doc.url) {
-            // Direct URL (e.g. KI analysis HTML)
-            fileUrl = doc.url;
-          } else if (doc.path) {
-            // Dropbox path → get temporary download link
+        for (const doc of docsWithPath.slice(0, 3)) {
+          try {
             const linkRes = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
               method: 'POST',
               headers: {
@@ -57,15 +58,11 @@ Deno.serve(async (req) => {
               },
               body: JSON.stringify({ path: doc.path })
             });
-            if (linkRes.ok) {
-              const linkData = await linkRes.json();
-              fileUrl = linkData.link;
-            }
-          }
+            if (!linkRes.ok) continue;
+            const linkData = await linkRes.json();
 
-          if (fileUrl) {
             const extracted = await base44.asServiceRole.integrations.Core.ExtractDataFromUploadedFile({
-              file_url: fileUrl,
+              file_url: linkData.link,
               json_schema: {
                 type: "object",
                 properties: {
@@ -79,10 +76,12 @@ Deno.serve(async (req) => {
                 content: extracted.output.text_content.slice(0, 3000)
               });
             }
+          } catch (e) {
+            console.warn(`Could not extract document ${doc.name}:`, e.message);
           }
-        } catch (e) {
-          console.warn(`Could not extract document ${doc.name}:`, e.message);
         }
+      } catch (e) {
+        console.warn('Could not connect to Dropbox:', e.message);
       }
     }
 
