@@ -1302,6 +1302,7 @@ export default function Players() {
               </div>
             </DialogContent>
           </Dialog>
-          </div>
-          );
-          }
+      </div>
+    </div>
+  );
+}
