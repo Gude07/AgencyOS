@@ -35,6 +35,57 @@ Deno.serve(async (req) => {
       player.favorite_matches?.includes(req.id)
     );
 
+    // Extract document contents
+    const documentContents = [];
+    if (player.dropbox_documents && player.dropbox_documents.length > 0) {
+      const { accessToken } = await base44.asServiceRole.connectors.getConnection("dropbox");
+
+      for (const doc of player.dropbox_documents.slice(0, 5)) {
+        try {
+          let fileUrl = null;
+
+          if (doc.url) {
+            // Direct URL (e.g. KI analysis HTML)
+            fileUrl = doc.url;
+          } else if (doc.path) {
+            // Dropbox path → get temporary download link
+            const linkRes = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ path: doc.path })
+            });
+            if (linkRes.ok) {
+              const linkData = await linkRes.json();
+              fileUrl = linkData.link;
+            }
+          }
+
+          if (fileUrl) {
+            const extracted = await base44.asServiceRole.integrations.Core.ExtractDataFromUploadedFile({
+              file_url: fileUrl,
+              json_schema: {
+                type: "object",
+                properties: {
+                  text_content: { type: "string", description: "All text content from the document" }
+                }
+              }
+            });
+            if (extracted.status === 'success' && extracted.output?.text_content) {
+              documentContents.push({
+                name: doc.name,
+                content: extracted.output.text_content.slice(0, 3000)
+              });
+            }
+          }
+        } catch (e) {
+          console.warn(`Could not extract document ${doc.name}:`, e.message);
+        }
+      }
+    }
+
     // Build comprehensive analysis prompt
     const prompt = `Du bist ein erfahrener Fußball-Scout und Transferberater. Analysiere das vollständige Profil dieses Spielers und erstelle eine detaillierte Bewertung.
 
@@ -92,6 +143,9 @@ ${matchedRequests.length > 0 ? matchedRequests.map(r => `- ${r.club_name} (${r.l
 
 KOMMENTARE (letzte 3):
 ${comments.length > 0 ? comments.slice(0, 3).map(c => `- ${c.created_by}: ${c.content}`).join('\n') : 'Keine Kommentare'}
+
+DOKUMENTE (${documentContents.length} Dokument(e) analysiert):
+${documentContents.length > 0 ? documentContents.map(d => `=== ${d.name} ===\n${d.content}`).join('\n\n') : 'Keine Dokumente vorhanden'}
 
 Erstelle eine umfassende KI-Analyse mit folgenden Punkten:
 1. Gesamtbewertung des Spielers (Stärken, Schwächen, Potenzial)

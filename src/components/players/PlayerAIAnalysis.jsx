@@ -62,7 +62,7 @@ export default function PlayerAIAnalysis({ playerId, playerName }) {
               <div>
                 <h3 className="font-bold text-slate-900">KI-Spieleranalyse</h3>
                 <p className="text-sm text-slate-600">
-                  Umfassende Bewertung basierend auf allen verfügbaren Daten: Karrierestatistiken, Scouting-Berichte, Präferenzen, Matches und mehr
+                  Umfassende Bewertung basierend auf allen verfügbaren Daten: Karrierestatistiken, Scouting-Berichte, Dokumente, Präferenzen, Matches und mehr
                 </p>
               </div>
             </div>
