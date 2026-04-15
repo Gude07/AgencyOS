@@ -105,7 +105,7 @@ Gib für jeden Spieler eine Match-Score und eine kurze Begründung.
     const aiResult = await base44.integrations.Core.InvokeLLM({
       prompt: matchingPrompt,
       response_json_schema: schema,
-      model: 'gemini_3_pro'
+      model: 'gemini_3_flash'
     });
     
     // Sortiere nach Match-Score

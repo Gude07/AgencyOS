@@ -49,7 +49,7 @@ Gib ausführliche, aktuelle Informationen zurück, insbesondere zu aktuellen Ver
     const clubProfileResponse = await base44.integrations.Core.InvokeLLM({
       prompt: clubProfilePrompt,
       add_context_from_internet: true,
-      model: 'gemini_3_pro',
+      model: 'gemini_3_flash',
       response_json_schema: {
         type: "object",
         properties: {
@@ -153,7 +153,7 @@ ANTWORTE NUR mit folgendem JSON-Format (kein Markdown, kein Text drumherum):
 
     const matchingResponse = await base44.integrations.Core.InvokeLLM({
       prompt: matchingPrompt,
-      model: 'gpt_5'
+      model: 'gpt_5_mini'
     });
 
     console.log('Raw LLM Response:', matchingResponse);
