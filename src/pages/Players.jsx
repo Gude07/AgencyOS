@@ -101,7 +101,7 @@ export default function Players() {
   const [showComparisonTool, setShowComparisonTool] = useState(false);
   const [displayMode, setDisplayMode] = useState(() => localStorage.getItem('playersDisplayMode') || urlParams.get('display') || 'grid');
   const [quickArchivePlayerId, setQuickArchivePlayerId] = useState(null);
-  const [activeBox, setActiveBox] = useState(null);
+  const [activeBox, setActiveBox] = useState(urlParams.get('box') || null);
 
   // Restore scroll position on mount
   React.useEffect(() => {
@@ -306,6 +306,7 @@ export default function Players() {
     if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
     if (filterArchive !== 'active') params.set('archive', filterArchive);
     if (displayMode !== 'grid') params.set('display', displayMode);
+    if (activeBox) params.set('box', activeBox);
 
     const newSearch = params.toString();
     const currentSearch = window.location.search.slice(1);
@@ -314,7 +315,7 @@ export default function Players() {
       window.history.replaceState(null, '', `?${newSearch}`);
     }
     localStorage.setItem('playersDisplayMode', displayMode);
-  }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches, filterArchive, displayMode]);
+  }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches, filterArchive, displayMode, activeBox]);
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
