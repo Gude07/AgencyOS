@@ -716,6 +716,7 @@ export default function Players() {
                             if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
                             if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
                             if (filterArchive !== 'active') params.set('archive', filterArchive);
+                            if (activeBox) params.set('box', activeBox);
                             params.set('scrollY', window.scrollY.toString());
                             navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&startEdit=true&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                           }}
@@ -747,6 +748,7 @@ export default function Players() {
                         if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
                         if (filterHasMatches !== 'alle') params.set('hasMatches', filterHasMatches);
                         if (filterArchive !== 'active') params.set('archive', filterArchive);
+                        if (activeBox) params.set('box', activeBox);
                         params.set('scrollY', window.scrollY.toString());
                         navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
                       }}
