@@ -1,12 +1,8 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
-
-const STORAGE_KEY = "player_boxes_config";
-const DEFAULT_BOXES = [
-  { id: "jugendspieler", name: "Jugendspieler", color: "green" },
-  { id: "eigene_spieler", name: "Eigene Spieler", color: "blue" },
-];
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 
 const BOX_COLOR_CLASSES = {
   blue:   "border-blue-300 bg-blue-50 text-blue-800",
@@ -22,16 +18,20 @@ const BOX_DOT_CLASSES = {
   orange: "bg-orange-500", red: "bg-red-500", slate: "bg-slate-500",
 };
 
-function getStoredBoxes() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return DEFAULT_BOXES;
+function useAllBoxes() {
+  return useQuery({
+    queryKey: ["playerBoxes"],
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.PlayerBox.list("order");
+      return all.filter(b => b.agency_id === user.agency_id);
+    },
+    staleTime: 30000,
+  });
 }
 
 export default function PlayerBoxBadges({ playerBoxes }) {
-  const boxes = getStoredBoxes();
+  const { data: boxes = [] } = useAllBoxes();
   const assignedBoxes = boxes.filter(b => Array.isArray(playerBoxes) && playerBoxes.includes(b.id));
   if (assignedBoxes.length === 0) return null;
   return (
@@ -52,7 +52,7 @@ export default function PlayerBoxBadges({ playerBoxes }) {
 
 // Edit variant: checkboxes to toggle box membership
 export function PlayerBoxEditor({ playerBoxes = [], onChange }) {
-  const boxes = getStoredBoxes();
+  const { data: boxes = [] } = useAllBoxes();
   if (boxes.length === 0) return null;
 
   const toggle = (boxId) => {

@@ -101,7 +101,7 @@ export default function Players() {
   const [showComparisonTool, setShowComparisonTool] = useState(false);
   const [displayMode, setDisplayMode] = useState(() => localStorage.getItem('playersDisplayMode') || urlParams.get('display') || 'grid');
   const [quickArchivePlayerId, setQuickArchivePlayerId] = useState(null);
-  const [activeBox, setActiveBox] = useState(urlParams.get('box') || null);
+  const [activeBox, setActiveBox] = useState(null); // will be set after boxes load if valid
 
   // Restore scroll position on mount
   React.useEffect(() => {
@@ -163,6 +163,26 @@ export default function Players() {
     },
     refetchInterval: 5000,
   });
+
+  // Load player boxes to validate URL param
+  const { data: playerBoxes = [] } = useQuery({
+    queryKey: ['playerBoxes'],
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.PlayerBox.list('order');
+      return all.filter(b => b.agency_id === user.agency_id);
+    },
+    staleTime: 30000,
+  });
+
+  // Once boxes are loaded, restore activeBox from URL if the box exists
+  useEffect(() => {
+    const boxParam = urlParams.get('box');
+    if (boxParam && playerBoxes.length > 0) {
+      const found = playerBoxes.find(b => b.id === boxParam);
+      if (found) setActiveBox(boxParam);
+    }
+  }, [playerBoxes]);
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: async (playerId) => {

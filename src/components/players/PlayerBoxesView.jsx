@@ -1,40 +1,22 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, X, Pencil, Boxes, Users, Check } from "lucide-react";
+import { Plus, X, Pencil, Users, Check } from "lucide-react";
 import { differenceInYears } from "date-fns";
 
-const DEFAULT_BOXES = [
-  { id: "jugendspieler", name: "Jugendspieler", color: "green" },
-  { id: "eigene_spieler", name: "Eigene Spieler", color: "blue" },
-];
-
 const BOX_COLORS = {
-  blue:   { border: "border-blue-300",   bg: "bg-blue-50 dark:bg-blue-950",     header: "bg-blue-100 dark:bg-blue-900",     text: "text-blue-800 dark:text-blue-200",   dot: "bg-blue-500" },
-  green:  { border: "border-green-300",  bg: "bg-green-50 dark:bg-green-950",   header: "bg-green-100 dark:bg-green-900",   text: "text-green-800 dark:text-green-200", dot: "bg-green-500" },
-  purple: { border: "border-purple-300", bg: "bg-purple-50 dark:bg-purple-950", header: "bg-purple-100 dark:bg-purple-900", text: "text-purple-800 dark:text-purple-200",dot: "bg-purple-500" },
-  orange: { border: "border-orange-300", bg: "bg-orange-50 dark:bg-orange-950", header: "bg-orange-100 dark:bg-orange-900", text: "text-orange-800 dark:text-orange-200",dot: "bg-orange-500" },
-  red:    { border: "border-red-300",    bg: "bg-red-50 dark:bg-red-950",       header: "bg-red-100 dark:bg-red-900",       text: "text-red-800 dark:text-red-200",     dot: "bg-red-500" },
-  slate:  { border: "border-slate-300",  bg: "bg-slate-50 dark:bg-slate-900",   header: "bg-slate-100 dark:bg-slate-800",   text: "text-slate-700 dark:text-slate-300", dot: "bg-slate-500" },
+  blue:   { border: "border-blue-300",   bg: "bg-blue-50 dark:bg-blue-950",     text: "text-blue-800 dark:text-blue-200",   dot: "bg-blue-500" },
+  green:  { border: "border-green-300",  bg: "bg-green-50 dark:bg-green-950",   text: "text-green-800 dark:text-green-200", dot: "bg-green-500" },
+  purple: { border: "border-purple-300", bg: "bg-purple-50 dark:bg-purple-950", text: "text-purple-800 dark:text-purple-200",dot: "bg-purple-500" },
+  orange: { border: "border-orange-300", bg: "bg-orange-50 dark:bg-orange-950", text: "text-orange-800 dark:text-orange-200",dot: "bg-orange-500" },
+  red:    { border: "border-red-300",    bg: "bg-red-50 dark:bg-red-950",       text: "text-red-800 dark:text-red-200",     dot: "bg-red-500" },
+  slate:  { border: "border-slate-300",  bg: "bg-slate-50 dark:bg-slate-900",   text: "text-slate-700 dark:text-slate-300", dot: "bg-slate-500" },
 };
 
 const COLOR_OPTIONS = ["blue", "green", "purple", "orange", "red", "slate"];
-const STORAGE_KEY = "player_boxes_config";
-
-function getStoredBoxes() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return DEFAULT_BOXES;
-}
-
-function saveBoxes(boxes) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(boxes));
-}
 
 function calculateAge(dob) {
   if (!dob) return null;
@@ -43,30 +25,50 @@ function calculateAge(dob) {
 
 export default function PlayerBoxesView({ players, activeBox, onBoxSelect }) {
   const queryClient = useQueryClient();
-  const [boxes, setBoxes] = useState(getStoredBoxes);
 
-  // Dialog states
   const [showCreateBox, setShowCreateBox] = useState(false);
   const [newBoxName, setNewBoxName] = useState("");
   const [newBoxColor, setNewBoxColor] = useState("blue");
   const [editingBox, setEditingBox] = useState(null);
-  const [assignBox, setAssignBox] = useState(null); // box object for player-assign dialog
+  const [assignBox, setAssignBox] = useState(null);
   const [searchAssign, setSearchAssign] = useState("");
-
-  // Drag state
   const [draggedPlayerId, setDraggedPlayerId] = useState(null);
   const [dragOverBox, setDragOverBox] = useState(null);
+
+  // Load boxes from DB
+  const { data: boxes = [], isLoading: boxesLoading } = useQuery({
+    queryKey: ["playerBoxes"],
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.PlayerBox.list("order");
+      return all.filter(b => b.agency_id === user.agency_id);
+    },
+    refetchInterval: 10000,
+  });
+
+  const createBoxMutation = useMutation({
+    mutationFn: async (boxData) => {
+      const user = await base44.auth.me();
+      return base44.entities.PlayerBox.create({ ...boxData, agency_id: user.agency_id, order: boxes.length });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["playerBoxes"] }),
+  });
+
+  const updateBoxMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.PlayerBox.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["playerBoxes"] }),
+  });
+
+  const deleteBoxMutation = useMutation({
+    mutationFn: (id) => base44.entities.PlayerBox.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["playerBoxes"] }),
+  });
 
   const updatePlayerMutation = useMutation({
     mutationFn: ({ playerId, newBoxes }) =>
       base44.entities.Player.update(playerId, { player_boxes: newBoxes }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["players"] }),
   });
-
-  const updateBoxesState = (newBoxes) => {
-    setBoxes(newBoxes);
-    saveBoxes(newBoxes);
-  };
 
   // --- Drag & Drop ---
   const handleDragStart = (e, playerId) => {
@@ -108,30 +110,29 @@ export default function PlayerBoxesView({ players, activeBox, onBoxSelect }) {
   // --- Box CRUD ---
   const createBox = () => {
     if (!newBoxName.trim()) return;
-    const id = "box_" + Date.now();
-    updateBoxesState([...boxes, { id, name: newBoxName.trim(), color: newBoxColor }]);
+    createBoxMutation.mutate({ name: newBoxName.trim(), color: newBoxColor });
     setNewBoxName(""); setNewBoxColor("blue"); setShowCreateBox(false);
   };
 
   const saveEditBox = () => {
     if (!editingBox) return;
-    updateBoxesState(boxes.map(b => b.id === editingBox.id ? editingBox : b));
+    updateBoxMutation.mutate({ id: editingBox.id, data: { name: editingBox.name, color: editingBox.color } });
     setEditingBox(null);
   };
 
-  const deleteBox = (boxId) => {
-    updateBoxesState(boxes.filter(b => b.id !== boxId));
+  const deleteBox = (box) => {
+    // Remove box from all players
     players.forEach(p => {
-      if (Array.isArray(p.player_boxes) && p.player_boxes.includes(boxId)) {
-        updatePlayerMutation.mutate({ playerId: p.id, newBoxes: p.player_boxes.filter(b => b !== boxId) });
+      if (Array.isArray(p.player_boxes) && p.player_boxes.includes(box.id)) {
+        updatePlayerMutation.mutate({ playerId: p.id, newBoxes: p.player_boxes.filter(b => b !== box.id) });
       }
     });
-    if (activeBox === boxId) onBoxSelect(null);
+    deleteBoxMutation.mutate(box.id);
+    if (activeBox === box.id) onBoxSelect(null);
   };
 
   return (
     <>
-      {/* Box tiles */}
       <div className="flex flex-wrap gap-3 items-center">
         {/* "Alle" tile */}
         <button
@@ -149,64 +150,66 @@ export default function PlayerBoxesView({ players, activeBox, onBoxSelect }) {
           </span>
         </button>
 
-        {boxes.map(box => {
-          const colors = BOX_COLORS[box.color] || BOX_COLORS.blue;
-          const count = playersInBox(box.id).length;
-          const isActive = activeBox === box.id;
-          const isOver = dragOverBox === box.id;
+        {boxesLoading ? (
+          <span className="text-xs text-slate-400">Boxen werden geladen...</span>
+        ) : (
+          boxes.map(box => {
+            const colors = BOX_COLORS[box.color] || BOX_COLORS.blue;
+            const count = playersInBox(box.id).length;
+            const isActive = activeBox === box.id;
+            const isOver = dragOverBox === box.id;
 
-          return (
-            <div
-              key={box.id}
-              className="relative group"
-              onDragOver={(e) => { e.preventDefault(); setDragOverBox(box.id); }}
-              onDragLeave={() => setDragOverBox(null)}
-              onDrop={(e) => handleDrop(e, box.id)}
-            >
-              <button
-                onClick={() => onBoxSelect(isActive ? null : box.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all font-medium text-sm ${
-                  isActive
-                    ? `${colors.border} ${colors.bg} ${colors.text} shadow-sm`
-                    : `border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:${colors.border} hover:${colors.bg}`
-                } ${isOver ? "ring-2 ring-blue-400 scale-105" : ""}`}
+            return (
+              <div
+                key={box.id}
+                className="relative group"
+                onDragOver={(e) => { e.preventDefault(); setDragOverBox(box.id); }}
+                onDragLeave={() => setDragOverBox(null)}
+                onDrop={(e) => handleDrop(e, box.id)}
               >
-                <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
-                {box.name}
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/40 dark:bg-black/20" : "bg-slate-100 dark:bg-slate-800 text-slate-500"}`}>
-                  {count}
-                </span>
-              </button>
+                <button
+                  onClick={() => onBoxSelect(isActive ? null : box.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all font-medium text-sm ${
+                    isActive
+                      ? `${colors.border} ${colors.bg} ${colors.text} shadow-sm`
+                      : `border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-slate-300`
+                  } ${isOver ? "ring-2 ring-blue-400 scale-105" : ""}`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
+                  {box.name}
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/40 dark:bg-black/20" : "bg-slate-100 dark:bg-slate-800 text-slate-500"}`}>
+                    {count}
+                  </span>
+                </button>
 
-              {/* Action buttons on hover */}
-              <div className="absolute -top-2 -right-2 hidden group-hover:flex gap-1 z-10">
-                <button
-                  onClick={() => { setAssignBox(box); setSearchAssign(""); }}
-                  className="w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow"
-                  title="Spieler zuweisen"
-                >
-                  <Users className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={() => setEditingBox({ ...box })}
-                  className="w-5 h-5 bg-slate-400 hover:bg-slate-500 text-white rounded-full flex items-center justify-center shadow"
-                  title="Umbenennen"
-                >
-                  <Pencil className="w-3 h-3" />
-                </button>
-                <button
-                  onClick={() => deleteBox(box.id)}
-                  className="w-5 h-5 bg-red-400 hover:bg-red-500 text-white rounded-full flex items-center justify-center shadow"
-                  title="Box löschen"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+                <div className="absolute -top-2 -right-2 hidden group-hover:flex gap-1 z-10">
+                  <button
+                    onClick={() => { setAssignBox(box); setSearchAssign(""); }}
+                    className="w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow"
+                    title="Spieler zuweisen"
+                  >
+                    <Users className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => setEditingBox({ ...box })}
+                    className="w-5 h-5 bg-slate-400 hover:bg-slate-500 text-white rounded-full flex items-center justify-center shadow"
+                    title="Umbenennen"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => deleteBox(box)}
+                    className="w-5 h-5 bg-red-400 hover:bg-red-500 text-white rounded-full flex items-center justify-center shadow"
+                    title="Box löschen"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
 
-        {/* Add box */}
         <button
           onClick={() => setShowCreateBox(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:border-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-all text-sm"
@@ -215,11 +218,6 @@ export default function PlayerBoxesView({ players, activeBox, onBoxSelect }) {
           Neue Box
         </button>
       </div>
-
-      {/* Drag hint */}
-      {draggedPlayerId && (
-        <p className="text-xs text-slate-400 mt-1">Auf eine Box ziehen, um den Spieler zuzuweisen</p>
-      )}
 
       {/* Assign Players Dialog */}
       <Dialog open={!!assignBox} onOpenChange={() => setAssignBox(null)}>
@@ -245,7 +243,8 @@ export default function PlayerBoxesView({ players, activeBox, onBoxSelect }) {
                   key={player.id}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
                 >
-                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${inBox ? "bg-blue-600 border-blue-600" : "border-slate-300 dark:border-slate-600"}`}
+                  <div
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${inBox ? "bg-blue-600 border-blue-600" : "border-slate-300 dark:border-slate-600"}`}
                     onClick={() => assignBox && togglePlayerInBox(player, assignBox.id)}
                   >
                     {inBox && <Check className="w-3 h-3 text-white" />}
@@ -254,9 +253,7 @@ export default function PlayerBoxesView({ players, activeBox, onBoxSelect }) {
                     <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{player.name}</p>
                     <p className="text-xs text-slate-500 truncate">{player.position}{age ? ` · ${age} J.` : ""}{player.current_club ? ` · ${player.current_club}` : ""}</p>
                   </div>
-                  {inBox && (
-                    <span className="text-xs text-blue-600 font-medium">✓ zugewiesen</span>
-                  )}
+                  {inBox && <span className="text-xs text-blue-600 font-medium">✓ zugewiesen</span>}
                 </label>
               );
             })}
@@ -293,7 +290,7 @@ export default function PlayerBoxesView({ players, activeBox, onBoxSelect }) {
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setShowCreateBox(false)}>Abbrechen</Button>
-            <Button onClick={createBox} disabled={!newBoxName.trim()} className="bg-blue-900 hover:bg-blue-800">Erstellen</Button>
+            <Button onClick={createBox} disabled={!newBoxName.trim() || createBoxMutation.isPending} className="bg-blue-900 hover:bg-blue-800">Erstellen</Button>
           </div>
         </DialogContent>
       </Dialog>

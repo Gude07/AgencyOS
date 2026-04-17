@@ -1,0 +1,35 @@
+{
+  "name": "PlayerBox",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name der Box"
+    },
+    "color": {
+      "type": "string",
+      "enum": [
+        "blue",
+        "green",
+        "purple",
+        "orange",
+        "red",
+        "slate"
+      ],
+      "default": "blue",
+      "description": "Farbe der Box"
+    },
+    "order": {
+      "type": "number",
+      "description": "Sortierreihenfolge"
+    }
+  },
+  "required": [
+    "agency_id",
+    "name"
+  ]
+}
