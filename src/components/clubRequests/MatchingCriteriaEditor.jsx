@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -31,19 +31,38 @@ const availableCriteria = [
   { value: "category", label: "Kategorie", group: "Basis" },
 ];
 
+function normalizeCriteria(criteria) {
+  return criteria.map(c => ({
+    ...c,
+    weight: Number(c.weight) || 3,
+    min_height: c.min_height != null ? Number(c.min_height) : undefined,
+    required: !!c.required,
+  }));
+}
+
 export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
+  // Use a ref to track if we're currently saving to avoid sync overwrite
+  const isSavingRef = useRef(false);
+  const lastSavedRef = useRef(JSON.stringify(criteria));
+
   const [editedCriteria, setEditedCriteria] = useState(
     criteria.length > 0
-      ? criteria.map(c => ({ ...c }))
+      ? normalizeCriteria(criteria)
       : [{ criterion: "position", weight: 5, required: true }]
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Sync state when saved data comes back from the server
-  useEffect(() => {
-    if (criteria.length > 0 && !isSaving) {
-      setEditedCriteria(criteria.map(c => ({ ...c })));
+  // Only sync from props when the server data actually changed (after a save),
+  // and only when we are NOT currently editing (not saving)
+  const prevCriteriaStr = useRef(JSON.stringify(criteria));
+  React.useEffect(() => {
+    const newStr = JSON.stringify(criteria);
+    if (newStr !== prevCriteriaStr.current && !isSavingRef.current) {
+      prevCriteriaStr.current = newStr;
+      if (criteria.length > 0) {
+        setEditedCriteria(normalizeCriteria(criteria));
+      }
     }
   }, [JSON.stringify(criteria)]);
 
@@ -56,18 +75,40 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
   };
 
   const updateCriterion = (index, field, value) => {
-    setEditedCriteria(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+    setEditedCriteria(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      return { ...item, [field]: value };
+    }));
   };
 
   const handleSave = async () => {
+    isSavingRef.current = true;
     setIsSaving(true);
     setSaved(false);
+
+    // Build clean data to save — ensure min_height is a proper number
+    const toSave = editedCriteria.map(c => {
+      const clean = {
+        criterion: c.criterion,
+        weight: Number(c.weight) || 3,
+        required: !!c.required,
+      };
+      if (c.criterion === 'height' && c.min_height != null && c.min_height !== '') {
+        clean.min_height = Number(c.min_height);
+      }
+      return clean;
+    });
+
     try {
-      await onSave(editedCriteria);
+      await onSave(toSave);
+      // After save, update our local state with the cleaned version
+      setEditedCriteria(toSave.map(c => ({ ...c })));
+      prevCriteriaStr.current = JSON.stringify(toSave);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } finally {
       setIsSaving(false);
+      isSavingRef.current = false;
     }
   };
 
@@ -78,7 +119,12 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
       <CardHeader className="border-b border-slate-100">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Matching-Kriterien konfigurieren</CardTitle>
-          <Button onClick={handleSave} size="sm" disabled={isSaving} className={saved ? "bg-green-600 hover:bg-green-600" : "bg-blue-900 hover:bg-blue-800"}>
+          <Button
+            onClick={handleSave}
+            size="sm"
+            disabled={isSaving}
+            className={saved ? "bg-green-600 hover:bg-green-600" : "bg-blue-900 hover:bg-blue-800"}
+          >
             {saved ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
             {isSaving ? "Speichert..." : saved ? "Gespeichert!" : "Speichern"}
           </Button>
@@ -95,8 +141,8 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
               <div className="flex-1 space-y-3">
                 <div>
                   <Label className="text-sm mb-1.5 block">Kriterium</Label>
-                  <Select 
-                    value={item.criterion} 
+                  <Select
+                    value={item.criterion}
                     onValueChange={(value) => updateCriterion(index, 'criterion', value)}
                   >
                     <SelectTrigger>
@@ -104,8 +150,8 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
                     </SelectTrigger>
                     <SelectContent>
                       {availableCriteria.map(crit => (
-                        <SelectItem 
-                          key={crit.value} 
+                        <SelectItem
+                          key={crit.value}
                           value={crit.value}
                           disabled={usedCriteria.includes(crit.value) && item.criterion !== crit.value}
                         >
@@ -121,7 +167,7 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
                     Gewichtung: {item.weight} / 5
                   </Label>
                   <Slider
-                    value={[item.weight]}
+                    value={[Number(item.weight)]}
                     onValueChange={(value) => updateCriterion(index, 'weight', value[0])}
                     min={1}
                     max={5}
@@ -136,20 +182,31 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
                 </div>
 
                 {item.criterion === 'height' && (
-                  <div>
-                    <Label className="text-sm mb-1.5 block">Mindestgröße (cm)</Label>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <Label className="text-sm mb-1.5 block font-medium text-blue-900">
+                      Mindestgröße (cm)
+                    </Label>
                     <Input
                       type="number"
                       min={140}
                       max={220}
                       placeholder="z.B. 185"
-                      value={item.min_height || ''}
-                      onChange={(e) => updateCriterion(index, 'min_height', e.target.value ? Number(e.target.value) : null)}
-                      className="w-32"
+                      value={item.min_height ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateCriterion(index, 'min_height', val === '' ? undefined : Number(val));
+                      }}
+                      className="w-36 bg-white"
                     />
-                    <p className="text-xs text-slate-500 mt-1">
-                      Spieler bis 5 cm darunter erhalten Teilpunkte, bis 10 cm wenige Punkte.
-                    </p>
+                    {item.min_height ? (
+                      <p className="text-xs text-blue-700 mt-1">
+                        ✅ Mindestgröße: <strong>{item.min_height} cm</strong> – Spieler darunter verlieren Punkte, bis 10 cm darunter = Teilpunkte
+                      </p>
+                    ) : (
+                      <p className="text-xs text-slate-500 mt-1">
+                        Kein Mindestwert → alle Größen erhalten volle Punkte
+                      </p>
+                    )}
                   </div>
                 )}
 
