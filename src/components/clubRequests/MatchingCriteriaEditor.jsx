@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,13 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Sync state when saved data comes back from the server
+  useEffect(() => {
+    if (criteria.length > 0 && !isSaving) {
+      setEditedCriteria(criteria.map(c => ({ ...c })));
+    }
+  }, [JSON.stringify(criteria)]);
 
   const addCriterion = () => {
     setEditedCriteria(prev => [...prev, { criterion: "", weight: 3, required: false }]);
