@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -36,6 +36,13 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
       ? criteria 
       : [{ criterion: "position", weight: 5, required: true }]
   );
+
+  // Sync state when criteria prop changes (e.g. after DB load)
+  useEffect(() => {
+    if (criteria.length > 0) {
+      setEditedCriteria(criteria);
+    }
+  }, [JSON.stringify(criteria)]);
 
   const addCriterion = () => {
     setEditedCriteria([
@@ -124,8 +131,8 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
 
                 <div className="flex items-center gap-2">
                   <Checkbox
-                    checked={item.required}
-                    onCheckedChange={(checked) => updateCriterion(index, 'required', checked)}
+                    checked={!!item.required}
+                    onCheckedChange={(checked) => updateCriterion(index, 'required', checked === true)}
                   />
                   <Label className="text-sm cursor-pointer">
                     Pflichtkriterium (K.O.-Kriterium)
