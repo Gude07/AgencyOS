@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -125,6 +126,24 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
                     <span>Hoch</span>
                   </div>
                 </div>
+
+                {item.criterion === 'height' && (
+                  <div>
+                    <Label className="text-sm mb-1.5 block">Mindestgröße (cm)</Label>
+                    <Input
+                      type="number"
+                      min={140}
+                      max={220}
+                      placeholder="z.B. 185"
+                      value={item.min_height || ''}
+                      onChange={(e) => updateCriterion(index, 'min_height', e.target.value ? Number(e.target.value) : null)}
+                      className="w-32"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Spieler bis 5 cm darunter erhalten Teilpunkte, bis 10 cm wenige Punkte.
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2">
                   <Checkbox

@@ -365,8 +365,24 @@ export function calculateDetailedMatchScore(player, request, customConfigs) {
         break;
       }
       case 'height': {
-        if (!player.height) { detail = 'Größe nicht angegeben'; }
-        else { achieved = weight; status = 'success'; detail = `✅ ${player.height} cm`; }
+        const minHeight = crit.min_height;
+        if (!player.height) {
+          detail = 'Größe nicht angegeben';
+        } else if (!minHeight) {
+          // Kein Zielwert definiert → volle Punkte
+          achieved = weight; status = 'success'; detail = `✅ ${player.height} cm (kein Mindestwert definiert)`;
+        } else {
+          const diff = minHeight - player.height; // positiv = zu klein
+          if (diff <= 0) {
+            achieved = weight; status = 'success'; detail = `✅ ${player.height} cm (Mindest: ${minHeight} cm)`;
+          } else if (diff <= 3) {
+            achieved = Math.round(weight * 0.7); status = 'partial'; detail = `⚠️ ${player.height} cm – knapp unter Mindest (${minHeight} cm, ${diff} cm Differenz)`;
+          } else if (diff <= 7) {
+            achieved = Math.round(weight * 0.3); status = 'partial'; detail = `⚠️ ${player.height} cm – unter Mindest (${minHeight} cm, ${diff} cm Differenz)`;
+          } else {
+            achieved = 0; status = 'fail'; detail = `❌ ${player.height} cm – deutlich unter Mindest (${minHeight} cm, ${diff} cm Differenz)`;
+          }
+        }
         break;
       }
       case 'speed': {
