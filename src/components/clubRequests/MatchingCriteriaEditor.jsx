@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Save } from "lucide-react";
+import { Plus, Trash2, Save, CheckCircle2 } from "lucide-react";
 
 const availableCriteria = [
   { value: "position", label: "Position", group: "Basis" },
@@ -37,6 +37,8 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
       ? criteria.map(c => ({ ...c }))
       : [{ criterion: "position", weight: 5, required: true }]
   );
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const addCriterion = () => {
     setEditedCriteria(prev => [...prev, { criterion: "", weight: 3, required: false }]);
@@ -50,8 +52,16 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
     setEditedCriteria(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
   };
 
-  const handleSave = () => {
-    onSave(editedCriteria);
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaved(false);
+    try {
+      await onSave(editedCriteria);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const usedCriteria = editedCriteria.map(c => c.criterion);
@@ -61,9 +71,9 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
       <CardHeader className="border-b border-slate-100">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Matching-Kriterien konfigurieren</CardTitle>
-          <Button onClick={handleSave} size="sm" className="bg-blue-900 hover:bg-blue-800">
-            <Save className="w-4 h-4 mr-2" />
-            Speichern
+          <Button onClick={handleSave} size="sm" disabled={isSaving} className={saved ? "bg-green-600 hover:bg-green-600" : "bg-blue-900 hover:bg-blue-800"}>
+            {saved ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            {isSaving ? "Speichert..." : saved ? "Gespeichert!" : "Speichern"}
           </Button>
         </div>
       </CardHeader>

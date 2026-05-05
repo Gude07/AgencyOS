@@ -80,8 +80,8 @@ export default function ClubRequestDetail() {
   const { data: request, isLoading } = useQuery({
     queryKey: ['clubRequest', requestId],
     queryFn: async () => {
-      const requests = await base44.entities.ClubRequest.list();
-      return requests.find(r => r.id === requestId);
+      const results = await base44.entities.ClubRequest.filter({ id: requestId });
+      return results[0] || null;
     },
     enabled: !!requestId,
   });
