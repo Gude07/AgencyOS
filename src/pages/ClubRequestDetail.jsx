@@ -173,10 +173,14 @@ export default function ClubRequestDetail() {
 
   };
 
+  const [criteriaEditorKey, setCriteriaEditorKey] = useState(0);
+
   const handleSaveMatchingCriteria = (criteria) => {
     updateRequestMutation.mutate({ 
       id: requestId, 
       data: { matching_criteria: criteria }
+    }, {
+      onSuccess: () => setCriteriaEditorKey(k => k + 1)
     });
   };
 
@@ -1183,6 +1187,7 @@ export default function ClubRequestDetail() {
 
               <TabsContent value="criteria">
                 <MatchingCriteriaEditor 
+                  key={criteriaEditorKey}
                   criteria={request.matching_criteria || []}
                   onSave={handleSaveMatchingCriteria}
                 />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -32,18 +32,11 @@ const availableCriteria = [
 ];
 
 export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
-  const [initialized, setInitialized] = useState(false);
-  const [editedCriteria, setEditedCriteria] = useState([{ criterion: "position", weight: 5, required: true }]);
-
-  // Only initialize once when DB data first arrives
-  useEffect(() => {
-    if (!initialized && criteria.length > 0) {
-      setEditedCriteria(criteria.map(c => ({ ...c })));
-      setInitialized(true);
-    } else if (!initialized && criteria.length === 0) {
-      setInitialized(true); // keep default
-    }
-  }, [criteria, initialized]);
+  const [editedCriteria, setEditedCriteria] = useState(
+    criteria.length > 0
+      ? criteria.map(c => ({ ...c }))
+      : [{ criterion: "position", weight: 5, required: true }]
+  );
 
   const addCriterion = () => {
     setEditedCriteria(prev => [...prev, { criterion: "", weight: 3, required: false }]);
@@ -59,8 +52,6 @@ export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
 
   const handleSave = () => {
     onSave(editedCriteria);
-    // After save, allow re-sync when fresh DB data arrives
-    setInitialized(false);
   };
 
   const usedCriteria = editedCriteria.map(c => c.criterion);
