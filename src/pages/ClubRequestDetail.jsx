@@ -173,15 +173,10 @@ export default function ClubRequestDetail() {
 
   };
 
-  const [criteriaEditorKey, setCriteriaEditorKey] = useState(0);
-
-  const handleSaveMatchingCriteria = (criteria) => {
-    updateRequestMutation.mutate({ 
-      id: requestId, 
-      data: { matching_criteria: criteria }
-    }, {
-      onSuccess: () => setCriteriaEditorKey(k => k + 1)
-    });
+  const handleSaveMatchingCriteria = async (criteria) => {
+    await base44.entities.ClubRequest.update(requestId, { matching_criteria: criteria });
+    queryClient.invalidateQueries({ queryKey: ['clubRequest', requestId] });
+    queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
   };
 
   const toggleFavoriteMutation = useMutation({
@@ -1187,7 +1182,6 @@ export default function ClubRequestDetail() {
 
               <TabsContent value="criteria">
                 <MatchingCriteriaEditor 
-                  key={criteriaEditorKey}
                   criteria={request.matching_criteria || []}
                   onSave={handleSaveMatchingCriteria}
                 />
