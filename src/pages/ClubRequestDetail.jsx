@@ -80,10 +80,11 @@ export default function ClubRequestDetail() {
   const { data: request, isLoading } = useQuery({
     queryKey: ['clubRequest', requestId],
     queryFn: async () => {
-      const results = await base44.entities.ClubRequest.filter({ id: requestId });
-      return results[0] || null;
+      const all = await base44.entities.ClubRequest.list();
+      return all.find(r => r.id === requestId) || null;
     },
     enabled: !!requestId,
+    staleTime: 5000,
   });
 
   const { data: players = [] } = useQuery({
@@ -174,9 +175,13 @@ export default function ClubRequestDetail() {
   };
 
   const handleSaveMatchingCriteria = async (criteria) => {
-    await base44.entities.ClubRequest.update(requestId, { matching_criteria: criteria });
-    queryClient.invalidateQueries({ queryKey: ['clubRequest', requestId] });
-    queryClient.invalidateQueries({ queryKey: ['clubRequests'] });
+    const updated = await base44.entities.ClubRequest.update(requestId, { matching_criteria: criteria });
+    // Direkt den Cache mit den gespeicherten Daten befüllen — kein Refetch-Race-Condition
+    queryClient.setQueryData(['clubRequest', requestId], (old) => ({
+      ...(old || {}),
+      ...updated,
+      matching_criteria: criteria,
+    }));
   };
 
   const toggleFavoriteMutation = useMutation({
