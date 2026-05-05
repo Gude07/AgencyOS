@@ -31,38 +31,35 @@ const availableCriteria = [
 ];
 
 export default function MatchingCriteriaEditor({ criteria = [], onSave }) {
-  const [editedCriteria, setEditedCriteria] = useState(
-    criteria.length > 0 
-      ? criteria 
-      : [{ criterion: "position", weight: 5, required: true }]
-  );
+  const [initialized, setInitialized] = useState(false);
+  const [editedCriteria, setEditedCriteria] = useState([{ criterion: "position", weight: 5, required: true }]);
 
-  // Sync state when criteria prop changes (e.g. after DB load)
+  // Only initialize once when DB data first arrives
   useEffect(() => {
-    if (criteria.length > 0) {
-      setEditedCriteria(criteria);
+    if (!initialized && criteria.length > 0) {
+      setEditedCriteria(criteria.map(c => ({ ...c })));
+      setInitialized(true);
+    } else if (!initialized && criteria.length === 0) {
+      setInitialized(true); // keep default
     }
-  }, [JSON.stringify(criteria)]);
+  }, [criteria, initialized]);
 
   const addCriterion = () => {
-    setEditedCriteria([
-      ...editedCriteria,
-      { criterion: "", weight: 3, required: false }
-    ]);
+    setEditedCriteria(prev => [...prev, { criterion: "", weight: 3, required: false }]);
   };
 
   const removeCriterion = (index) => {
-    setEditedCriteria(editedCriteria.filter((_, i) => i !== index));
+    setEditedCriteria(prev => prev.filter((_, i) => i !== index));
   };
 
   const updateCriterion = (index, field, value) => {
-    const newCriteria = [...editedCriteria];
-    newCriteria[index][field] = value;
-    setEditedCriteria(newCriteria);
+    setEditedCriteria(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
   };
 
   const handleSave = () => {
     onSave(editedCriteria);
+    // After save, allow re-sync when fresh DB data arrives
+    setInitialized(false);
   };
 
   const usedCriteria = editedCriteria.map(c => c.criterion);
