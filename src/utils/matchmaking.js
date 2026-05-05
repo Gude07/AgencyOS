@@ -306,9 +306,163 @@ export function calculateDetailedMatchScore(player, request, customConfigs) {
     });
   }
 
+  // --- 7. BENUTZERDEFINIERTE MATCHING-KRITERIEN ---
+  const customCriteria = Array.isArray(request.matching_criteria) ? request.matching_criteria : [];
+  for (const crit of customCriteria) {
+    if (!crit.criterion) continue;
+    const weight = (crit.weight || 3) * 2; // weight 1-5 → 2-10 Punkte
+    const required = !!crit.required;
+    let achieved = 0;
+    let status = 'fail';
+    let detail = '';
+
+    switch (crit.criterion) {
+      case 'foot': {
+        // Bereits als fest eincodiertes Kriterium abgedeckt wenn sought_foot gesetzt;
+        // hier als custom-Kriterium auswerten (z.B. wenn sought_foot nicht gesetzt)
+        if (!request.sought_foot) {
+          // Kein globaler Foot-Filter → custom-Kriterium hat nichts zu prüfen, volle Punkte
+          achieved = weight; status = 'success'; detail = 'Kein Fuß-Filter gesetzt – Kriterium übersprungen';
+        } else {
+          const pFoot = player.foot;
+          if (!pFoot) { detail = 'Starker Fuß nicht angegeben'; }
+          else if (pFoot === 'beidfüßig' || pFoot === request.sought_foot) {
+            achieved = weight; status = 'success';
+            detail = `✅ ${pFoot} (gefordert: ${request.sought_foot})`;
+          } else {
+            detail = `❌ ${pFoot} (gefordert: ${request.sought_foot})`;
+          }
+        }
+        break;
+      }
+      case 'position': {
+        if (mainPositionMatch) { achieved = weight; status = 'success'; detail = `✅ Hauptposition: ${player.position}`; }
+        else if (secondaryPositionMatch) { achieved = Math.round(weight * 0.5); status = 'partial'; detail = `⚠️ Nebenposition passt`; }
+        else { detail = `❌ Position passt nicht`; }
+        break;
+      }
+      case 'age': {
+        const ageMin = request.age_min || 0;
+        const ageMax = request.age_max || 99;
+        if (!playerAge) { achieved = 0; detail = 'Alter unbekannt'; }
+        else if (playerAge >= ageMin && playerAge <= ageMax) { achieved = weight; status = 'success'; detail = `✅ ${playerAge} J. (${ageMin}-${ageMax})`; }
+        else { detail = `❌ ${playerAge} J. außerhalb (${ageMin}-${ageMax})`; }
+        break;
+      }
+      case 'market_value': {
+        const mv = player.market_value;
+        const bMax = request.budget_max;
+        const bMin = request.budget_min || 0;
+        if (!mv) { detail = 'Marktwert unbekannt'; }
+        else if (bMax && mv > bMax) { detail = `❌ Marktwert ${formatMV(mv)} über Budget`; }
+        else if (mv >= bMin) { achieved = weight; status = 'success'; detail = `✅ Marktwert ${formatMV(mv)} im Budget`; }
+        else { detail = `⚠️ Marktwert ${formatMV(mv)} unter Minimum`; achieved = Math.round(weight * 0.5); status = 'partial'; }
+        break;
+      }
+      case 'nationality': {
+        // Immer erfüllt wenn keine spezifische Nationalität definiert ist
+        achieved = weight; status = 'success'; detail = 'Nationalität wird in den Basis-Kriterien geprüft';
+        break;
+      }
+      case 'height': {
+        if (!player.height) { detail = 'Größe nicht angegeben'; }
+        else { achieved = weight; status = 'success'; detail = `✅ ${player.height} cm`; }
+        break;
+      }
+      case 'speed': {
+        if (!player.speed_rating) { detail = 'Tempo nicht angegeben'; }
+        else if (player.speed_rating >= crit.weight + 3) { achieved = weight; status = 'success'; detail = `✅ Tempo ${player.speed_rating}/10`; }
+        else if (player.speed_rating >= crit.weight + 1) { achieved = Math.round(weight * 0.6); status = 'partial'; detail = `⚠️ Tempo ${player.speed_rating}/10`; }
+        else { detail = `❌ Tempo ${player.speed_rating}/10 zu niedrig`; }
+        break;
+      }
+      case 'strength': {
+        if (!player.strength_rating) { detail = 'Stärke nicht angegeben'; }
+        else if (player.strength_rating >= crit.weight + 3) { achieved = weight; status = 'success'; detail = `✅ Stärke ${player.strength_rating}/10`; }
+        else if (player.strength_rating >= crit.weight + 1) { achieved = Math.round(weight * 0.6); status = 'partial'; detail = `⚠️ Stärke ${player.strength_rating}/10`; }
+        else { detail = `❌ Stärke ${player.strength_rating}/10 zu niedrig`; }
+        break;
+      }
+      case 'stamina': {
+        if (!player.stamina_rating) { detail = 'Ausdauer nicht angegeben'; }
+        else if (player.stamina_rating >= crit.weight + 3) { achieved = weight; status = 'success'; detail = `✅ Ausdauer ${player.stamina_rating}/10`; }
+        else if (player.stamina_rating >= crit.weight + 1) { achieved = Math.round(weight * 0.6); status = 'partial'; detail = `⚠️ Ausdauer ${player.stamina_rating}/10`; }
+        else { detail = `❌ Ausdauer ${player.stamina_rating}/10 zu niedrig`; }
+        break;
+      }
+      case 'agility': {
+        if (!player.agility_rating) { detail = 'Agilität nicht angegeben'; }
+        else if (player.agility_rating >= crit.weight + 3) { achieved = weight; status = 'success'; detail = `✅ Agilität ${player.agility_rating}/10`; }
+        else if (player.agility_rating >= crit.weight + 1) { achieved = Math.round(weight * 0.6); status = 'partial'; detail = `⚠️ Agilität ${player.agility_rating}/10`; }
+        else { detail = `❌ Agilität ${player.agility_rating}/10 zu niedrig`; }
+        break;
+      }
+      case 'personality': {
+        if (!player.personality_traits?.length) { detail = 'Keine Persönlichkeits-Eigenschaften angegeben'; }
+        else { achieved = weight; status = 'success'; detail = `✅ ${player.personality_traits.length} Eigenschaften angegeben`; }
+        break;
+      }
+      case 'current_form': {
+        const formMap = { ausgezeichnet: 5, sehr_gut: 4, gut: 3, befriedigend: 2, schwach: 1 };
+        const formVal = formMap[player.current_form] || 0;
+        if (!formVal) { detail = 'Form nicht angegeben'; }
+        else if (formVal >= 4) { achieved = weight; status = 'success'; detail = `✅ Form: ${player.current_form}`; }
+        else if (formVal >= 3) { achieved = Math.round(weight * 0.6); status = 'partial'; detail = `⚠️ Form: ${player.current_form}`; }
+        else { detail = `❌ Form: ${player.current_form}`; }
+        break;
+      }
+      case 'contract_until': {
+        if (!player.contract_until) { detail = 'Vertragsende unbekannt'; }
+        else {
+          const contractDate = new Date(player.contract_until);
+          const now = new Date();
+          const monthsLeft = (contractDate - now) / (1000 * 60 * 60 * 24 * 30);
+          if (monthsLeft <= 12) { achieved = weight; status = 'success'; detail = `✅ Vertrag läuft in ${Math.round(monthsLeft)} Monaten aus`; }
+          else { achieved = Math.round(weight * 0.3); status = 'partial'; detail = `⚠️ Vertrag noch ${Math.round(monthsLeft)} Monate gültig`; }
+        }
+        break;
+      }
+      case 'category': {
+        achieved = weight; status = 'success'; detail = `Kategorie: ${player.category || 'keine'}`;
+        break;
+      }
+      default: {
+        achieved = weight; status = 'success'; detail = 'Kriterium nicht auswertbar';
+      }
+    }
+
+    // Pflichtkriterium nicht erfüllt → Spieler disqualifiziert
+    if (required && achieved === 0) {
+      return {
+        score: 0,
+        disqualified: true,
+        breakdown: [...breakdown, { name: getCriterionLabel(crit.criterion), weight, achieved: 0, status: 'fail', required: true, detail: `🚫 Pflichtkriterium nicht erfüllt: ${detail}` }]
+      };
+    }
+
+    breakdown.push({
+      name: getCriterionLabel(crit.criterion),
+      weight,
+      achieved,
+      status,
+      required,
+      detail
+    });
+  }
+
   const totalWeight = breakdown.reduce((s, i) => s + i.weight, 0);
   const totalAchieved = breakdown.reduce((s, i) => s + i.achieved, 0);
   const score = totalWeight > 0 ? Math.round((totalAchieved / totalWeight) * 100) : 0;
 
   return { score, breakdown, disqualified: false };
+}
+
+function getCriterionLabel(criterion) {
+  const labels = {
+    position: 'Position', age: 'Alter', market_value: 'Marktwert', nationality: 'Nationalität',
+    foot: 'Starker Fuß', height: 'Größe', speed: '⚡ Tempo', strength: '💪 Stärke',
+    stamina: '🏃 Ausdauer', agility: '🤸 Agilität', personality: '👤 Persönlichkeit',
+    current_form: '📊 Aktuelle Form', contract_until: 'Vertragsende', category: 'Kategorie',
+  };
+  return labels[criterion] || criterion;
 }
