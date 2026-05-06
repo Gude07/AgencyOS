@@ -23,6 +23,23 @@ function matchesRequest(player, req) {
     reasons.push(`Starker Fuß: ${player.foot}`);
   }
 
+  // Contract duration check for loans (need at least 2 years remaining)
+  const contractDate = player.contract_until ? new Date(player.contract_until) : null;
+  const now = new Date();
+  const monthsLeft = contractDate ? (contractDate - now) / (1000 * 60 * 60 * 24 * 30) : null;
+
+  const onlyLoan = req.transfer_types?.length > 0 &&
+    req.transfer_types.every(t => t === 'leihe' || t === 'leihe_mit_kaufoption');
+
+  if (onlyLoan && monthsLeft !== null && monthsLeft < 24) {
+    return null; // Not enough contract time for a loan
+  }
+
+  if ((req.transfer_types?.includes('leihe') || req.transfer_types?.includes('leihe_mit_kaufoption')) &&
+      monthsLeft !== null && monthsLeft < 24) {
+    mismatches.push(`Vertrag zu kurz für Leihe (${Math.round(monthsLeft)} Monate)`);
+  }
+
   // Budget check (market value vs buy budget)
   if (req.transfer_types?.includes('kauf') && req.budget_max && player.market_value) {
     if (player.market_value > req.budget_max * 1.5) return null; // clearly out of budget
@@ -30,10 +47,7 @@ function matchesRequest(player, req) {
   }
 
   // Free transfer: contract ending soon
-  if (req.transfer_types?.includes('ablösefrei') && player.contract_until) {
-    const contractDate = new Date(player.contract_until);
-    const now = new Date();
-    const monthsLeft = (contractDate - now) / (1000 * 60 * 60 * 24 * 30);
+  if (req.transfer_types?.includes('ablösefrei') && contractDate) {
     if (monthsLeft <= 12) reasons.push(`Vertrag läuft aus (${player.contract_until})`);
   }
 
