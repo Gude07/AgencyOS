@@ -1,16 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Sparkles, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 export default function MultiRequestSummaryDialog({ open, onClose, selectedRequestIds, requests }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState(null);
+  const summaryRef = useRef(null);
 
   const selectedRequests = requests.filter(r => selectedRequestIds.has(r.id));
 
@@ -29,175 +32,135 @@ export default function MultiRequestSummaryDialog({ open, onClose, selectedReque
     setLoading(false);
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!summary) return;
+    setDownloading(true);
 
-    const doc = new jsPDF({ unit: "mm", format: "a4" });
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-    const margin = 18;
-    const maxWidth = pageW - margin * 2;
-    let y = 0;
+    // Build a standalone HTML page for rendering
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #222; background: #fff; padding: 0; }
+  .page { width: 794px; padding: 0; }
+  
+  /* Header banner */
+  .header { background: #0f2864; color: #fff; padding: 22px 32px 18px; }
+  .header h1 { font-size: 22px; font-weight: bold; margin-bottom: 4px; }
+  .header .subtitle { font-size: 12px; color: #b4c8ff; }
+  .header .meta { font-size: 11px; color: #93aee8; margin-top: 6px; }
+  
+  /* Body */
+  .body { padding: 28px 32px; }
+  
+  /* H2 → club section header */
+  h2 { font-size: 14px; font-weight: bold; color: #0f2864; background: #e6ecff;
+       border-left: 4px solid #0f2864; padding: 7px 12px; margin: 20px 0 10px; border-radius: 0 4px 4px 0; }
+  
+  /* H3 → sub-section */
+  h3 { font-size: 12px; font-weight: bold; color: #2850a0; margin: 14px 0 5px; padding-bottom: 3px;
+       border-bottom: 1px solid #d0d8ef; }
+  
+  /* H1 */
+  h1.content-h1 { font-size: 17px; font-weight: bold; color: #0a1e5a; margin: 16px 0 8px;
+                  padding-bottom: 5px; border-bottom: 2px solid #0f2864; }
+  
+  /* Paragraphs */
+  p { font-size: 12px; line-height: 1.65; color: #333; margin: 5px 0; }
+  
+  /* Lists */
+  ul { margin: 5px 0 5px 20px; }
+  li { font-size: 12px; line-height: 1.7; color: #333; margin: 2px 0; }
+  
+  /* Bold */
+  strong { font-weight: bold; color: #111; }
+  
+  /* HR */
+  hr { border: none; border-top: 1px solid #d0d8ef; margin: 16px 0; }
+  
+  /* Blockquote – used for highlighted info */
+  blockquote { border-left: 3px solid #0f2864; background: #f4f6ff; padding: 8px 12px;
+               margin: 8px 0; border-radius: 0 4px 4px 0; font-size: 12px; color: #333; }
+  
+  /* Footer */
+  .footer { border-top: 1px solid #d0d8ef; padding: 10px 32px; display: flex;
+            justify-content: space-between; font-size: 10px; color: #999; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>KI-Spieler-Zusammenfassung</h1>
+    <div class="subtitle">Vereinsanfragen Scout-Report</div>
+    <div class="meta">Erstellt: ${new Date().toLocaleDateString("de-DE")} &nbsp;|&nbsp; Anfragen: ${selectedRequests.map(r => r.club_name).join(", ")}</div>
+  </div>
+  <div class="body">
+    ${markdownToHtml(summary)}
+  </div>
+  <div class="footer">
+    <span>Vertraulich – Spieleragentur</span>
+    <span>${new Date().toLocaleDateString("de-DE")}</span>
+  </div>
+</div>
+</body>
+</html>`;
 
-    const checkPage = (needed = 8) => {
-      if (y + needed > pageH - 15) {
-        doc.addPage();
-        y = 18;
-      }
-    };
+    // Render in an off-screen iframe
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:794px;height:1200px;border:none;visibility:hidden;";
+    document.body.appendChild(iframe);
 
-    // ── Cover header ──────────────────────────────────────────────
-    doc.setFillColor(15, 40, 100);
-    doc.rect(0, 0, pageW, 32, "F");
+    iframe.contentDocument.open();
+    iframe.contentDocument.write(html);
+    iframe.contentDocument.close();
 
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text("Vereinsanfragen", margin, 13);
+    // Wait for fonts/images to load
+    await new Promise(r => setTimeout(r, 600));
 
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text("KI-Spieler-Zusammenfassung", margin, 20);
+    const iframeBody = iframe.contentDocument.body;
+    const totalHeight = iframeBody.scrollHeight;
+    iframe.style.height = totalHeight + "px";
 
-    doc.setFontSize(8.5);
-    doc.setTextColor(180, 200, 255);
-    doc.text(`Erstellt: ${new Date().toLocaleDateString("de-DE")}  |  Anfragen: ${selectedRequests.map(r => r.club_name).join(", ")}`, margin, 27.5);
+    await new Promise(r => setTimeout(r, 200));
 
-    y = 40;
+    const canvas = await html2canvas(iframeBody, {
+      scale: 2,
+      useCORS: true,
+      width: 794,
+      height: totalHeight,
+      windowWidth: 794,
+      windowHeight: totalHeight,
+    });
 
-    // ── Parse and render markdown ─────────────────────────────────
-    const lines = summary.split("\n");
+    document.body.removeChild(iframe);
 
-    for (let i = 0; i < lines.length; i++) {
-      const raw = lines[i];
-      const trimmed = raw.trim();
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ unit: "mm", format: "a4" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
 
-      if (!trimmed) {
-        y += 2.5;
-        continue;
-      }
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const pagesNeeded = Math.ceil(imgH / pageH);
 
-      // H2 (## ...) → section header with colored bar
-      if (trimmed.startsWith("## ")) {
-        checkPage(14);
-        y += 3;
-        const text = trimmed.replace(/^## /, "").replace(/[#*`]/g, "").trim();
-        doc.setFillColor(230, 236, 255);
-        doc.rect(margin - 3, y - 5, maxWidth + 6, 9, "F");
-        doc.setFillColor(15, 40, 100);
-        doc.rect(margin - 3, y - 5, 3, 9, "F");
-        doc.setFontSize(11.5);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(15, 40, 100);
-        doc.text(text, margin + 2, y);
-        y += 7;
-        continue;
-      }
-
-      // H3 (### ...) → sub-section
-      if (trimmed.startsWith("### ")) {
-        checkPage(10);
-        y += 2;
-        const text = trimmed.replace(/^### /, "").replace(/[#*`]/g, "").trim();
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(40, 80, 160);
-        doc.text(text, margin, y);
-        y += 6;
-        continue;
-      }
-
-      // H1 (# ...) → large title (rare)
-      if (trimmed.startsWith("# ")) {
-        checkPage(12);
-        const text = trimmed.replace(/^# /, "").replace(/[#*`]/g, "").trim();
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(10, 30, 90);
-        doc.text(text, margin, y);
-        y += 8;
-        continue;
-      }
-
-      // Horizontal rule (---)
-      if (/^---+$/.test(trimmed)) {
-        checkPage(6);
-        y += 2;
-        doc.setDrawColor(200, 210, 230);
-        doc.setLineWidth(0.3);
-        doc.line(margin, y, pageW - margin, y);
-        y += 4;
-        continue;
-      }
-
-      // Bullet points (- or •)
-      if (trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
-        const text = trimmed.replace(/^[-•] /, "").replace(/\*\*/g, "").replace(/[`*]/g, "").trim();
-        const indented = raw.startsWith("  ") || raw.startsWith("\t");
-        const indent = indented ? margin + 8 : margin + 3;
-        const bulletX = indent - 3;
-
-        checkPage(6);
-        doc.setFillColor(15, 40, 100);
-        doc.circle(bulletX, y - 1.2, 0.9, "F");
-
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(40, 40, 40);
-        const wrapped = doc.splitTextToSize(text, maxWidth - (indent - margin));
-        wrapped.forEach((line, idx) => {
-          checkPage(5);
-          doc.text(line, indent, y);
-          y += idx < wrapped.length - 1 ? 4.5 : 5;
-        });
-        continue;
-      }
-
-      // Bold standalone line (**text**)
-      if (trimmed.startsWith("**") && trimmed.endsWith("**") && trimmed.length > 4) {
-        checkPage(7);
-        const text = trimmed.replace(/\*\*/g, "").trim();
-        doc.setFontSize(9.5);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(20, 20, 20);
-        const wrapped = doc.splitTextToSize(text, maxWidth);
-        wrapped.forEach(line => {
-          checkPage(5);
-          doc.text(line, margin, y);
-          y += 5;
-        });
-        continue;
-      }
-
-      // Normal text – strip markdown symbols
-      const cleanText = trimmed.replace(/\*\*/g, "").replace(/[`*#]/g, "").trim();
-      if (!cleanText) continue;
-
-      checkPage(6);
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(50, 50, 50);
-      const wrapped = doc.splitTextToSize(cleanText, maxWidth);
-      wrapped.forEach(line => {
-        checkPage(5);
-        doc.text(line, margin, y);
-        y += 4.8;
-      });
-      y += 0.8;
+    for (let i = 0; i < pagesNeeded; i++) {
+      if (i > 0) pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, -i * pageH, imgW, imgH);
     }
 
-    // ── Footer on every page ──────────────────────────────────────
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let p = 1; p <= totalPages; p++) {
-      doc.setPage(p);
-      doc.setFontSize(7.5);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(150, 150, 150);
-      doc.text(`Seite ${p} / ${totalPages}`, pageW - margin, pageH - 8, { align: "right" });
-      doc.text("Vertraulich – Spieleragentur", margin, pageH - 8);
+    // Page numbers
+    const total = pdf.internal.getNumberOfPages();
+    for (let p = 1; p <= total; p++) {
+      pdf.setPage(p);
+      pdf.setFontSize(8);
+      pdf.setTextColor(160, 160, 160);
+      pdf.text(`${p} / ${total}`, pageW - 10, pageH - 5, { align: "right" });
     }
 
-    doc.save(`Spieler_Zusammenfassung_${new Date().toISOString().split("T")[0]}.pdf`);
+    pdf.save(`Spieler_Zusammenfassung_${new Date().toISOString().split("T")[0]}.pdf`);
+    setDownloading(false);
   };
 
   const handleClose = () => {
@@ -260,22 +223,23 @@ export default function MultiRequestSummaryDialog({ open, onClose, selectedReque
           )}
 
           {summary && (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
+            <div ref={summaryRef} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
               <ReactMarkdown
                 className="prose prose-sm dark:prose-invert max-w-none"
                 components={{
-                  h1: ({ children }) => <h1 className="text-xl font-bold text-blue-900 dark:text-blue-300 mt-5 mb-2 pb-1 border-b border-blue-100">{children}</h1>,
+                  h1: ({ children }) => <h1 className="text-xl font-bold text-blue-900 dark:text-blue-300 mt-5 mb-2 pb-1 border-b-2 border-blue-200">{children}</h1>,
                   h2: ({ children }) => (
-                    <h2 className="text-base font-bold text-blue-900 dark:text-blue-300 mt-5 mb-2 bg-blue-50 dark:bg-blue-950 px-3 py-1.5 rounded-lg">
+                    <h2 className="text-base font-bold text-blue-900 dark:text-blue-300 mt-5 mb-2 bg-blue-50 dark:bg-blue-950 px-3 py-1.5 rounded-lg border-l-4 border-blue-800">
                       {children}
                     </h2>
                   ),
-                  h3: ({ children }) => <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mt-3 mb-1">{children}</h3>,
+                  h3: ({ children }) => <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mt-3 mb-1 border-b border-slate-200 pb-1">{children}</h3>,
                   strong: ({ children }) => <strong className="font-semibold text-slate-900 dark:text-white">{children}</strong>,
                   ul: ({ children }) => <ul className="my-1.5 ml-4 space-y-1 list-disc">{children}</ul>,
                   li: ({ children }) => <li className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">{children}</li>,
                   p: ({ children }) => <p className="my-1.5 text-slate-700 dark:text-slate-300 text-sm leading-relaxed">{children}</p>,
                   hr: () => <hr className="my-4 border-slate-200 dark:border-slate-700" />,
+                  blockquote: ({ children }) => <blockquote className="border-l-4 border-blue-400 bg-blue-50 dark:bg-blue-950 px-3 py-2 my-2 rounded-r-lg text-sm text-slate-700 dark:text-slate-300">{children}</blockquote>,
                 }}
               >
                 {summary}
@@ -293,9 +257,9 @@ export default function MultiRequestSummaryDialog({ open, onClose, selectedReque
                   <Sparkles className="w-4 h-4" />
                   Neu generieren
                 </Button>
-                <Button onClick={handleDownloadPDF} className="bg-blue-900 hover:bg-blue-800 gap-2">
-                  <Download className="w-4 h-4" />
-                  Als PDF herunterladen
+                <Button onClick={handleDownloadPDF} disabled={downloading} className="bg-blue-900 hover:bg-blue-800 gap-2">
+                  {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {downloading ? "Wird erstellt..." : "Als PDF herunterladen"}
                 </Button>
               </>
             )}
@@ -304,4 +268,54 @@ export default function MultiRequestSummaryDialog({ open, onClose, selectedReque
       </DialogContent>
     </Dialog>
   );
+}
+
+// Simple markdown → HTML converter for the PDF iframe
+function markdownToHtml(md) {
+  const lines = md.split("\n");
+  const out = [];
+  let inList = false;
+
+  for (const line of lines) {
+    const t = line.trim();
+
+    if (!t) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      out.push("<br/>");
+      continue;
+    }
+
+    if (t.startsWith("# ")) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      out.push(`<h1 class="content-h1">${escHtml(t.slice(2)).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</h1>`);
+    } else if (t.startsWith("## ")) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      out.push(`<h2>${escHtml(t.slice(3)).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</h2>`);
+    } else if (t.startsWith("### ")) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      out.push(`<h3>${escHtml(t.slice(4)).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</h3>`);
+    } else if (/^---+$/.test(t)) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      out.push("<hr/>");
+    } else if (t.startsWith("- ") || t.startsWith("• ")) {
+      if (!inList) { out.push("<ul>"); inList = true; }
+      const txt = escHtml(t.replace(/^[-•] /, "")).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      out.push(`<li>${txt}</li>`);
+    } else if (t.startsWith("> ")) {
+      if (inList) { out.push("</ul>"); inList = false; }
+      const txt = escHtml(t.slice(2)).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      out.push(`<blockquote>${txt}</blockquote>`);
+    } else {
+      if (inList) { out.push("</ul>"); inList = false; }
+      const txt = escHtml(t).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      out.push(`<p>${txt}</p>`);
+    }
+  }
+
+  if (inList) out.push("</ul>");
+  return out.join("\n");
+}
+
+function escHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
