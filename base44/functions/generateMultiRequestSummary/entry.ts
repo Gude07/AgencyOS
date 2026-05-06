@@ -40,10 +40,29 @@ function matchesRequest(player, req) {
     mismatches.push(`Vertrag zu kurz für Leihe (${Math.round(monthsLeft)} Monate)`);
   }
 
+  // League-based market value plausibility check
+  // Rough minimum market values per league tier to avoid unrealistic suggestions
+  const leagueName = (req.league || '').toLowerCase();
+  const leagueMinValue = (() => {
+    if (/bundesliga|premier league|la liga|serie a|ligue 1|eredivisie/.test(leagueName) && !/2\.|zweite|second/.test(leagueName)) return 500000;
+    if (/2\. bundesliga|zweite|championship|serie b|ligue 2/.test(leagueName)) return 150000;
+    if (/3\. liga|dritte|league one|serie c/.test(leagueName)) return 50000;
+    return 0; // unknown league – no minimum
+  })();
+
+  if (leagueMinValue > 0 && player.market_value && player.market_value < leagueMinValue) {
+    return null; // Market value too low for this league level
+  }
+
   // Budget check (market value vs buy budget)
   if (req.transfer_types?.includes('kauf') && req.budget_max && player.market_value) {
     if (player.market_value > req.budget_max * 1.5) return null; // clearly out of budget
     if (player.market_value <= req.budget_max) reasons.push(`Marktwert im Budget`);
+  }
+
+  // Also exclude if market value is way above the maximum budget (even for non-buy transfers)
+  if (req.budget_max && player.market_value && player.market_value > req.budget_max * 3) {
+    return null; // Unrealistically expensive for the club
   }
 
   // Free transfer: contract ending soon
