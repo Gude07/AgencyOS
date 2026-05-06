@@ -102,6 +102,7 @@ export default function ClubRequests() {
     position_needed: "",
     league: "",
     country: "",
+    sought_foot: "",
     transfer_types: ["kauf"],
     budget_min: "",
     budget_max: "",
@@ -949,7 +950,7 @@ export default function ClubRequests() {
                       <div className="flex flex-wrap gap-1.5">
                         {request.transfer_types.map(type => (
                           <Badge key={type} variant="outline" className="border-blue-300 bg-blue-50 text-blue-900 text-xs">
-                            {type === 'kauf' ? '💰 Kauf' : type === 'leihe' ? '🔄 Leihe' : '🔄💰 Leihe + Kaufoption'}
+                            {type === 'kauf' ? '💰 Kauf' : type === 'ablösefrei' ? '🆓 Ablösefrei' : type === 'leihe' ? '🔄 Leihe' : '🔄💰 Leihe + Kaufoption'}
                           </Badge>
                         ))}
                       </div>
@@ -1124,7 +1125,7 @@ export default function ClubRequests() {
                             <div className="flex flex-wrap gap-1.5">
                               {request.transfer_types.map(type => (
                                 <Badge key={type} variant="outline" className="border-blue-300 bg-blue-50 dark:bg-blue-950 dark:border-blue-700 text-blue-900 dark:text-blue-300 text-xs">
-                                  {type === 'kauf' ? '💰 Kauf' : type === 'leihe' ? '🔄 Leihe' : '🔄💰 Leihe + Kaufoption'}
+                                  {type === 'kauf' ? '💰 Kauf' : type === 'ablösefrei' ? '🆓 Ablösefrei' : type === 'leihe' ? '🔄 Leihe' : '🔄💰 Leihe + Kaufoption'}
                                 </Badge>
                               ))}
                             </div>
@@ -1347,9 +1348,24 @@ export default function ClubRequests() {
                 </div>
 
                 <div className="col-span-2">
+                  <Label htmlFor="sought_foot">Gesuchter starker Fuß <span className="text-slate-400 font-normal">(optional)</span></Label>
+                  <Select value={newRequest.sought_foot || ""} onValueChange={(value) => setNewRequest({...newRequest, sought_foot: value === 'keine_angabe' ? undefined : value})}>
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Kein Fuß bevorzugt" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="keine_angabe">Kein Fuß bevorzugt</SelectItem>
+                      <SelectItem value="rechts">Rechts</SelectItem>
+                      <SelectItem value="links">Links</SelectItem>
+                      <SelectItem value="beidfüßig">Beidfüßig</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="col-span-2">
                   <Label className="mb-3 block">Transfer-Art *</Label>
                   <div className="flex flex-wrap gap-3">
-                    {['kauf', 'leihe', 'leihe_mit_kaufoption'].map(type => (
+                    {['kauf', 'ablösefrei', 'leihe', 'leihe_mit_kaufoption'].map(type => (
                       <label key={type} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -1364,7 +1380,7 @@ export default function ClubRequests() {
                           className="h-4 w-4"
                         />
                         <span className="text-sm text-slate-700">
-                          {type === 'kauf' ? 'Kauf' : type === 'leihe' ? 'Leihe' : 'Leihe mit Kaufoption'}
+                          {type === 'kauf' ? 'Kauf' : type === 'ablösefrei' ? 'Ablösefrei' : type === 'leihe' ? 'Leihe' : 'Leihe mit Kaufoption'}
                         </span>
                       </label>
                     ))}

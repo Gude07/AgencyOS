@@ -702,7 +702,7 @@ export default function ClubRequestDetail() {
                     <Label className="text-sm text-slate-600 mb-1.5 block">Transfer-Art</Label>
                     {editMode ? (
                       <div className="flex flex-wrap gap-3">
-                        {['kauf', 'leihe', 'leihe_mit_kaufoption'].map(type => (
+                        {['kauf', 'ablösefrei', 'leihe', 'leihe_mit_kaufoption'].map(type => (
                           <label key={type} className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
@@ -717,7 +717,7 @@ export default function ClubRequestDetail() {
                               className="h-4 w-4"
                             />
                             <span className="text-sm text-slate-700">
-                              {type === 'kauf' ? 'Kauf' : type === 'leihe' ? 'Leihe' : 'Leihe mit Kaufoption'}
+                              {type === 'kauf' ? 'Kauf' : type === 'ablösefrei' ? 'Ablösefrei' : type === 'leihe' ? 'Leihe' : 'Leihe mit Kaufoption'}
                             </span>
                           </label>
                         ))}
@@ -726,7 +726,7 @@ export default function ClubRequestDetail() {
                       <div className="flex flex-wrap gap-1.5">
                         {currentRequestData.transfer_types?.map(type => (
                           <Badge key={type} variant="outline" className="border-blue-300 bg-blue-50 text-blue-900">
-                            {type === 'kauf' ? '💰 Kauf' : type === 'leihe' ? '🔄 Leihe' : '🔄💰 Leihe + Kaufoption'}
+                            {type === 'kauf' ? '💰 Kauf' : type === 'ablösefrei' ? '🆓 Ablösefrei' : type === 'leihe' ? '🔄 Leihe' : '🔄💰 Leihe + Kaufoption'}
                           </Badge>
                         ))}
                       </div>

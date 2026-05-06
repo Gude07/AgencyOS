@@ -42,7 +42,7 @@
         "Rechtsau\u00dfen",
         "St\u00fcrmer"
       ],
-      "description": "Gesuchte Position (w\u00e4hle 'Alle Positionen' wenn Attribute wichtiger sind als Position)"
+      "description": "Gesuchte Position"
     },
     "sought_foot": {
       "type": "string",
@@ -67,6 +67,7 @@
         "type": "string",
         "enum": [
           "kauf",
+          "abl\u00f6sefrei",
           "leihe",
           "leihe_mit_kaufoption"
         ]
@@ -74,7 +75,7 @@
       "default": [
         "kauf"
       ],
-      "description": "Gew\u00fcnschte Transfer-Arten (Kauf, Leihe, Leihe mit Kaufoption)"
+      "description": "Gew\u00fcnschte Transfer-Arten (Kauf, Abl\u00f6sefrei, Leihe, Leihe mit Kaufoption)"
     },
     "budget_min": {
       "type": "number",
