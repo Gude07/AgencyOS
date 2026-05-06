@@ -23,21 +23,24 @@ function matchesRequest(player, req) {
     reasons.push(`Starker Fuß: ${player.foot}`);
   }
 
-  // Contract duration check for loans (need at least 2 years remaining)
+  // Contract duration check for loans (need at least 24 months remaining)
   const contractDate = player.contract_until ? new Date(player.contract_until) : null;
   const now = new Date();
   const monthsLeft = contractDate ? (contractDate - now) / (1000 * 60 * 60 * 24 * 30) : null;
 
-  const onlyLoan = req.transfer_types?.length > 0 &&
-    req.transfer_types.every(t => t === 'leihe' || t === 'leihe_mit_kaufoption');
+  const loanTypes = ['leihe', 'leihe_mit_kaufoption'];
+  const requestedTypes = req.transfer_types || [];
+  const hasLoan = requestedTypes.some(t => loanTypes.includes(t));
+  const hasNonLoan = requestedTypes.some(t => !loanTypes.includes(t));
 
-  if (onlyLoan && monthsLeft !== null && monthsLeft < 24) {
-    return null; // Not enough contract time for a loan
-  }
-
-  if ((req.transfer_types?.includes('leihe') || req.transfer_types?.includes('leihe_mit_kaufoption')) &&
-      monthsLeft !== null && monthsLeft < 24) {
-    mismatches.push(`Vertrag zu kurz für Leihe (${Math.round(monthsLeft)} Monate)`);
+  if (hasLoan && monthsLeft !== null && monthsLeft < 24) {
+    // Not enough contract for any kind of loan
+    if (!hasNonLoan) {
+      // Request is purely loan-based → player doesn't qualify at all
+      return null;
+    }
+    // Request has other transfer types (kauf/ablösefrei) → still valid, but note the loan restriction
+    mismatches.push(`Kein Leihe möglich – Vertrag endet in ${Math.round(monthsLeft)} Monaten (mind. 24 nötig)`);
   }
 
   // League-based market value plausibility check
@@ -230,7 +233,8 @@ WICHTIG:
 - Sei präzise und professionell
 - Nutze die exakten Spielerdaten (keine Erfindungen)
 - Markiere fehlende Werte mit "k.A."
-- Das Dokument soll direkt an Vereinsverantwortliche weitergeleitet werden können`;
+- Das Dokument soll direkt an Vereinsverantwortliche weitergeleitet werden können
+- KRITISCH: Wenn in matchWarnings steht "Kein Leihe möglich", dann schlage NIEMALS eine Leihe oder Leihe mit Kaufoption für diesen Spieler vor – auch nicht als Option. Nur die verbleibenden Transfer-Typen (z.B. Kauf, Ablösefrei) sind dann relevant.`;
 
     const summary = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
