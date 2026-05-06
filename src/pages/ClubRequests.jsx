@@ -34,10 +34,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User, MessageCircle, Download } from "lucide-react";
+import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User, MessageCircle, Download, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import MultiRequestSummaryDialog from "@/components/clubRequests/MultiRequestSummaryDialog";
 
 const priorityColors = {
   niedrig: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -78,6 +79,7 @@ export default function ClubRequests() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedRequests, setSelectedRequests] = useState(new Set());
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [clubSuggestionApplied, setClubSuggestionApplied] = useState(false);
   const [archiveAction, setArchiveAction] = useState(null);
   const [newArchiveName, setNewArchiveName] = useState("");
@@ -591,6 +593,13 @@ export default function ClubRequests() {
                 </Button>
                 {selectedRequests.size > 0 && (
                   <>
+                    <Button
+                      onClick={() => setShowSummaryDialog(true)}
+                      className="bg-purple-700 hover:bg-purple-800 gap-2"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      KI-Zusammenfassung ({selectedRequests.size})
+                    </Button>
                     {filterArchive === "active" ? (
                       <Select onValueChange={handleArchiveSelected}>
                         <SelectTrigger className="w-[180px]">
@@ -1673,6 +1682,13 @@ export default function ClubRequests() {
               </div>
             </DialogContent>
             </Dialog>
+
+            <MultiRequestSummaryDialog
+              open={showSummaryDialog}
+              onClose={() => setShowSummaryDialog(false)}
+              selectedRequestIds={selectedRequests}
+              requests={requests}
+            />
 
             <AlertDialog open={!!archiveToDelete} onOpenChange={() => {
             setArchiveToDelete(null);
