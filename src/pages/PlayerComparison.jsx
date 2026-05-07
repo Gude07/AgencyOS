@@ -13,6 +13,10 @@ export default function PlayerComparison() {
   const [clubName, setClubName] = useState('');
   const [position, setPosition] = useState('');
   const [enableReplacement, setEnableReplacement] = useState(false);
+  const [enableTargetClub, setEnableTargetClub] = useState(false);
+  const [targetClub, setTargetClub] = useState('');
+  const [targetLeague, setTargetLeague] = useState('');
+  const [targetBudget, setTargetBudget] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
   const [result, setResult] = useState(null);
@@ -23,7 +27,8 @@ export default function PlayerComparison() {
     'Spielerprofil wird analysiert...',
     'Ähnliche Spieler werden gesucht...',
     'Taktischer Fit wird bewertet...',
-    enableReplacement ? 'Vereinsersatz wird analysiert...' : null
+    enableReplacement ? 'Vereinsersatz wird analysiert...' : null,
+    enableTargetClub ? 'Zielverein-Matching wird analysiert...' : null
   ].filter(Boolean);
 
   const handleAnalyze = async () => {
@@ -35,17 +40,21 @@ export default function PlayerComparison() {
     setResult(null);
     let stepIdx = 0;
     setLoadingStep(steps[0]);
+    const extraSteps = (enableReplacement ? 1 : 0) + (enableTargetClub ? 1 : 0);
     const interval = setInterval(() => {
       stepIdx = Math.min(stepIdx + 1, steps.length - 1);
       setLoadingStep(steps[stepIdx]);
-    }, enableReplacement ? 15000 : 12000);
+    }, extraSteps > 0 ? 15000 : 12000);
 
     try {
       const res = await base44.functions.invoke('playerProfileMatch', {
         playerName: playerName.trim(),
         clubName: clubName.trim(),
         position: position.trim() || undefined,
-        enableClubReplacement: enableReplacement
+        enableClubReplacement: enableReplacement,
+        targetClub: enableTargetClub && targetClub.trim() ? targetClub.trim() : undefined,
+        targetLeague: enableTargetClub && targetLeague.trim() ? targetLeague.trim() : undefined,
+        targetBudget: enableTargetClub && targetBudget ? Number(targetBudget) * 1_000_000 : undefined,
       });
       setResult(res.data);
     } catch (e) {
@@ -83,6 +92,7 @@ export default function PlayerComparison() {
     similar_players: result.similar_players,
     fit_results: result.fit_results,
     club_replacement: result.club_replacement,
+    target_club_match: result.target_club_match,
     reference_player: playerName,
     reference_club: clubName
   } : null;
@@ -142,6 +152,40 @@ export default function PlayerComparison() {
                 <span className="font-semibold">Club Replacement Analysis aktivieren</span>
                 <span className="block text-xs opacity-75">Analysiert welche Spieler am besten als Ersatz im Vereinssystem passen (+~15s)</span>
               </label>
+            </div>
+
+            {/* Target Club Option */}
+            <div className="rounded-lg border border-purple-200 dark:border-purple-800 overflow-hidden">
+              <div className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-950">
+                <input
+                  type="checkbox"
+                  id="targetClubEnable"
+                  checked={enableTargetClub}
+                  onChange={e => setEnableTargetClub(e.target.checked)}
+                  disabled={loading}
+                  className="w-4 h-4 accent-purple-600"
+                />
+                <label htmlFor="targetClubEnable" className="text-sm text-purple-800 dark:text-purple-200 cursor-pointer">
+                  <span className="font-semibold">Zielverein-Matching aktivieren</span>
+                  <span className="block text-xs opacity-75">Sucht ähnliche Spieler, die zum Spielstil und Budget eines bestimmten Vereins passen (+~20s)</span>
+                </label>
+              </div>
+              {enableTargetClub && (
+                <div className="p-3 bg-white dark:bg-slate-900 grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Zielverein *</label>
+                    <Input placeholder="z.B. SC Freiburg" value={targetClub} onChange={e => setTargetClub(e.target.value)} disabled={loading} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Liga</label>
+                    <Input placeholder="z.B. Bundesliga" value={targetLeague} onChange={e => setTargetLeague(e.target.value)} disabled={loading} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Max. Budget (Mio. €)</label>
+                    <Input type="number" placeholder="z.B. 8" value={targetBudget} onChange={e => setTargetBudget(e.target.value)} disabled={loading} />
+                  </div>
+                </div>
+              )}
             </div>
             <Button
               onClick={handleAnalyze}
