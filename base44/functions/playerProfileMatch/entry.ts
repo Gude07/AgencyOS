@@ -223,12 +223,99 @@ Return ONLY valid JSON sorted by highest fit_score (no markdown):
     return Response.json({ error: `Step 3 fehlgeschlagen: ${e.message}` }, { status: 500 });
   }
 
-  // STEP 4 — Club Context Replacement Analysis (optional)
+  // STEP 4 + 5 — Run optional analyses in parallel
   let clubReplacement = null;
+  let targetClubMatch = null;
+
+  // Build target club prompt helper
+  let step5Promise = null;
+  if (targetClub) {
+    let effectiveBudget = targetBudget;
+    if (!effectiveBudget && targetLeague) {
+      const ll = targetLeague.toLowerCase();
+      if (/champions|premier league|bundesliga(?! 2)|la liga|serie a(?! b)|ligue 1(?! 2)|eredivisie/.test(ll)) effectiveBudget = 80_000_000;
+      else if (/2\. bundesliga|championship|serie b|segunda|ligue 2/.test(ll)) effectiveBudget = 8_000_000;
+      else if (/3\. liga|dritte|league one|third/.test(ll)) effectiveBudget = 2_000_000;
+      else effectiveBudget = 15_000_000;
+    }
+
+    step5Promise = base44.integrations.Core.InvokeLLM({
+      model: 'gemini_3_flash',
+      add_context_from_internet: true,
+      prompt: `Du bist Fußball-Scout-Experte. Ein Verein sucht einen Spieler mit einem bestimmten Spielerprofil.
+
+GESUCHTER SPIELERTYP (Referenzprofil von "${playerProfile.player_name}"):
+${JSON.stringify(playerProfile, null, 2)}
+
+ZIELVEREIN: "${targetClub}"
+LIGA: "${targetLeague || 'unbekannt'}"
+MAX. BUDGET: ${effectiveBudget ? `€${effectiveBudget.toLocaleString()}` : 'nicht angegeben'}
+
+KANDIDATEN (ähnliche Spieler, bereits gefunden):
+${JSON.stringify(fitResults.slice(0, 8), null, 2)}
+
+AUFGABE:
+1. Recherchiere "${targetClub}" im Internet: Formation, Spielstil, taktische Philosophie, Liga-Niveau, typisches Transferbudget.
+2. Bewerte, welche der Kandidaten-Spieler zu "${targetClub}" passen würden – basierend auf:
+   - Taktischer Fit zum Vereinssystem
+   - Budget-Realismus: Spieler deren Marktwert das Budget (€${effectiveBudget ? effectiveBudget.toLocaleString() : 'unbegrenzt'}) deutlich übersteigt AUSSCHLIESSEN
+   - Ligakompatibilität
+3. Schlage 2-3 weitere reale Spieler vor (aus dem Internet), die noch besser zum Verein und Budget passen.
+
+WICHTIG: Alle Texte auf DEUTSCH. Nur budgettechnisch realistische Spieler vorschlagen!
+
+Antworte als JSON:
+{
+  "club_profile": {
+    "name": "${targetClub}",
+    "league": "",
+    "formation": "",
+    "playing_style": "",
+    "tactical_philosophy": "",
+    "estimated_transfer_budget": "",
+    "squad_needs": ""
+  },
+  "matched_candidates": [
+    {
+      "name": "",
+      "club": "",
+      "estimated_market_value": "",
+      "club_fit_score": 85,
+      "budget_feasible": true,
+      "fit_explanation": "",
+      "strengths_for_club": [],
+      "concerns": []
+    }
+  ],
+  "additional_recommendations": [
+    {
+      "name": "",
+      "current_club": "",
+      "nationality": "",
+      "age": 24,
+      "position": "",
+      "estimated_market_value": "",
+      "contract_until": "",
+      "why_fits_club": "",
+      "similarity_to_reference": ""
+    }
+  ]
+}`,
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          club_profile: { type: 'object', properties: { name: { type: 'string' }, league: { type: 'string' }, formation: { type: 'string' }, playing_style: { type: 'string' }, tactical_philosophy: { type: 'string' }, estimated_transfer_budget: { type: 'string' }, squad_needs: { type: 'string' } } },
+          matched_candidates: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, club: { type: 'string' }, estimated_market_value: { type: 'string' }, club_fit_score: { type: 'number' }, budget_feasible: { type: 'boolean' }, fit_explanation: { type: 'string' }, strengths_for_club: { type: 'array', items: { type: 'string' } }, concerns: { type: 'array', items: { type: 'string' } } } } },
+          additional_recommendations: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, current_club: { type: 'string' }, nationality: { type: 'string' }, age: { type: 'number' }, position: { type: 'string' }, estimated_market_value: { type: 'string' }, contract_until: { type: 'string' }, why_fits_club: { type: 'string' }, similarity_to_reference: { type: 'string' } } } }
+        }
+      }
+    }).catch(e => { console.warn('Step 5 fehlgeschlagen:', e.message); return null; });
+  }
+
   if (enableClubReplacement) {
     try {
       const step4Result = await base44.integrations.Core.InvokeLLM({
-        model: 'gemini_3_pro',
+        model: 'gemini_3_flash',
         add_context_from_internet: true,
         prompt: `You are evaluating which players could best REPLACE "${playerProfile.player_name}" at "${clubName}".
 
@@ -309,142 +396,15 @@ Return ONLY valid JSON sorted by highest replacement_score (no markdown):
     }
   }
 
-  // STEP 5 — Target Club Matching (optional)
-  let targetClubMatch = null;
-  if (targetClub) {
-    try {
-      // Derive budget cap from league tier if no explicit budget given
-      let effectiveBudget = targetBudget;
-      if (!effectiveBudget && targetLeague) {
-        const ll = targetLeague.toLowerCase();
-        if (/champions|premier league|bundesliga(?! 2)|la liga|serie a(?! b)|ligue 1(?! 2)|eredivisie/.test(ll)) effectiveBudget = 80_000_000;
-        else if (/2\. bundesliga|championship|serie b|segunda|ligue 2/.test(ll)) effectiveBudget = 8_000_000;
-        else if (/3\. liga|dritte|league one|third/.test(ll)) effectiveBudget = 2_000_000;
-        else effectiveBudget = 15_000_000;
-      }
-
-      const step5Result = await base44.integrations.Core.InvokeLLM({
-        model: 'gemini_3_1_pro',
-        add_context_from_internet: true,
-        prompt: `Du bist Fußball-Scout-Experte. Ein Verein sucht einen Spieler mit einem bestimmten Spielerprofil.
-
-GESUCHTER SPIELERTYP (Referenzprofil von "${playerProfile.player_name}"):
-${JSON.stringify(playerProfile, null, 2)}
-
-ZIELVEREIN: "${targetClub}"
-LIGA: "${targetLeague || 'unbekannt'}"
-MAX. BUDGET: ${effectiveBudget ? `€${effectiveBudget.toLocaleString()}` : 'nicht angegeben'}
-
-KANDIDATEN (ähnliche Spieler, bereits gefunden):
-${JSON.stringify(fitResults.slice(0, 10), null, 2)}
-
-AUFGABE:
-1. Recherchiere "${targetClub}" im Internet: Formation, Spielstil, taktische Philosophie, aktuelle Kaderstruktur, Liga-Niveau, typisches Transferbudget.
-2. Bewerte, welche der Kandidaten-Spieler zu "${targetClub}" passen würden – basierend auf:
-   - Taktischer Fit zum Vereinssystem
-   - Budget-Realismus: Spieler deren Marktwert das Budget (€${effectiveBudget ? effectiveBudget.toLocaleString() : 'unbegrenzt'}) deutlich übersteigt AUSSCHLIESSEN
-   - Ligakompatibilität (zu großer Unterschied im Niveau kritisch bewerten)
-   - Vertragssituation (kurze Restlaufzeit = Risiko oder Chance je nach Transferart)
-3. Schlage auch 2-3 weitere reale Spieler vor (aus dem Internet recherchiert), die noch besser zum Verein und Budget passen könnten, aber NICHT in der Kandidatenliste sind.
-
-WICHTIG: Alle Texte auf DEUTSCH. Nur Spieler vorschlagen, die budgettechnisch realistisch sind!
-
-Antworte als JSON:
-{
-  "club_profile": {
-    "name": "${targetClub}",
-    "league": "",
-    "formation": "",
-    "playing_style": "",
-    "tactical_philosophy": "",
-    "estimated_transfer_budget": "",
-    "squad_needs": ""
-  },
-  "matched_candidates": [
-    {
-      "name": "",
-      "club": "",
-      "estimated_market_value": "",
-      "club_fit_score": 85,
-      "budget_feasible": true,
-      "fit_explanation": "",
-      "strengths_for_club": [],
-      "concerns": []
-    }
-  ],
-  "additional_recommendations": [
-    {
-      "name": "",
-      "current_club": "",
-      "nationality": "",
-      "age": 24,
-      "position": "",
-      "estimated_market_value": "",
-      "contract_until": "",
-      "why_fits_club": "",
-      "similarity_to_reference": ""
-    }
-  ]
-}`,
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            club_profile: {
-              type: 'object',
-              properties: {
-                name: { type: 'string' },
-                league: { type: 'string' },
-                formation: { type: 'string' },
-                playing_style: { type: 'string' },
-                tactical_philosophy: { type: 'string' },
-                estimated_transfer_budget: { type: 'string' },
-                squad_needs: { type: 'string' }
-              }
-            },
-            matched_candidates: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  name: { type: 'string' },
-                  club: { type: 'string' },
-                  estimated_market_value: { type: 'string' },
-                  club_fit_score: { type: 'number' },
-                  budget_feasible: { type: 'boolean' },
-                  fit_explanation: { type: 'string' },
-                  strengths_for_club: { type: 'array', items: { type: 'string' } },
-                  concerns: { type: 'array', items: { type: 'string' } }
-                }
-              }
-            },
-            additional_recommendations: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  name: { type: 'string' },
-                  current_club: { type: 'string' },
-                  nationality: { type: 'string' },
-                  age: { type: 'number' },
-                  position: { type: 'string' },
-                  estimated_market_value: { type: 'string' },
-                  contract_until: { type: 'string' },
-                  why_fits_club: { type: 'string' },
-                  similarity_to_reference: { type: 'string' }
-                }
-              }
-            }
-          }
-        }
-      });
+  // STEP 5 — await target club promise (started in parallel with step 4)
+  if (step5Promise) {
+    const step5Result = await step5Promise;
+    if (step5Result) {
       targetClubMatch = step5Result;
       if (targetClubMatch?.matched_candidates) {
         targetClubMatch.matched_candidates.sort((a, b) => b.club_fit_score - a.club_fit_score);
       }
       console.log('Step 5 done');
-    } catch (e) {
-      console.warn('Step 5 fehlgeschlagen:', e.message);
-      targetClubMatch = null;
     }
   }
 
