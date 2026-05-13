@@ -59,13 +59,13 @@ function matchesRequest(player, req) {
 
   // Budget check (market value vs buy budget)
   if (req.transfer_types?.includes('kauf') && req.budget_max && player.market_value) {
-    if (player.market_value > req.budget_max * 1.5) return null; // clearly out of budget
-    if (player.market_value <= req.budget_max) reasons.push(`Marktwert im Budget`);
+    if (player.market_value > req.budget_max) return null; // strictly over budget → exclude
+    reasons.push(`Marktwert im Budget`);
   }
 
-  // Also exclude if market value is way above the maximum budget (even for non-buy transfers)
-  if (req.budget_max && player.market_value && player.market_value > req.budget_max * 3) {
-    return null; // Unrealistically expensive for the club
+  // For non-buy transfers: also exclude if market value far exceeds the maximum buy budget
+  if (!req.transfer_types?.includes('kauf') && req.budget_max && player.market_value && player.market_value > req.budget_max * 1.5) {
+    return null; // Unrealistically expensive even for loan/free
   }
 
   // Free transfer: contract ending soon
@@ -82,6 +82,9 @@ function matchesRequest(player, req) {
   if (req.sought_foot && player.foot === req.sought_foot) score += 3;
   if (req.budget_max && player.market_value && player.market_value <= req.budget_max) score += 2;
   score -= mismatches.length * 2;
+
+  // Only recommend players with a meaningful match score (at least one positive reason beyond position)
+  if (reasons.length === 0 && mismatches.length > 0) return null;
 
   return { score, reasons, mismatches };
 }
@@ -144,7 +147,8 @@ Deno.serve(async (req) => {
         })
         .filter(Boolean)
         .sort((a, b) => b.score - a.score)
-        .slice(0, 5) // top 5 best-matching players
+        .filter(m => m.score >= 12) // only players who truly match (score > base 10)
+        .slice(0, 8) // cap at 8 but usually far fewer
         .map(m => ({
           name: m.player.name,
           position: m.player.position,
@@ -207,13 +211,14 @@ Für jeden Spieler:
   - ✅ Passt weil: Position, Alter und Budget erfüllt
 
 ### 🤖 KI-Empfehlungen (Kriterien-Matching)
-(Top-Spieler die wirklich passen – nur wenn criteriaMatches vorhanden)
+(Nur Spieler die WIRKLICH alle Kernkriterien erfüllen – Budget, Position, Alter, Fuß. Es können 0, 1, 2 oder mehr sein – niemals Spieler erfinden oder aufführen die nicht in den Daten stehen)
 Für jeden Spieler:
 - **[Name]** | [Alter] J. | [Nationalität] | [aktueller Verein] | MV: [Marktwert]
   - Vertrag bis: [Datum] | Fuß: [Fuß]
   - ✅ [matchReasons als Aufzählung]
   - ⚠️ [matchWarnings falls vorhanden]
 
+Falls criteriaMatches leer ist: Schreibe "Kein weiterer Spieler im Portfolio erfüllt alle Kriterien dieser Anfrage."
 Falls KEINE Spieler (weder Shortlist noch KI-Empfehlungen) vorhanden sind: Schreibe "Aktuell keine passenden Spieler im Portfolio gefunden."
 
 ---
