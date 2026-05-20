@@ -10,7 +10,7 @@ import { createPortal } from "react-dom";
  *  - content: ReactNode to render inside the popover
  *  - children: the element to wrap
  */
-export default function HoverDetailCard({ children, content, delay = 2500 }) {
+export default function HoverDetailCard({ children, content, delay = 1500 }) {
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const timerRef = useRef(null);
