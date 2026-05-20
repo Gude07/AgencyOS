@@ -171,79 +171,15 @@ export default function AcquisitionKanban() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95 }}
                         >
-                          <Card className="bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow border border-slate-200 dark:border-slate-700 group">
-                            <CardContent className="p-3 space-y-2">
-                              {/* Name + actions */}
-                              <div className="flex items-start justify-between gap-1">
-                                <button
-                                  className="font-semibold text-sm text-slate-900 dark:text-white hover:text-blue-700 text-left leading-tight"
-                                  onClick={() => navigate(createPageUrl("PlayerDetail") + "?id=" + player.id)}
-                                >
-                                  {player.name}
-                                </button>
-                                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                                  <button
-                                    onClick={() => setEditingPlayer(player)}
-                                    className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
-                                    title="Bearbeiten"
-                                  >
-                                    <Pencil className="w-3 h-3 text-slate-500" />
-                                  </button>
-                                  <button
-                                    onClick={() => setDeleteCandidate(player)}
-                                    className="p-1 rounded hover:bg-red-50"
-                                    title="Löschen"
-                                  >
-                                    <Trash2 className="w-3 h-3 text-red-400" />
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Club & position */}
-                              <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                <span>{player.current_club || "–"}</span>
-                                {player.transfermarkt_url && (
-                                  <a href={player.transfermarkt_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="hover:text-blue-600">
-                                    <ExternalLink className="w-2.5 h-2.5" />
-                                  </a>
-                                )}
-                              </div>
-
-                              <div className="flex flex-wrap gap-1">
-                                <Badge variant="outline" className="text-xs border-blue-200 bg-blue-50 text-blue-700">{player.position}</Badge>
-                                {calculateAge(player.date_of_birth) && (
-                                  <Badge variant="outline" className="text-xs">{calculateAge(player.date_of_birth)} J.</Badge>
-                                )}
-                                {player.nationality && (
-                                  <Badge variant="outline" className="text-xs">{player.nationality}</Badge>
-                                )}
-                              </div>
-
-                              {player.acquisition_notes && (
-                                <p className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-700 rounded p-2 line-clamp-2">
-                                  {player.acquisition_notes}
-                                </p>
-                              )}
-
-                              {/* Move buttons */}
-                              <div className="flex justify-between pt-1">
-                                <button
-                                  onClick={() => movePlayer(player, -1)}
-                                  disabled={colIndex === 0}
-                                  className="text-xs flex items-center gap-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                  <ChevronLeft className="w-3 h-3" /> Zurück
-                                </button>
-                                <button
-                                  onClick={() => movePlayer(player, 1)}
-                                  disabled={colIndex === COLUMNS.length - 1}
-                                  className="text-xs flex items-center gap-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                  Weiter <ChevronRight className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </CardContent>
-                          </Card>
+                          <AcquisitionCard
+                            player={player}
+                            colIndex={colIndex}
+                            totalCols={COLUMNS.length}
+                            onMove={movePlayer}
+                            onEdit={setEditingPlayer}
+                            onDelete={setDeleteCandidate}
+                            onNavigate={() => navigate(createPageUrl("PlayerDetail") + "?id=" + player.id)}
+                          />
                         </motion.div>
                       );
                     })}
@@ -339,6 +275,83 @@ export default function AcquisitionKanban() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function AcquisitionCard({ player, colIndex, totalCols, onMove, onEdit, onDelete, onNavigate }) {
+  const [showDetail, setShowDetail] = useState(false);
+  const age = calculateAge(player.date_of_birth);
+
+  return (
+    <>
+      <Card className="bg-white dark:bg-slate-800 shadow-sm hover:shadow-md transition-shadow border border-slate-200 dark:border-slate-700 group">
+        <CardContent className="p-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">{player.name}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                {player.current_club || "–"} · {player.position}
+              </p>
+            </div>
+            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+              <button onClick={() => setShowDetail(true)} className="p-1 rounded hover:bg-blue-50" title="Details">
+                <ExternalLink className="w-3 h-3 text-blue-500" />
+              </button>
+              <button onClick={() => onEdit(player)} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700" title="Bearbeiten">
+                <Pencil className="w-3 h-3 text-slate-500" />
+              </button>
+              <button onClick={() => onDelete(player)} className="p-1 rounded hover:bg-red-50" title="Löschen">
+                <Trash2 className="w-3 h-3 text-red-400" />
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-between mt-2">
+            <button onClick={() => onMove(player, -1)} disabled={colIndex === 0} className="text-xs flex items-center gap-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed">
+              <ChevronLeft className="w-3 h-3" /> Zurück
+            </button>
+            <button onClick={() => onMove(player, 1)} disabled={colIndex === totalCols - 1} className="text-xs flex items-center gap-0.5 text-slate-400 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed">
+              Weiter <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Detail Dialog */}
+      <Dialog open={showDetail} onOpenChange={setShowDetail}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{player.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2 text-sm">
+            <div className="grid grid-cols-2 gap-3">
+              <div><span className="text-xs text-slate-400 uppercase tracking-wide block">Verein</span><span className="font-medium">{player.current_club || "–"}</span></div>
+              <div><span className="text-xs text-slate-400 uppercase tracking-wide block">Position</span><span className="font-medium">{player.position}</span></div>
+              {age && <div><span className="text-xs text-slate-400 uppercase tracking-wide block">Alter</span><span className="font-medium">{age} J.</span></div>}
+              {player.nationality && <div><span className="text-xs text-slate-400 uppercase tracking-wide block">Nationalität</span><span className="font-medium">{player.nationality}</span></div>}
+              {player.market_value && <div><span className="text-xs text-slate-400 uppercase tracking-wide block">Marktwert</span><span className="font-medium">{(player.market_value / 1000000).toFixed(1)}M €</span></div>}
+              {player.contract_until && <div><span className="text-xs text-slate-400 uppercase tracking-wide block">Vertrag bis</span><span className="font-medium">{player.contract_until}</span></div>}
+            </div>
+            {player.acquisition_notes && (
+              <div>
+                <span className="text-xs text-slate-400 uppercase tracking-wide block mb-1">Akquise-Notizen</span>
+                <p className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 rounded p-2 text-sm">{player.acquisition_notes}</p>
+              </div>
+            )}
+            {player.transfermarkt_url && (
+              <a href={player.transfermarkt_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:underline text-xs">
+                <ExternalLink className="w-3 h-3" /> Transfermarkt-Profil
+              </a>
+            )}
+          </div>
+          <div className="flex justify-between pt-2">
+            <Button variant="outline" size="sm" onClick={() => setShowDetail(false)}>Schließen</Button>
+            <Button size="sm" className="bg-blue-900 hover:bg-blue-800" onClick={() => { setShowDetail(false); onNavigate(); }}>
+              Vollständiges Profil öffnen
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
