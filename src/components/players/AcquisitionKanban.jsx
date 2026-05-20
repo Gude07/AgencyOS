@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
-import { Plus, ExternalLink, ChevronRight, ChevronLeft, Pencil, Trash2, Target, Phone, MessageSquare, Handshake, CheckCircle, XCircle } from "lucide-react";
+import { Plus, ExternalLink, ChevronRight, ChevronLeft, Pencil, Trash2, Target, Phone, MessageSquare, Handshake, CheckCircle, XCircle, Search, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -56,6 +56,8 @@ export default function AcquisitionKanban() {
   const [newPlayer, setNewPlayer] = useState({ ...emptyPlayer });
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterPosition, setFilterPosition] = useState("");
 
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['acquisitionPlayers'],
@@ -125,28 +127,70 @@ export default function AcquisitionKanban() {
     setShowAddDialog(true);
   };
 
+  const allPositions = POSITIONS.flatMap(g => g.items);
+
+  const filteredPlayers = players.filter(p => {
+    const matchesSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.current_club || "").toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesPosition = !filterPosition || p.position === filterPosition;
+    return matchesSearch && matchesPosition;
+  });
+
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Akquise-Pipeline</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{players.length} Spieler im Akquiseprozess</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{filteredPlayers.length} von {players.length} Spielern</p>
         </div>
-        <Button
-          onClick={() => openAddDialog("Zielidentifikation")}
-          className="bg-blue-900 hover:bg-blue-800"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Akquise-Spieler hinzufügen
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Search */}
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Name oder Verein..."
+              className="pl-8 h-9 w-48 text-sm"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2">
+                <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+              </button>
+            )}
+          </div>
+          {/* Position filter */}
+          <Select value={filterPosition} onValueChange={setFilterPosition}>
+            <SelectTrigger className="h-9 w-44 text-sm">
+              <SelectValue placeholder="Alle Positionen" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>Alle Positionen</SelectItem>
+              {POSITIONS.map(group => (
+                <SelectGroup key={group.group}>
+                  <SelectLabel>{group.group}</SelectLabel>
+                  {group.items.map(pos => (
+                    <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={() => openAddDialog("Zielidentifikation")}
+            className="bg-blue-900 hover:bg-blue-800 h-9"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Hinzufügen
+          </Button>
+        </div>
       </div>
 
       {/* Kanban Board */}
       <div className="overflow-x-auto pb-4">
         <div className="flex gap-4 min-w-max">
           {COLUMNS.map((col) => {
-            const colPlayers = players.filter(p => p.acquisition_status === col.id);
+            const colPlayers = filteredPlayers.filter(p => p.acquisition_status === col.id);
             const Icon = col.icon;
             return (
               <div key={col.id} className={`w-72 rounded-xl border-2 ${col.color} flex flex-col`}>
