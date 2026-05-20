@@ -10,6 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Plus, ExternalLink, ChevronRight, ChevronLeft, Pencil, Trash2, Target, Phone, MessageSquare, Handshake, CheckCircle, XCircle, Search, X } from "lucide-react";
+
+const InstagramIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+    <circle cx="12" cy="12" r="4"/>
+    <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/>
+  </svg>
+);
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -84,6 +92,7 @@ export default function AcquisitionKanban() {
         market_value: data.market_value ? parseFloat(data.market_value) : undefined,
         contract_until: data.contract_until || undefined,
         transfermarkt_url: data.transfermarkt_url || undefined,
+        instagram_url: data.instagram_url || undefined,
         acquisition_notes: data.acquisition_notes || undefined,
         is_acquisition_target: true,
         acquisition_status: data.acquisition_status || "Zielidentifikation",
@@ -381,11 +390,18 @@ function AcquisitionCard({ player, colIndex, totalCols, onMove, onEdit, onDelete
                 <p className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 rounded p-2 text-sm">{player.acquisition_notes}</p>
               </div>
             )}
-            {player.transfermarkt_url && (
-              <a href={player.transfermarkt_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:underline text-xs">
-                <ExternalLink className="w-3 h-3" /> Transfermarkt-Profil
-              </a>
-            )}
+            <div className="flex flex-wrap gap-3">
+              {player.transfermarkt_url && (
+                <a href={player.transfermarkt_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:underline text-xs">
+                  <ExternalLink className="w-3 h-3" /> Transfermarkt
+                </a>
+              )}
+              {player.instagram_url && (
+                <a href={player.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-pink-600 hover:underline text-xs">
+                  <InstagramIcon className="w-3 h-3" /> Instagram
+                </a>
+              )}
+            </div>
           </div>
           <div className="flex justify-between pt-2">
             <Button variant="outline" size="sm" onClick={() => setShowDetail(false)}>Schließen</Button>
@@ -511,6 +527,16 @@ function AcquisitionPlayerForm({ player, onChange, positions, columns }) {
             value={player.transfermarkt_url || ""}
             onChange={e => onChange({ ...player, transfermarkt_url: e.target.value })}
             placeholder="https://www.transfermarkt.de/..."
+            className="mt-1.5"
+          />
+        </div>
+
+        <div>
+          <Label>Instagram</Label>
+          <Input
+            value={player.instagram_url || ""}
+            onChange={e => onChange({ ...player, instagram_url: e.target.value })}
+            placeholder="https://www.instagram.com/..."
             className="mt-1.5"
           />
         </div>

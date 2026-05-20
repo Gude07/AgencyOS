@@ -86,6 +86,10 @@
       "type": "string",
       "description": "Link zum Transfermarkt.de Profil"
     },
+    "instagram_url": {
+      "type": "string",
+      "description": "Link zum Instagram-Profil"
+    },
     "category": {
       "type": "string",
       "enum": [
