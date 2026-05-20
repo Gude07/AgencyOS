@@ -40,6 +40,8 @@ import CommunicationHistory from "../components/clubRequests/CommunicationHistor
 import MatchScoreBreakdown from "../components/clubRequests/MatchScoreBreakdown";
 import EmailDraftGenerator from "../components/ai/EmailDraftGenerator";
 import DropboxDocumentManager from "../components/documents/DropboxDocumentManager";
+import HoverDetailCard from "../components/ui/HoverDetailCard";
+import PlayerHoverCard from "../components/players/PlayerHoverCard";
 
 const priorityColors = {
   niedrig: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -266,8 +268,8 @@ export default function ClubRequestDetail() {
     const isOfferedToThisRequest = player.offered_to_requests?.includes(requestId);
 
     return (
+      <HoverDetailCard key={player.id} content={<PlayerHoverCard player={player} />}>
       <div 
-        key={player.id}
         className={`p-4 rounded-lg border transition-colors ${
           isOfferedToThisRequest 
             ? 'bg-green-50 border-green-300 hover:border-green-400' 
@@ -376,6 +378,7 @@ export default function ClubRequestDetail() {
           </Button>
         </div>
       </div>
+      </HoverDetailCard>
     );
   };
 

@@ -34,6 +34,8 @@ import { createPageUrl } from "@/utils";
 import { format, differenceInYears } from "date-fns";
 import { calculateDetailedMatchScore } from "../utils/matchmaking";
 import MatchScoreBreakdown from "../components/clubRequests/MatchScoreBreakdown";
+import HoverDetailCard from "../components/ui/HoverDetailCard";
+import ClubRequestHoverCard from "../components/clubRequests/ClubRequestHoverCard";
 import { de } from "date-fns/locale";
 import PlayerPreferences from "../components/players/PlayerPreferences";
 import SecondaryPositionsEditor from "../components/players/SecondaryPositionsEditor";
@@ -1155,8 +1157,8 @@ export default function PlayerDetail() {
                   {filteredMatchingRequests.map(request => {
                     const isFavorite = (player.favorite_matches || []).includes(request.id);
                     return (
+                      <HoverDetailCard key={request.id} content={<ClubRequestHoverCard request={request} />}>
                       <Card 
-                        key={request.id}
                         className={`border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:shadow-md transition-all cursor-pointer ${
                           isFavorite ? 'ring-2 ring-yellow-400' : ''
                         }`}
@@ -1204,14 +1206,15 @@ export default function PlayerDetail() {
                           </div>
                         </CardContent>
                       </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </TabsContent>
+                      </HoverDetailCard>
+                      );
+                      })}
+                      </div>
+                      )}
+                      </div>
+                      </TabsContent>
 
-          <TabsContent value="comments">
+                      <TabsContent value="comments">
             <PlayerComments playerId={playerId} />
           </TabsContent>
         </Tabs>
