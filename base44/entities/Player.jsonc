@@ -99,6 +99,27 @@
       "default": "Beobachtungsliste",
       "description": "Kategorie f\u00fcr die Organisation"
     },
+    "is_acquisition_target": {
+      "type": "boolean",
+      "default": false,
+      "description": "Markiert den Spieler als Akquise-Ziel (getrennt von regul\u00e4ren Spielern)"
+    },
+    "acquisition_status": {
+      "type": "string",
+      "enum": [
+        "Zielidentifikation",
+        "Erstkontakt",
+        "In Gespr\u00e4ch",
+        "Verhandlung",
+        "Gewonnen",
+        "Abgelehnt"
+      ],
+      "description": "Akquise-Phase des Spielers"
+    },
+    "acquisition_notes": {
+      "type": "string",
+      "description": "Notizen zur Akquise (Ansprechpartner, n\u00e4chste Schritte, etc.)"
+    },
     "potential_clubs": {
       "type": "array",
       "items": {

@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays } from "lucide-react";
+import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -46,6 +46,7 @@ import PlayerComparisonTool from "../components/players/PlayerComparisonTool";
 import PlayersTableView from "../components/players/PlayersTableView";
 import PlayerBoxesView from "../components/players/PlayerBoxesView";
 import PlayerBoxBadges from "../components/players/PlayerBoxBadges";
+import AcquisitionKanban from "../components/players/AcquisitionKanban";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -80,6 +81,7 @@ export default function Players() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
+  const [mainView, setMainView] = useState(urlParams.get('view') || 'players'); // 'players' | 'acquisition'
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
@@ -137,7 +139,7 @@ export default function Players() {
     queryFn: async () => {
       const user = await base44.auth.me();
       const all = await base44.entities.Player.list('-created_date');
-      return all.filter(p => p.agency_id === user.agency_id);
+      return all.filter(p => p.agency_id === user.agency_id && !p.is_acquisition_target);
     },
     refetchInterval: 3000,
   });
@@ -455,6 +457,41 @@ export default function Players() {
   return (
     <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
+
+        {/* Main View Toggle */}
+        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 w-fit">
+          <button
+            onClick={() => setMainView('players')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              mainView === 'players'
+                ? 'bg-blue-900 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <UsersIcon className="w-4 h-4" />
+            Spieler
+          </button>
+          <button
+            onClick={() => setMainView('acquisition')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              mainView === 'acquisition'
+                ? 'bg-orange-600 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Target className="w-4 h-4" />
+            Akquise-Pipeline
+          </button>
+        </div>
+
+        {/* Acquisition View */}
+        {mainView === 'acquisition' && (
+          <AcquisitionKanban />
+        )}
+
+        {/* Normal Players View */}
+        {mainView === 'players' && (<>
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Spielerverwaltung</h1>
@@ -1271,6 +1308,7 @@ export default function Players() {
             onOpenChange={setShowComparisonTool}
             initialPlayerIds={[]}
           />
+        </>)}  {/* end mainView === 'players' */}
 
           {/* Quick Archive Dialog */}
           <Dialog open={!!quickArchivePlayerId} onOpenChange={() => setQuickArchivePlayerId(null)}>
