@@ -1,0 +1,25 @@
+{
+  "name": "Comment",
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "ID der zugeh\u00f6rigen Aufgabe"
+    },
+    "content": {
+      "type": "string",
+      "description": "Kommentartext"
+    },
+    "mentions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "E-Mails von erw\u00e4hnten Personen"
+    }
+  },
+  "required": [
+    "task_id",
+    "content"
+  ]
+}

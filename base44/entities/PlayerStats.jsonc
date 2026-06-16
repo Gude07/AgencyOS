@@ -1,0 +1,160 @@
+{
+  "name": "PlayerStats",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "Interne Spieler-ID (verkn\u00fcpft mit Player-Entity)"
+    },
+    "player_name_external": {
+      "type": "string",
+      "description": "Spielername wie auf der externen Quelle"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "api_football",
+        "soccerstats247",
+        "manual"
+      ],
+      "default": "manual",
+      "description": "Datenquelle"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Direkte URL zum Spielerprofil auf der Quelle"
+    },
+    "season": {
+      "type": "string",
+      "description": "Saison z.B. '2024' oder '2024/25'"
+    },
+    "competition": {
+      "type": "string",
+      "description": "Liga / Wettbewerb z.B. 'Bundesliga'"
+    },
+    "club": {
+      "type": "string",
+      "description": "Verein in dieser Saison"
+    },
+    "position": {
+      "type": "string",
+      "description": "Position laut Datenquelle"
+    },
+    "appearances": {
+      "type": "number",
+      "description": "Gesamte Spieleins\u00e4tze"
+    },
+    "starts": {
+      "type": "number",
+      "description": "Startelf-Eins\u00e4tze"
+    },
+    "minutes_played": {
+      "type": "number",
+      "description": "Gespielte Minuten"
+    },
+    "goals": {
+      "type": "number",
+      "description": "Erzielte Tore"
+    },
+    "assists": {
+      "type": "number",
+      "description": "Vorlagen"
+    },
+    "yellow_cards": {
+      "type": "number",
+      "description": "Gelbe Karten"
+    },
+    "red_cards": {
+      "type": "number",
+      "description": "Rote Karten"
+    },
+    "goals_per_90": {
+      "type": "number",
+      "description": "Tore pro 90 Minuten (berechnet)"
+    },
+    "assists_per_90": {
+      "type": "number",
+      "description": "Vorlagen pro 90 Minuten (berechnet)"
+    },
+    "minutes_per_goal": {
+      "type": "number",
+      "description": "Minuten pro Tor"
+    },
+    "additional_stats": {
+      "type": "object",
+      "description": "Weitere verf\u00fcgbare Statistiken (flexible Key-Value-Paare)",
+      "properties": {
+        "shots": {
+          "type": "number"
+        },
+        "shots_on_target": {
+          "type": "number"
+        },
+        "pass_accuracy": {
+          "type": "number"
+        },
+        "clean_sheets": {
+          "type": "number"
+        },
+        "tackles": {
+          "type": "number"
+        },
+        "interceptions": {
+          "type": "number"
+        },
+        "dribbles": {
+          "type": "number"
+        },
+        "fouls_committed": {
+          "type": "number"
+        },
+        "fouls_drawn": {
+          "type": "number"
+        }
+      }
+    },
+    "match_confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Matching-Konfidenz in Prozent (100 = sicher, <50 = Review n\u00f6tig)"
+    },
+    "match_status": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "auto_matched",
+        "needs_review",
+        "unmatched"
+      ],
+      "default": "auto_matched",
+      "description": "Status des Spieler-Matchings"
+    },
+    "data_status": {
+      "type": "string",
+      "enum": [
+        "api_data_available",
+        "no_api_data_found"
+      ],
+      "description": "Status der API-Daten"
+    },
+    "data_note": {
+      "type": "string",
+      "description": "Hinweis zu fehlenden oder verf\u00fcgbaren Daten"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der letzten Synchronisation"
+    },
+    "raw_data": {
+      "type": "string",
+      "description": "Rohdaten der letzten Abfrage (JSON-String, f\u00fcr Debugging)"
+    }
+  },
+  "required": [
+    "player_id",
+    "source",
+    "season"
+  ]
+}

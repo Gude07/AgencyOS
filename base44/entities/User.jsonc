@@ -1,0 +1,38 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user",
+      "description": "Benutzerrolle"
+    },
+    "agency_id": {
+      "type": "string",
+      "description": "ID der zugeh\u00f6rigen Agentur"
+    },
+    "favorite_players": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "IDs der favorisierten Spieler"
+    },
+    "favorite_club_requests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "IDs der favorisierten Vereinsanfragen"
+    }
+  },
+  "required": [
+    "agency_id"
+  ]
+}

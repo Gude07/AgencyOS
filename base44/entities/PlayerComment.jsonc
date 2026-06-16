@@ -1,0 +1,22 @@
+{
+  "name": "PlayerComment",
+  "type": "object",
+  "properties": {
+    "player_id": {
+      "type": "string",
+      "description": "ID des Spielers"
+    },
+    "content": {
+      "type": "string",
+      "description": "Kommentartext"
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "ID des \u00fcbergeordneten Kommentars (f\u00fcr Antworten)"
+    }
+  },
+  "required": [
+    "player_id",
+    "content"
+  ]
+}

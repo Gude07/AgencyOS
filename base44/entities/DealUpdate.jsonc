@@ -1,0 +1,43 @@
+{
+  "name": "DealUpdate",
+  "type": "object",
+  "properties": {
+    "deal_id": {
+      "type": "string",
+      "description": "ID des zugeh\u00f6rigen Deals"
+    },
+    "update_type": {
+      "type": "string",
+      "enum": [
+        "status_change",
+        "communication",
+        "financial_update",
+        "document_added",
+        "note",
+        "meeting"
+      ],
+      "description": "Art des Updates"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titel des Updates"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detaillierte Beschreibung"
+    },
+    "old_status": {
+      "type": "string",
+      "description": "Vorheriger Status (bei Status-\u00c4nderung)"
+    },
+    "new_status": {
+      "type": "string",
+      "description": "Neuer Status (bei Status-\u00c4nderung)"
+    }
+  },
+  "required": [
+    "deal_id",
+    "update_type",
+    "title"
+  ]
+}

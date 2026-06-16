@@ -1,0 +1,80 @@
+{
+  "name": "TransferRumor",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "player_name": {
+      "type": "string",
+      "description": "Name des Spielers"
+    },
+    "from_club": {
+      "type": "string",
+      "description": "Aktueller Verein"
+    },
+    "to_club": {
+      "type": "string",
+      "description": "Zielverein"
+    },
+    "position": {
+      "type": "string",
+      "description": "Position des Spielers"
+    },
+    "league": {
+      "type": "string",
+      "description": "Liga des Zielvereins"
+    },
+    "summary": {
+      "type": "string",
+      "description": "KI-Zusammenfassung des Ger\u00fcchts"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Link zum Original-Artikel"
+    },
+    "source_title": {
+      "type": "string",
+      "description": "Titel des Artikels"
+    },
+    "source_name": {
+      "type": "string",
+      "description": "Name der Quelle"
+    },
+    "fee_estimate": {
+      "type": "number",
+      "description": "Gesch\u00e4tzte Abl\u00f6sesumme in Mio \u20ac"
+    },
+    "confidence_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Wahrscheinlichkeit des Transfers in %"
+    },
+    "transfer_period": {
+      "type": "string",
+      "enum": [
+        "Winter 2025/26",
+        "Sommer 2026",
+        "Winter 2026/27"
+      ],
+      "description": "Transferperiode"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "neu",
+        "gepr\u00fcft",
+        "zu_anfrage",
+        "abgelehnt"
+      ],
+      "default": "neu",
+      "description": "Bearbeitungsstatus"
+    }
+  },
+  "required": [
+    "agency_id",
+    "player_name"
+  ]
+}

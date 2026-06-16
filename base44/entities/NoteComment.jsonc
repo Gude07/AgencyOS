@@ -1,0 +1,18 @@
+{
+  "name": "NoteComment",
+  "type": "object",
+  "properties": {
+    "note_id": {
+      "type": "string",
+      "description": "ID der zugeh\u00f6rigen Notiz"
+    },
+    "content": {
+      "type": "string",
+      "description": "Kommentartext"
+    }
+  },
+  "required": [
+    "note_id",
+    "content"
+  ]
+}

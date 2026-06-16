@@ -892,21 +892,66 @@ export default function PlayerDetail() {
                       </div>
                     )}
 
-                    {currentPlayerData?.transfermarkt_url && (
-                      <div>
-                        <Label className="text-sm font-semibold text-slate-700 mb-2 block flex items-center gap-2">
-                          <LinkIcon className="w-4 h-4" />
-                          Transfermarkt.de Profil
-                        </Label>
-                        <a
-                          href={currentPlayerData.transfermarkt_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-900 hover:underline break-all"
-                        >
-                          {currentPlayerData.transfermarkt_url}
-                        </a>
+                    {editMode ? (
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-semibold text-slate-700 mb-2 block flex items-center gap-2">
+                            <LinkIcon className="w-4 h-4" />
+                            Transfermarkt.de Link
+                          </Label>
+                          <Input
+                            value={editedPlayer?.transfermarkt_url || ""}
+                            onChange={(e) => setEditedPlayer({...editedPlayer, transfermarkt_url: e.target.value})}
+                            placeholder="https://www.transfermarkt.de/..."
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-semibold text-slate-700 mb-2 block">
+                            Instagram Link
+                          </Label>
+                          <Input
+                            value={editedPlayer?.instagram_url || ""}
+                            onChange={(e) => setEditedPlayer({...editedPlayer, instagram_url: e.target.value})}
+                            placeholder="https://www.instagram.com/..."
+                          />
+                        </div>
                       </div>
+                    ) : (
+                      (currentPlayerData?.transfermarkt_url || currentPlayerData?.instagram_url) && (
+                        <div className="space-y-2">
+                          {currentPlayerData?.transfermarkt_url && (
+                            <div>
+                              <Label className="text-sm font-semibold text-slate-700 mb-1 block flex items-center gap-2">
+                                <LinkIcon className="w-4 h-4" />
+                                Transfermarkt.de Profil
+                              </Label>
+                              <a
+                                href={currentPlayerData.transfermarkt_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-900 hover:underline break-all text-sm"
+                              >
+                                {currentPlayerData.transfermarkt_url}
+                              </a>
+                            </div>
+                          )}
+                          {currentPlayerData?.instagram_url && (
+                            <div>
+                              <Label className="text-sm font-semibold text-slate-700 mb-1 block">
+                                Instagram
+                              </Label>
+                              <a
+                                href={currentPlayerData.instagram_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-pink-600 hover:underline break-all text-sm"
+                              >
+                                {currentPlayerData.instagram_url}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      )
                     )}
                   </CardContent>
                 </Card>

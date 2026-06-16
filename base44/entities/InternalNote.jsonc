@@ -1,0 +1,44 @@
+{
+  "name": "InternalNote",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titel der Notiz"
+    },
+    "content": {
+      "type": "string",
+      "description": "Inhalt der Notiz (unterst\u00fctzt HTML/Rich-Text)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "meeting",
+        "entscheidung",
+        "information",
+        "wichtig",
+        "sonstiges"
+      ],
+      "default": "information",
+      "description": "Kategorie der Notiz"
+    },
+    "pinned": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ist die Notiz angepinnt"
+    },
+    "folder_id": {
+      "type": "string",
+      "description": "ID des zugeh\u00f6rigen Ordners"
+    }
+  },
+  "required": [
+    "agency_id",
+    "title",
+    "content"
+  ]
+}

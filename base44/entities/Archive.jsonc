@@ -1,0 +1,31 @@
+{
+  "name": "Archive",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name des Archiv-Ordners"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "player",
+        "club"
+      ],
+      "description": "Typ des Archivs (Spieler oder Verein)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung des Archivs"
+    }
+  },
+  "required": [
+    "agency_id",
+    "name",
+    "type"
+  ]
+}

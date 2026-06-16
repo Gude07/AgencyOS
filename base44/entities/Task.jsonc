@@ -1,0 +1,119 @@
+{
+  "name": "Task",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titel der Aufgabe"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detaillierte Beschreibung der Aufgabe"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "niedrig",
+        "mittel",
+        "hoch",
+        "kritisch"
+      ],
+      "default": "mittel",
+      "description": "Priorit\u00e4tsstufe der Aufgabe"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "in_bearbeitung",
+        "review",
+        "abgeschlossen",
+        "\u00fcberf\u00e4llig"
+      ],
+      "default": "offen",
+      "description": "Aktueller Status der Aufgabe"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date",
+      "description": "F\u00e4lligkeitsdatum der Aufgabe"
+    },
+    "assigned_to": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "E-Mails der zugewiesenen Teammitglieder"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "transfer",
+        "vertrag",
+        "spieleranfrage",
+        "reise",
+        "meeting",
+        "verwaltung",
+        "sonstiges"
+      ],
+      "default": "sonstiges",
+      "description": "Kategorie der Aufgabe"
+    },
+    "estimated_hours": {
+      "type": "number",
+      "description": "Gesch\u00e4tzte Bearbeitungszeit in Stunden"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Fertigstellung"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs von Aufgaben, von denen diese Aufgabe abh\u00e4ngt"
+    },
+    "subtasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "last_modified": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Unteraufgaben und Checklisten"
+    },
+    "progress": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0,
+      "description": "Fortschritt in Prozent"
+    },
+    "outlook_event_id": {
+      "type": "string",
+      "description": "ID des zugeh\u00f6rigen Outlook-Events"
+    }
+  },
+  "required": [
+    "agency_id",
+    "title",
+    "priority",
+    "status"
+  ]
+}

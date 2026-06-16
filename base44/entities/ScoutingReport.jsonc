@@ -1,0 +1,142 @@
+{
+  "name": "ScoutingReport",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "ID des Spielers"
+    },
+    "report_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Beobachtung"
+    },
+    "scout_name": {
+      "type": "string",
+      "description": "Name des Scouts"
+    },
+    "match_attended": {
+      "type": "string",
+      "description": "Beobachtetes Spiel (z.B. FC Bayern vs BVB, 01.03.2026)"
+    },
+    "overall_rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Gesamtbewertung (1-10)"
+    },
+    "recommendation": {
+      "type": "string",
+      "enum": [
+        "sehr_empfehlenswert",
+        "empfehlenswert",
+        "beobachten",
+        "nicht_empfehlenswert"
+      ],
+      "description": "Empfehlung des Scouts"
+    },
+    "strengths": {
+      "type": "string",
+      "description": "St\u00e4rken des Spielers"
+    },
+    "weaknesses": {
+      "type": "string",
+      "description": "Schw\u00e4chen des Spielers"
+    },
+    "potential": {
+      "type": "string",
+      "description": "Entwicklungspotenzial"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Weitere Notizen"
+    },
+    "technical_passing": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "technical_dribbling": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "technical_shooting": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "technical_tackling": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "technical_heading": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "technical_first_touch": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "tactical_positioning": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "tactical_decision_making": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "tactical_game_intelligence": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "physical_speed": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "physical_endurance": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "physical_strength": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "mental_leadership": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "mental_work_rate": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "mental_composure": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10
+    }
+  },
+  "required": [
+    "agency_id",
+    "player_id",
+    "report_date",
+    "scout_name",
+    "overall_rating",
+    "recommendation"
+  ]
+}

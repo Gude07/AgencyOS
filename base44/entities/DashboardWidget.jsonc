@@ -1,0 +1,48 @@
+{
+  "name": "DashboardWidget",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Benutzers"
+    },
+    "widget_type": {
+      "type": "string",
+      "enum": [
+        "my_open_tasks",
+        "upcoming_meetings",
+        "new_club_requests",
+        "overdue_tasks",
+        "recent_players",
+        "recent_deals",
+        "stats_overview"
+      ],
+      "description": "Typ des Widgets"
+    },
+    "position": {
+      "type": "number",
+      "description": "Position des Widgets auf dem Dashboard (f\u00fcr Sortierung)"
+    },
+    "is_visible": {
+      "type": "boolean",
+      "default": true,
+      "description": "Sichtbarkeit des Widgets"
+    },
+    "settings": {
+      "type": "object",
+      "description": "Widget-spezifische Einstellungen",
+      "properties": {
+        "max_items": {
+          "type": "number"
+        },
+        "filter": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "user_email",
+    "widget_type"
+  ]
+}

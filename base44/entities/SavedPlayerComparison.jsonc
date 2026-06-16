@@ -1,0 +1,44 @@
+{
+  "name": "SavedPlayerComparison",
+  "type": "object",
+  "properties": {
+    "reference_player": {
+      "type": "string",
+      "description": "Name des Referenzspielers"
+    },
+    "reference_club": {
+      "type": "string",
+      "description": "Verein des Referenzspielers"
+    },
+    "analysis_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Datum der Analyse"
+    },
+    "player_profile": {
+      "type": "string",
+      "description": "JSON-String des Spielerprofils"
+    },
+    "similar_players": {
+      "type": "string",
+      "description": "JSON-String der \u00e4hnlichen Spieler"
+    },
+    "fit_results": {
+      "type": "string",
+      "description": "JSON-String der Fit-Ergebnisse"
+    },
+    "club_replacement": {
+      "type": "string",
+      "description": "JSON-String der Vereinsersatz-Analyse"
+    },
+    "created_by_user": {
+      "type": "string",
+      "description": "E-Mail des erstellenden Benutzers"
+    }
+  },
+  "required": [
+    "reference_player",
+    "reference_club",
+    "created_by_user"
+  ]
+}

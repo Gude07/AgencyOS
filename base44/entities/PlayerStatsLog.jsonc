@@ -1,0 +1,58 @@
+{
+  "name": "PlayerStatsLog",
+  "type": "object",
+  "properties": {
+    "level": {
+      "type": "string",
+      "enum": [
+        "info",
+        "warning",
+        "error"
+      ],
+      "default": "info",
+      "description": "Log-Level"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "fetch",
+        "parse",
+        "normalize",
+        "validate",
+        "match",
+        "persist"
+      ],
+      "description": "Pipeline-Stufe in der der Log-Eintrag entstanden ist"
+    },
+    "player_name": {
+      "type": "string",
+      "description": "Spielername (extern), der verarbeitet wurde"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "Interne Spieler-ID, falls bereits gematcht"
+    },
+    "message": {
+      "type": "string",
+      "description": "Log-Nachricht"
+    },
+    "details": {
+      "type": "string",
+      "description": "Weitere Details / Stack-Trace (JSON-String)"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "URL der Datenquelle"
+    },
+    "resolved": {
+      "type": "boolean",
+      "default": false,
+      "description": "Wurde das Problem manuell gel\u00f6st?"
+    }
+  },
+  "required": [
+    "level",
+    "stage",
+    "message"
+  ]
+}

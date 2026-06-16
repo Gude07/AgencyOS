@@ -1,0 +1,87 @@
+{
+  "name": "PlayerCareerStat",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "ID des Spielers"
+    },
+    "stat_type": {
+      "type": "string",
+      "enum": [
+        "club",
+        "national",
+        "u_national"
+      ],
+      "default": "club",
+      "description": "Art der Statistik: Verein, Nationalmannschaft oder U-Nationalmannschaft"
+    },
+    "season": {
+      "type": "string",
+      "description": "Saison z.B. '2024/25'"
+    },
+    "club": {
+      "type": "string",
+      "description": "Verein / Team in dieser Saison"
+    },
+    "competition": {
+      "type": "string",
+      "description": "Liga / Wettbewerb"
+    },
+    "appearances": {
+      "type": "number",
+      "default": 0,
+      "description": "Eins\u00e4tze"
+    },
+    "starts": {
+      "type": "number",
+      "default": 0,
+      "description": "Startelf-Eins\u00e4tze"
+    },
+    "minutes_played": {
+      "type": "number",
+      "default": 0,
+      "description": "Gespielte Minuten"
+    },
+    "goals": {
+      "type": "number",
+      "default": 0,
+      "description": "Tore (Feldspieler)"
+    },
+    "assists": {
+      "type": "number",
+      "default": 0,
+      "description": "Vorlagen (Feldspieler)"
+    },
+    "goals_conceded": {
+      "type": "number",
+      "default": 0,
+      "description": "Gegentore (Torwart)"
+    },
+    "clean_sheets": {
+      "type": "number",
+      "default": 0,
+      "description": "Zu-Null-Spiele (Torwart)"
+    },
+    "yellow_cards": {
+      "type": "number",
+      "default": 0,
+      "description": "Gelbe Karten"
+    },
+    "red_cards": {
+      "type": "number",
+      "default": 0,
+      "description": "Rote Karten"
+    }
+  },
+  "required": [
+    "agency_id",
+    "player_id",
+    "season",
+    "club"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Benutzers, der die Benachrichtigung erh\u00e4lt"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "neue_aufgabe",
+        "neue_anfrage",
+        "neue_antwort",
+        "termin_erinnerung",
+        "deadline_erinnerung",
+        "spieler_update",
+        "match_vorschlag"
+      ],
+      "description": "Art der Benachrichtigung"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titel der Benachrichtigung"
+    },
+    "message": {
+      "type": "string",
+      "description": "Nachrichtentext"
+    },
+    "link": {
+      "type": "string",
+      "description": "Link zur relevanten Seite (z.B. PlayerDetail?id=123)"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Wurde die Benachrichtigung gelesen"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID der zugeh\u00f6rigen Entit\u00e4t (Spieler, Aufgabe, etc.)"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Typ der Entit\u00e4t (Player, Task, ClubRequest, etc.)"
+    }
+  },
+  "required": [
+    "user_email",
+    "type",
+    "title",
+    "message"
+  ]
+}

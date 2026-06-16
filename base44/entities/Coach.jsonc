@@ -1,0 +1,192 @@
+{
+  "name": "Coach",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name des Trainers"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date",
+      "description": "Geburtsdatum"
+    },
+    "age": {
+      "type": "number",
+      "description": "Alter des Trainers"
+    },
+    "nationality": {
+      "type": "string",
+      "description": "Nationalit\u00e4t"
+    },
+    "specialization": {
+      "type": "string",
+      "enum": [
+        "Cheftrainer",
+        "Co-Trainer",
+        "Torwarttrainer",
+        "Athletiktrainer",
+        "Individualtrainer",
+        "Jugendtrainer",
+        "Technischer Direktor"
+      ],
+      "description": "Spezialisierung des Trainers"
+    },
+    "current_club": {
+      "type": "string",
+      "description": "Aktueller Verein"
+    },
+    "salary_expectation": {
+      "type": "number",
+      "description": "Gehaltsvorstellung pro Jahr in Euro"
+    },
+    "contract_until": {
+      "type": "string",
+      "format": "date",
+      "description": "Vertragsende"
+    },
+    "experience_years": {
+      "type": "number",
+      "description": "Jahre Trainererfahrung"
+    },
+    "licenses": {
+      "type": "string",
+      "description": "Trainerlizenzen (z.B. UEFA Pro, A-Lizenz)"
+    },
+    "preferred_formation": {
+      "type": "string",
+      "description": "Bevorzugte Formation/Spielsystem"
+    },
+    "coaching_philosophy": {
+      "type": "string",
+      "description": "Trainerphilosophie und Spielstil"
+    },
+    "achievements": {
+      "type": "string",
+      "description": "Erfolge und Auszeichnungen"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Gesprochene Sprachen"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Wintertransferperiode",
+        "Sommertransferperiode",
+        "Zukunft",
+        "Beobachtungsliste",
+        "Top-Priorit\u00e4t",
+        "Vertragsende"
+      ],
+      "default": "Beobachtungsliste",
+      "description": "Kategorie f\u00fcr die Organisation"
+    },
+    "potential_clubs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Liste potentieller Vereine"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen zum Trainer"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "aktiv",
+        "in_verhandlung",
+        "unter_vertrag",
+        "archiviert"
+      ],
+      "default": "aktiv",
+      "description": "Status des Trainers"
+    },
+    "contact_email": {
+      "type": "string",
+      "description": "E-Mail-Adresse"
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Telefonnummer"
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "preferred_leagues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "preferred_countries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "min_salary": {
+          "type": "number"
+        },
+        "excluded_clubs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "career_goals": {
+          "type": "string"
+        }
+      },
+      "description": "Trainerpr\u00e4ferenzen"
+    },
+    "dropbox_documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "uploaded_date": {
+            "type": "string"
+          },
+          "uploaded_by": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "In Dropbox hochgeladene Dokumente"
+    }
+  },
+  "required": [
+    "agency_id",
+    "name",
+    "specialization"
+  ]
+}

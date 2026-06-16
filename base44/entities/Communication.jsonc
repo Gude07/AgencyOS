@@ -1,0 +1,55 @@
+{
+  "name": "Communication",
+  "type": "object",
+  "properties": {
+    "club_request_id": {
+      "type": "string",
+      "description": "ID der zugeh\u00f6rigen Vereinsanfrage"
+    },
+    "date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Datum und Uhrzeit der Kommunikation"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "telefonat",
+        "email",
+        "meeting",
+        "whatsapp",
+        "sonstiges"
+      ],
+      "description": "Art der Kommunikation"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Betreff oder Kurzbeschreibung"
+    },
+    "details": {
+      "type": "string",
+      "description": "Detaillierte Beschreibung des Gespr\u00e4chs"
+    },
+    "discussed_players": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der besprochenen Spieler"
+    },
+    "next_steps": {
+      "type": "string",
+      "description": "N\u00e4chste Schritte oder Ergebnis"
+    },
+    "contact_person": {
+      "type": "string",
+      "description": "Kontaktperson beim Verein"
+    }
+  },
+  "required": [
+    "club_request_id",
+    "date",
+    "type",
+    "subject"
+  ]
+}

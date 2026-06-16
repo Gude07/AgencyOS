@@ -1,0 +1,227 @@
+{
+  "name": "Deal",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titel des Deals (z.B. Spielername + aufnehmender Verein)"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "ID des Spielers (optional, falls aus System)"
+    },
+    "player_name": {
+      "type": "string",
+      "description": "Name des Spielers"
+    },
+    "club_request_id": {
+      "type": "string",
+      "description": "ID der verkn\u00fcpften Vereinsanfrage (optional)"
+    },
+    "receiving_club": {
+      "type": "string",
+      "description": "Aufnehmender Verein"
+    },
+    "releasing_club": {
+      "type": "string",
+      "description": "Abgebender Verein"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "interesse",
+        "verhandlung",
+        "angebot_erhalten",
+        "medizincheck",
+        "vertragsunterzeichnung",
+        "abgeschlossen",
+        "abgelehnt",
+        "pausiert"
+      ],
+      "default": "interesse",
+      "description": "Aktueller Status des Deals"
+    },
+    "transfer_type": {
+      "type": "string",
+      "enum": [
+        "transfer",
+        "leihe",
+        "abl\u00f6sefrei"
+      ],
+      "default": "transfer",
+      "description": "Art des Transfers"
+    },
+    "transfer_fee": {
+      "type": "number",
+      "description": "Abl\u00f6sesumme in Euro"
+    },
+    "loan_fee": {
+      "type": "number",
+      "description": "Leihgeb\u00fchr in Euro (falls Leihe)"
+    },
+    "contract_length": {
+      "type": "number",
+      "description": "Vertragslaufzeit in Jahren"
+    },
+    "contract_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Vertragsbeginn"
+    },
+    "contract_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Vertragsende"
+    },
+    "annual_salary": {
+      "type": "number",
+      "description": "Jahresgehalt des Spielers in Euro (brutto)"
+    },
+    "monthly_salary": {
+      "type": "number",
+      "description": "Monatsgehalt des Spielers in Euro (brutto)"
+    },
+    "signing_bonus": {
+      "type": "number",
+      "description": "Handgeld f\u00fcr Spieler in Euro"
+    },
+    "performance_bonuses": {
+      "type": "string",
+      "description": "Leistungsboni (z.B. Tore, Eins\u00e4tze, Titel)"
+    },
+    "release_clause": {
+      "type": "number",
+      "description": "Ausstiegsklausel in Euro"
+    },
+    "agency_commission": {
+      "type": "number",
+      "description": "Beraterhonorar / Vermittlungsprovision in Euro"
+    },
+    "agency_commission_type": {
+      "type": "string",
+      "enum": [
+        "einmalig",
+        "j\u00e4hrlich",
+        "prozent_gehalt",
+        "prozent_abl\u00f6se"
+      ],
+      "default": "einmalig",
+      "description": "Art der Provisionszahlung"
+    },
+    "agency_commission_percent": {
+      "type": "number",
+      "description": "Provision in Prozent (falls prozentual)"
+    },
+    "agency_payment_schedule": {
+      "type": "string",
+      "description": "Zahlungsplan f\u00fcr Provision (z.B. 50% bei Unterschrift, 50% nach 6 Monaten)"
+    },
+    "agency_payment_received": {
+      "type": "boolean",
+      "default": false,
+      "description": "Provision bereits erhalten"
+    },
+    "agency_payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Provisionszahlung"
+    },
+    "player_image_rights": {
+      "type": "string",
+      "description": "Bildrechte-Regelung"
+    },
+    "other_benefits": {
+      "type": "string",
+      "description": "Sonstige Leistungen (Auto, Wohnung, Fl\u00fcge etc.)"
+    },
+    "payment_schedule": {
+      "type": "string",
+      "description": "Zahlungsplan f\u00fcr Abl\u00f6se"
+    },
+    "transfer_window": {
+      "type": "string",
+      "enum": [
+        "Winter 2024/25",
+        "Sommer 2025",
+        "Winter 2025/26",
+        "Sommer 2026",
+        "Winter 2026/27",
+        "Sommer 2027"
+      ],
+      "description": "Transferfenster"
+    },
+    "expected_completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Erwartetes Abschlussdatum"
+    },
+    "medical_check_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum des Medizinchecks"
+    },
+    "contract_signing_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Vertragsunterzeichnung"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Zus\u00e4tzliche Notizen und Details"
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Angeh\u00e4ngte Dokumente mit Name und URL"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "niedrig",
+        "mittel",
+        "hoch",
+        "kritisch"
+      ],
+      "default": "mittel",
+      "description": "Priorit\u00e4t des Deals"
+    },
+    "assigned_to": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "E-Mails der zust\u00e4ndigen Personen"
+    },
+    "probability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Wahrscheinlichkeit des Abschlusses in Prozent"
+    }
+  },
+  "required": [
+    "agency_id",
+    "title",
+    "player_name",
+    "receiving_club",
+    "status"
+  ]
+}

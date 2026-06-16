@@ -1,0 +1,43 @@
+{
+  "name": "Template",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "template_type": {
+      "type": "string",
+      "enum": [
+        "player",
+        "club_request",
+        "deal",
+        "scouting_report"
+      ],
+      "description": "Typ der Vorlage"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name der Vorlage"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung der Vorlage"
+    },
+    "template_data": {
+      "type": "object",
+      "description": "Vorausgef\u00fcllte Daten f\u00fcr die Vorlage"
+    },
+    "is_shared": {
+      "type": "boolean",
+      "default": false,
+      "description": "F\u00fcr alle Nutzer der Agentur sichtbar"
+    }
+  },
+  "required": [
+    "agency_id",
+    "template_type",
+    "name",
+    "template_data"
+  ]
+}

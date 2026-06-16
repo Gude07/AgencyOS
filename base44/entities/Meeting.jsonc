@@ -1,0 +1,69 @@
+{
+  "name": "Meeting",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titel des Termins"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung des Termins"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Startdatum und -uhrzeit"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Enddatum und -uhrzeit"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "meeting",
+        "reise",
+        "spieltermin",
+        "deadline",
+        "teams_meeting",
+        "sonstiges"
+      ],
+      "default": "meeting",
+      "description": "Art des Termins"
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "E-Mails der Teilnehmer"
+    },
+    "location": {
+      "type": "string",
+      "description": "Ort des Termins"
+    },
+    "related_task_id": {
+      "type": "string",
+      "description": "ID einer verbundenen Aufgabe"
+    },
+    "outlook_event_id": {
+      "type": "string",
+      "description": "ID des Outlook-Events f\u00fcr Synchronisation"
+    },
+    "teams_link": {
+      "type": "string",
+      "description": "Teams Meeting Link"
+    }
+  },
+  "required": [
+    "agency_id",
+    "title",
+    "start_date"
+  ]
+}
