@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Archive } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Archive, DoorOpen, Target } from "lucide-react";
 import { format, differenceInYears, differenceInMonths } from "date-fns";
 
 const isContractExpiringSoon = (contractUntil) => {
@@ -195,7 +195,19 @@ export default function PlayersTableView({ players, searchTerm, filterCategory, 
                 onClick={() => handleRowClick(player)}
               >
                 <TableCell className="font-medium text-slate-900 dark:text-white">
-                  {player.name}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {player.name}
+                    {player.player_type === 'transfer_list' && (
+                      <Badge className="bg-orange-100 text-orange-700 border border-orange-300 text-xs flex items-center gap-1">
+                        <DoorOpen className="w-3 h-3" /> Abgang
+                      </Badge>
+                    )}
+                    {(player.player_type === 'acquisition' || player.is_acquisition_target) && (
+                      <Badge className="bg-purple-100 text-purple-700 border border-purple-300 text-xs flex items-center gap-1">
+                        <Target className="w-3 h-3" /> Akquise
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="text-slate-700">
                   {calculateAge(player.date_of_birth) || "-"}

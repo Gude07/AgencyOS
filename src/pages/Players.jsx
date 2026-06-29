@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target } from "lucide-react";
+import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -47,6 +47,7 @@ import PlayersTableView from "../components/players/PlayersTableView";
 import PlayerBoxesView from "../components/players/PlayerBoxesView";
 import PlayerBoxBadges from "../components/players/PlayerBoxBadges";
 import AcquisitionKanban from "../components/players/AcquisitionKanban";
+import TransferListView from "../components/players/TransferListView";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -81,7 +82,7 @@ export default function Players() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
-  const [mainView, setMainView] = useState(urlParams.get('view') || 'players'); // 'players' | 'acquisition'
+  const [mainView, setMainView] = useState(urlParams.get('view') || 'players'); // 'players' | 'acquisition' | 'transfer_list'
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
@@ -139,7 +140,7 @@ export default function Players() {
     queryFn: async () => {
       const user = await base44.auth.me();
       const all = await base44.entities.Player.list('-created_date');
-      return all.filter(p => p.agency_id === user.agency_id && !p.is_acquisition_target);
+      return all.filter(p => p.agency_id === user.agency_id && !p.is_acquisition_target && p.player_type !== 'transfer_list');
     },
     refetchInterval: 3000,
   });
@@ -475,18 +476,34 @@ export default function Players() {
             onClick={() => setMainView('acquisition')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
               mainView === 'acquisition'
-                ? 'bg-orange-600 text-white shadow-sm'
+                ? 'bg-purple-600 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Target className="w-4 h-4" />
             Akquise-Pipeline
           </button>
+          <button
+            onClick={() => setMainView('transfer_list')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              mainView === 'transfer_list'
+                ? 'bg-orange-500 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <DoorOpen className="w-4 h-4" />
+            Abgangsliste
+          </button>
         </div>
 
         {/* Acquisition View */}
         {mainView === 'acquisition' && (
           <AcquisitionKanban />
+        )}
+
+        {/* Transfer List View */}
+        {mainView === 'transfer_list' && (
+          <TransferListView />
         )}
 
         {/* Normal Players View */}
@@ -824,6 +841,16 @@ export default function Players() {
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-1.5 mt-2">
+                          {player.player_type === 'transfer_list' && (
+                            <Badge className="bg-orange-100 text-orange-700 border border-orange-300 text-xs flex items-center gap-1">
+                              <DoorOpen className="w-3 h-3" /> Abgangskandidat
+                            </Badge>
+                          )}
+                          {(player.player_type === 'acquisition' || player.is_acquisition_target) && (
+                            <Badge className="bg-purple-100 text-purple-700 border border-purple-300 text-xs flex items-center gap-1">
+                              <Target className="w-3 h-3" /> Akquise
+                            </Badge>
+                          )}
                           <Badge variant="secondary" className={categoryColors[player.category] + " border text-xs"}>{player.category}</Badge>
                           <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-800 font-semibold text-xs">{player.position}</Badge>
                           {Array.isArray(player.secondary_positions) && player.secondary_positions.slice(0, 1).map((pos) => (

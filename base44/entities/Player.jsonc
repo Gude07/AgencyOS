@@ -90,6 +90,16 @@
       "type": "string",
       "description": "Link zum Instagram-Profil"
     },
+    "player_type": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "transfer_list",
+        "acquisition"
+      ],
+      "default": "standard",
+      "description": "Spieler-Typ: standard = normales Portfolio, transfer_list = Abgangskandidat vom Verein, acquisition = Akquise-Ziel"
+    },
     "category": {
       "type": "string",
       "enum": [
