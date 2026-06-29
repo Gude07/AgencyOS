@@ -296,12 +296,18 @@ export default function ClubRequestDetail() {
               navigate(createPageUrl("PlayerDetail") + "?id=" + player.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
             }}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h4 className={`font-semibold ${isOfferedToThisRequest ? 'text-green-900' : 'text-slate-900'}`}>
                 {player.name}
               </h4>
               {isOfferedToThisRequest && (
                 <Badge className="bg-green-600 text-white text-xs">Angeboten</Badge>
+              )}
+              {player.player_type === 'transfer_list' && (
+                <Badge className="bg-orange-100 text-orange-700 border border-orange-300 text-xs">🚪 Abgang</Badge>
+              )}
+              {(player.player_type === 'acquisition' || player.is_acquisition_target) && (
+                <Badge className="bg-purple-100 text-purple-700 border border-purple-300 text-xs">🎯 Akquise</Badge>
               )}
             </div>
             <p className={`text-sm mt-1 ${isOfferedToThisRequest ? 'text-green-700' : 'text-slate-600'}`}>
