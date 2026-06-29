@@ -267,24 +267,20 @@ export default function ClubRequestDetail() {
   const renderPlayerCard = (player, showMatchScore = false) => {
     const isOfferedToThisRequest = player.offered_to_requests?.includes(requestId);
     
-    const score = player.matchScore ?? 0;
-    const scoreAccent = showMatchScore
-      ? score >= 70 ? 'border-l-green-500 bg-green-50/40'
-        : score >= 40 ? 'border-l-amber-400 bg-amber-50/30'
-        : 'border-l-red-400 bg-red-50/20'
-      : '';
+    const isTransferList = player.player_type === 'transfer_list';
+    const isAcquisition = player.player_type === 'acquisition' || player.is_acquisition_target;
+
+    const borderClass = isOfferedToThisRequest
+      ? 'bg-green-50 border-green-300 hover:border-green-400'
+      : isTransferList
+        ? 'bg-orange-50/30 border-orange-400 hover:border-orange-500'
+        : isAcquisition
+          ? 'bg-purple-50/30 border-purple-400 hover:border-purple-500'
+          : 'bg-slate-50 border-slate-200 hover:border-blue-300';
 
     return (
       <HoverDetailCard key={player.id} content={<PlayerHoverCard player={player} />}>
-      <div 
-        className={`p-4 rounded-lg border border-l-4 transition-colors ${
-          isOfferedToThisRequest 
-            ? 'bg-green-50 border-green-300 border-l-green-500 hover:border-green-400' 
-            : showMatchScore
-              ? `border-slate-200 ${scoreAccent} hover:brightness-95`
-              : 'bg-slate-50 border-slate-200 hover:border-blue-300'
-        }`}
-      >
+      <div className={`p-4 rounded-lg border transition-colors ${borderClass}`}>
         <div className="flex items-start justify-between gap-3 mb-3">
           <div 
             className="flex-1 cursor-pointer"

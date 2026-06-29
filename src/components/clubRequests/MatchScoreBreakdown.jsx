@@ -36,18 +36,10 @@ export default function MatchScoreBreakdown({ player, request, matchScore, custo
   const achievedWeight = breakdown.reduce((sum, item) => sum + item.achieved, 0);
   const computedScore = totalWeight > 0 ? Math.round((achievedWeight / totalWeight) * 100) : matchScore;
 
-  const getScoreColor = (score) => {
-    if (score >= 70) return { btn: "bg-green-600 hover:bg-green-700", badge: "bg-green-100 text-green-900", bar: "text-green-600" };
-    if (score >= 40) return { btn: "bg-amber-500 hover:bg-amber-600", badge: "bg-amber-100 text-amber-900", bar: "text-amber-600" };
-    return { btn: "bg-red-500 hover:bg-red-600", badge: "bg-red-100 text-red-900", bar: "text-red-600" };
-  };
-
-  const colors = getScoreColor(computedScore);
-
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <button className={`flex items-center gap-1 px-2 py-1 ${colors.btn} text-white rounded-lg transition-colors`}>
+        <button className="flex items-center gap-1 px-2 py-1 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-colors">
           <Info className="w-3 h-3" />
           <span className="text-sm font-bold">{computedScore}%</span>
         </button>
@@ -57,7 +49,7 @@ export default function MatchScoreBreakdown({ player, request, matchScore, custo
           <div>
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-semibold text-slate-900">Match-Analyse</h4>
-              <Badge variant="secondary" className={colors.badge}>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-900">
                 {computedScore}% Match
               </Badge>
             </div>
