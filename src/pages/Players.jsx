@@ -143,13 +143,14 @@ export default function Players() {
     });
 
   const { data: players = [], isLoading } = useQuery({
-    queryKey: ['players'],
+    queryKey: ['players', 'standard'],
     queryFn: async () => {
       const user = await base44.auth.me();
-      const all = await base44.entities.Player.list('-created_date');
-      return all.filter(p => p.agency_id === user.agency_id && !p.is_acquisition_target && p.player_type !== 'transfer_list');
+      const all = await base44.entities.Player.filter({ agency_id: user.agency_id });
+      return all.filter(p => !p.is_acquisition_target && p.player_type !== 'transfer_list' && p.player_type !== 'acquisition');
     },
     refetchInterval: 3000,
+    staleTime: 0,
   });
 
   // All archived players for duplicate detection
@@ -157,8 +158,8 @@ export default function Players() {
     queryKey: ['archivedPlayers'],
     queryFn: async () => {
       const user = await base44.auth.me();
-      const all = await base44.entities.Player.list('-created_date');
-      return all.filter(p => p.agency_id === user.agency_id && !!p.archive_id);
+      const all = await base44.entities.Player.filter({ agency_id: user.agency_id });
+      return all.filter(p => !!p.archive_id);
     },
     staleTime: 10000,
   });
