@@ -11,7 +11,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Archive, DoorOpen, Target } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Archive, DoorOpen, Target, AlertTriangle } from "lucide-react";
+import { differenceInMonths as diffMonths } from "date-fns";
+
+const isProfileOutdated = (updatedDate) => {
+  if (!updatedDate) return false;
+  return diffMonths(new Date(), new Date(updatedDate)) >= 6;
+};
 import { format, differenceInYears, differenceInMonths } from "date-fns";
 
 const isContractExpiringSoon = (contractUntil) => {
@@ -197,6 +203,11 @@ export default function PlayersTableView({ players, searchTerm, filterCategory, 
                 <TableCell className="font-medium text-slate-900 dark:text-white">
                   <div className="flex items-center gap-2 flex-wrap">
                     {player.name}
+                    {isProfileOutdated(player.updated_date) && (
+                      <Badge className="bg-amber-100 text-amber-700 border border-amber-300 text-xs flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Veraltet
+                      </Badge>
+                    )}
                     {player.player_type === 'transfer_list' && (
                       <Badge className="bg-orange-100 text-orange-700 border border-orange-300 text-xs flex items-center gap-1">
                         <DoorOpen className="w-3 h-3" /> Abgang

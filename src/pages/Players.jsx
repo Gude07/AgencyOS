@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen } from "lucide-react";
+import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen, Clock, RotateCcw, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -78,6 +78,12 @@ const isContractExpiringSoon = (contractUntil) => {
   return months >= 0 && months <= 6;
 };
 
+const isProfileOutdated = (updatedDate) => {
+  if (!updatedDate) return false;
+  const months = differenceInMonths(new Date(), new Date(updatedDate));
+  return months >= 6;
+};
+
 export default function Players() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -105,6 +111,7 @@ export default function Players() {
   const [displayMode, setDisplayMode] = useState(() => localStorage.getItem('playersDisplayMode') || urlParams.get('display') || 'grid');
   const [quickArchivePlayerId, setQuickArchivePlayerId] = useState(null);
   const [activeBox, setActiveBox] = useState(null); // will be set after boxes load if valid
+  const [archivedDuplicates, setArchivedDuplicates] = useState([]); // archived players matching new player name
 
   // Restore scroll position on mount
   React.useEffect(() => {
@@ -143,6 +150,17 @@ export default function Players() {
       return all.filter(p => p.agency_id === user.agency_id && !p.is_acquisition_target && p.player_type !== 'transfer_list');
     },
     refetchInterval: 3000,
+  });
+
+  // All archived players for duplicate detection
+  const { data: allArchivedPlayers = [] } = useQuery({
+    queryKey: ['archivedPlayers'],
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Player.list('-created_date');
+      return all.filter(p => p.agency_id === user.agency_id && !!p.archive_id);
+    },
+    staleTime: 10000,
   });
 
   const { data: allComments = [] } = useQuery({
@@ -840,6 +858,12 @@ export default function Players() {
                             )}
                           </p>
                         </div>
+                        {isProfileOutdated(player.updated_date) && (
+                          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-300 rounded-md px-2 py-1 mt-1 mb-1">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                            <span className="text-xs text-amber-700 font-medium">Profil veraltet – bitte aktualisieren</span>
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {player.player_type === 'transfer_list' && (
                             <Badge className="bg-orange-100 text-orange-700 border border-orange-300 text-xs flex items-center gap-1">
@@ -929,7 +953,7 @@ export default function Players() {
           </div>
         )}
 
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <Dialog open={showCreateDialog} onOpenChange={(open) => { setShowCreateDialog(open); if (!open) setArchivedDuplicates([]); }}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <div className="flex items-center justify-between">
@@ -953,10 +977,56 @@ export default function Players() {
                   <Input
                     id="name"
                     value={newPlayer.name}
-                    onChange={(e) => setNewPlayer({...newPlayer, name: e.target.value})}
+                    onChange={(e) => {
+                      const name = e.target.value;
+                      setNewPlayer({...newPlayer, name});
+                      if (name.length >= 3) {
+                        const matches = allArchivedPlayers.filter(p =>
+                          p.name.toLowerCase().includes(name.toLowerCase())
+                        );
+                        setArchivedDuplicates(matches);
+                      } else {
+                        setArchivedDuplicates([]);
+                      }
+                    }}
                     placeholder="z.B. Max Mustermann"
                     className="mt-1.5"
                   />
+                  {archivedDuplicates.length > 0 && (
+                    <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-2">
+                      <p className="text-xs font-semibold text-amber-800 flex items-center gap-1.5">
+                        <Archive className="w-3.5 h-3.5" />
+                        Im Archiv gefunden – möchtest du einen dieser Spieler reaktivieren?
+                      </p>
+                      {archivedDuplicates.map(p => {
+                        const arch = archives.find(a => a.id === p.archive_id);
+                        return (
+                          <div key={p.id} className="flex items-center justify-between bg-white border border-amber-200 rounded-md px-3 py-2">
+                            <div>
+                              <span className="font-medium text-slate-800 text-sm">{p.name}</span>
+                              <span className="text-xs text-slate-500 ml-2">{p.position}{p.current_club ? ` · ${p.current_club}` : ''}</span>
+                              {arch && <span className="text-xs text-amber-600 ml-2">📁 {arch.name}</span>}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-amber-700 border-amber-400 hover:bg-amber-100 text-xs h-7 gap-1"
+                              onClick={async () => {
+                                await base44.entities.Player.update(p.id, { archive_id: null });
+                                queryClient.invalidateQueries({ queryKey: ['players'] });
+                                queryClient.invalidateQueries({ queryKey: ['archivedPlayers'] });
+                                setShowCreateDialog(false);
+                                setArchivedDuplicates([]);
+                              }}
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              Reaktivieren
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div>
