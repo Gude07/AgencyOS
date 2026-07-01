@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Archive, DoorOpen, Target, AlertTriangle } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Archive, DoorOpen, Target, UserX, AlertTriangle } from "lucide-react";
 import { differenceInMonths as diffMonths } from "date-fns";
 
 const isProfileOutdated = (updatedDate) => {
@@ -216,6 +216,11 @@ export default function PlayersTableView({ players, searchTerm, filterCategory, 
                     {(player.player_type === 'acquisition' || player.is_acquisition_target) && (
                       <Badge className="bg-purple-100 text-purple-700 border border-purple-300 text-xs flex items-center gap-1">
                         <Target className="w-3 h-3" /> Akquise
+                      </Badge>
+                    )}
+                    {player.player_type === 'free_agent' && (
+                      <Badge className="bg-teal-100 text-teal-700 border border-teal-300 text-xs flex items-center gap-1">
+                        <UserX className="w-3 h-3" /> Vereinslos
                       </Badge>
                     )}
                   </div>

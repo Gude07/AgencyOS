@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen, Clock, RotateCcw, AlertTriangle } from "lucide-react";
+import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen, UserX, Clock, RotateCcw, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -48,6 +48,7 @@ import PlayerBoxesView from "../components/players/PlayerBoxesView";
 import PlayerBoxBadges from "../components/players/PlayerBoxBadges";
 import AcquisitionKanban from "../components/players/AcquisitionKanban";
 import TransferListView from "../components/players/TransferListView";
+import FreeAgentsView from "../components/players/FreeAgentsView";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -147,7 +148,7 @@ export default function Players() {
     queryFn: async () => {
       const user = await base44.auth.me();
       const all = await base44.entities.Player.filter({ agency_id: user.agency_id });
-      return all.filter(p => !p.is_acquisition_target && p.player_type !== 'transfer_list' && p.player_type !== 'acquisition');
+      return all.filter(p => !p.is_acquisition_target && p.player_type !== 'transfer_list' && p.player_type !== 'acquisition' && p.player_type !== 'free_agent');
     },
     refetchInterval: 3000,
     staleTime: 0,
@@ -513,6 +514,17 @@ export default function Players() {
             <DoorOpen className="w-4 h-4" />
             Abgangsliste
           </button>
+          <button
+            onClick={() => setMainView('free_agent')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              mainView === 'free_agent'
+                ? 'bg-teal-600 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <UserX className="w-4 h-4" />
+            Vereinslos
+          </button>
         </div>
 
         {/* Acquisition View */}
@@ -523,6 +535,11 @@ export default function Players() {
         {/* Transfer List View */}
         {mainView === 'transfer_list' && (
           <TransferListView />
+        )}
+
+        {/* Free Agents View */}
+        {mainView === 'free_agent' && (
+          <FreeAgentsView />
         )}
 
         {/* Normal Players View */}

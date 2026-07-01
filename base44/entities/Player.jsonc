@@ -95,10 +95,11 @@
       "enum": [
         "standard",
         "transfer_list",
-        "acquisition"
+        "acquisition",
+        "free_agent"
       ],
       "default": "standard",
-      "description": "Spieler-Typ: standard = normales Portfolio, transfer_list = Abgangskandidat vom Verein, acquisition = Akquise-Ziel"
+      "description": "Spieler-Typ: standard = normales Portfolio, transfer_list = Abgangskandidat vom Verein, acquisition = Akquise-Ziel, free_agent = vereinslos"
     },
     "category": {
       "type": "string",

@@ -269,6 +269,7 @@ export default function ClubRequestDetail() {
     
     const isTransferList = player.player_type === 'transfer_list';
     const isAcquisition = player.player_type === 'acquisition' || player.is_acquisition_target;
+    const isFreeAgent = player.player_type === 'free_agent';
 
     const borderClass = isOfferedToThisRequest
       ? 'bg-green-50 border-green-300 hover:border-green-400'
@@ -276,7 +277,9 @@ export default function ClubRequestDetail() {
         ? 'bg-orange-50/30 border-orange-400 hover:border-orange-500'
         : isAcquisition
           ? 'bg-purple-50/30 border-purple-400 hover:border-purple-500'
-          : 'bg-slate-50 border-slate-200 hover:border-blue-300';
+          : isFreeAgent
+            ? 'bg-teal-50/30 border-teal-400 hover:border-teal-500'
+            : 'bg-slate-50 border-slate-200 hover:border-blue-300';
 
     return (
       <HoverDetailCard key={player.id} content={<PlayerHoverCard player={player} />}>
@@ -304,6 +307,9 @@ export default function ClubRequestDetail() {
               )}
               {(player.player_type === 'acquisition' || player.is_acquisition_target) && (
                 <Badge className="bg-purple-100 text-purple-700 border border-purple-300 text-xs">🎯 Akquise</Badge>
+              )}
+              {player.player_type === 'free_agent' && (
+                <Badge className="bg-teal-100 text-teal-700 border border-teal-300 text-xs">Vereinslos</Badge>
               )}
             </div>
             <p className={`text-sm mt-1 ${isOfferedToThisRequest ? 'text-green-700' : 'text-slate-600'}`}>

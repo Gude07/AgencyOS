@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal, Trash2, IdCard, Move } from "lucide-react";
+import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal, Trash2, IdCard, Move, DoorOpen, Target, UserX } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -465,6 +465,40 @@ export default function PlayerDetail() {
                       </div>
                       <div className="space-y-3">
                         <div className="flex flex-wrap gap-2">
+                          {editMode ? (
+                            <Select
+                              value={editedPlayer?.player_type || "standard"}
+                              onValueChange={(value) => setEditedPlayer({...editedPlayer, player_type: value})}
+                            >
+                              <SelectTrigger className="w-52">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="standard">Standard</SelectItem>
+                                <SelectItem value="transfer_list">🚪 Abgangskandidat</SelectItem>
+                                <SelectItem value="acquisition">🎯 Akquise-Ziel</SelectItem>
+                                <SelectItem value="free_agent">Vereinslos</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <>
+                              {currentPlayerData?.player_type === 'transfer_list' && (
+                                <Badge className="bg-orange-100 text-orange-700 border border-orange-300 flex items-center gap-1">
+                                  <DoorOpen className="w-3.5 h-3.5" /> Abgangskandidat
+                                </Badge>
+                              )}
+                              {(currentPlayerData?.player_type === 'acquisition' || currentPlayerData?.is_acquisition_target) && (
+                                <Badge className="bg-purple-100 text-purple-700 border border-purple-300 flex items-center gap-1">
+                                  <Target className="w-3.5 h-3.5" /> Akquise-Ziel
+                                </Badge>
+                              )}
+                              {currentPlayerData?.player_type === 'free_agent' && (
+                                <Badge className="bg-teal-100 text-teal-700 border border-teal-300 flex items-center gap-1">
+                                  <UserX className="w-3.5 h-3.5" /> Vereinslos
+                                </Badge>
+                              )}
+                            </>
+                          )}
                           {editMode ? (
                             <Select 
                               value={editedPlayer?.category || "Beobachtungsliste"} 
