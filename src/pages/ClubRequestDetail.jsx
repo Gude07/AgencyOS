@@ -76,7 +76,8 @@ export default function ClubRequestDetail() {
     category: "alle",
     status: "alle",
     nationality: "alle",
-    positionType: "alle"
+    positionType: "alle",
+    playerType: "alle"
   });
 
   const { data: request, isLoading } = useQuery({
@@ -255,8 +256,10 @@ export default function ClubRequestDetail() {
     const matchesPositionType = matchFilters.positionType === "alle" || 
       (matchFilters.positionType === "main" && player.positionMatch === "main") ||
       (matchFilters.positionType === "secondary" && player.positionMatch === "secondary");
+    const playerTypeValue = player.player_type || 'standard';
+    const matchesPlayerType = matchFilters.playerType === "alle" || playerTypeValue === matchFilters.playerType;
     
-    return matchesSearch && matchesCategory && matchesStatus && matchesNationality && matchesPositionType;
+    return matchesSearch && matchesCategory && matchesStatus && matchesNationality && matchesPositionType && matchesPlayerType;
   });
 
   const uniqueNationalities = [...new Set(matchingPlayers.map(p => p.nationality).filter(Boolean))];
@@ -1130,6 +1133,21 @@ export default function ClubRequestDetail() {
                           {uniqueNationalities.map(nationality => (
                             <SelectItem key={nationality} value={nationality}>{nationality}</SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                      <Select 
+                        value={matchFilters.playerType} 
+                        onValueChange={(value) => setMatchFilters({...matchFilters, playerType: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Spielertyp" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alle">Alle Spielertypen</SelectItem>
+                          <SelectItem value="standard">Standard</SelectItem>
+                          <SelectItem value="transfer_list">🚪 Abgangskandidaten</SelectItem>
+                          <SelectItem value="acquisition">🎯 Akquise-Ziele</SelectItem>
+                          <SelectItem value="free_agent">Vereinslos</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
