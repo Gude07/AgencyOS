@@ -84,6 +84,11 @@ const transferItems = [
     icon: Building2,
   },
   {
+    title: "Vereinsnetzwerk",
+    url: createPageUrl("ClubNetwork"),
+    icon: Building2,
+  },
+  {
     title: "Deals",
     url: createPageUrl("Deals"),
     icon: CheckSquare,

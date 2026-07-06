@@ -16,6 +16,8 @@ import Inbox from './pages/Inbox';
 import ClubProfiles from './pages/ClubProfiles';
 import PlayerComparison from './pages/PlayerComparison';
 import SavedComparisons from './pages/SavedComparisons';
+import ClubNetwork from './pages/ClubNetwork';
+import ClubNetworkDetail from './pages/ClubNetworkDetail';
 
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -99,6 +101,22 @@ const AuthenticatedApp = () => {
             <SavedComparisons />
           </LayoutWrapper>
         } 
+      />
+      <Route 
+        path="/ClubNetwork"
+        element={
+          <LayoutWrapper currentPageName="ClubNetwork">
+            <ClubNetwork />
+          </LayoutWrapper>
+        }
+      />
+      <Route 
+        path="/ClubNetworkDetail"
+        element={
+          <LayoutWrapper currentPageName="ClubNetworkDetail">
+            <ClubNetworkDetail />
+          </LayoutWrapper>
+        }
       />
       <Route 
         path="/AIChat" 

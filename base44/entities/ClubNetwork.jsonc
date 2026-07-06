@@ -1,0 +1,94 @@
+{
+  "name": "ClubNetwork",
+  "type": "object",
+  "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
+    "club_name": {
+      "type": "string",
+      "description": "Name des Vereins"
+    },
+    "transfermarkt_url": {
+      "type": "string",
+      "description": "Link zum Transfermarkt-Kader des Vereins"
+    },
+    "league": {
+      "type": "string",
+      "description": "Liga des Vereins"
+    },
+    "country": {
+      "type": "string",
+      "description": "Land des Vereins"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Allgemeine Notizen zum Verein"
+    },
+    "contacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Vereinsinterne Ansprechpartner"
+    },
+    "placements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "player_id": {
+            "type": "string"
+          },
+          "player_name": {
+            "type": "string"
+          },
+          "position": {
+            "type": "string"
+          },
+          "contact_id": {
+            "type": "string"
+          },
+          "contact_name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Historie platzierter Spieler bei diesem Verein"
+    }
+  },
+  "required": [
+    "agency_id",
+    "club_name"
+  ]
+}
