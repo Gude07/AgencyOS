@@ -112,6 +112,8 @@ export default function ClubNetworkDetail() {
             <PlacementList
               placements={club.placements || []}
               contacts={club.contacts || []}
+              clubName={club.club_name}
+              clubNetworkId={club.id}
               onChange={(placements) => updateMutation.mutate({ placements })}
             />
           </TabsContent>

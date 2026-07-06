@@ -10,10 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2, User, CalendarDays } from "lucide-react";
 import PlayerPickerDialog from "./PlayerPickerDialog";
+import { base44 } from "@/api/base44Client";
 
 const emptyForm = { player_id: "", player_name: "", position: "", contact_id: "", contact_name: "", date: "", notes: "" };
 
-export default function PlacementList({ placements, contacts, onChange }) {
+export default function PlacementList({ placements, contacts, onChange, clubName, clubNetworkId }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -33,14 +34,42 @@ export default function PlacementList({ placements, contacts, onChange }) {
     setForm({ ...form, contact_id: contactId, contact_name: contact?.name || "" });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.player_name.trim()) return;
-    onChange([...placements, { ...form, id: Date.now().toString() }]);
+    const newPlacement = { ...form, id: Date.now().toString() };
+    onChange([...placements, newPlacement]);
     setDialogOpen(false);
+
+    if (newPlacement.player_id) {
+      const player = await base44.entities.Player.get(newPlacement.player_id);
+      const existingPlacements = player.club_placements || [];
+      await base44.entities.Player.update(newPlacement.player_id, {
+        club_placements: [
+          ...existingPlacements,
+          {
+            id: newPlacement.id,
+            club_network_id: clubNetworkId,
+            club_name: clubName,
+            contact_name: newPlacement.contact_name,
+            date: newPlacement.date,
+            notes: newPlacement.notes,
+          },
+        ],
+      });
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    const placement = placements.find((p) => p.id === id);
     onChange(placements.filter((p) => p.id !== id));
+
+    if (placement?.player_id) {
+      const player = await base44.entities.Player.get(placement.player_id);
+      const existingPlacements = player.club_placements || [];
+      await base44.entities.Player.update(placement.player_id, {
+        club_placements: existingPlacements.filter((p) => p.id !== id),
+      });
+    }
   };
 
   const sorted = [...placements].sort((a, b) => (b.date || "").localeCompare(a.date || ""));

@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen, UserX, Clock, RotateCcw, AlertTriangle } from "lucide-react";
+import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen, UserX, Building2, Clock, RotateCcw, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -891,6 +891,11 @@ export default function Players() {
                           {(player.player_type === 'acquisition' || player.is_acquisition_target) && (
                             <Badge className="bg-purple-100 text-purple-700 border border-purple-300 text-xs flex items-center gap-1">
                               <Target className="w-3 h-3" /> Akquise
+                            </Badge>
+                          )}
+                          {Array.isArray(player.club_placements) && player.club_placements.length > 0 && (
+                            <Badge className="bg-green-100 text-green-700 border border-green-300 text-xs flex items-center gap-1">
+                              <Building2 className="w-3 h-3" /> Platziert bei {player.club_placements[player.club_placements.length - 1].club_name}
                             </Badge>
                           )}
                           <Badge variant="secondary" className={categoryColors[player.category] + " border text-xs"}>{player.category}</Badge>

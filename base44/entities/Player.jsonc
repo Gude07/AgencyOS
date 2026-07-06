@@ -306,6 +306,35 @@
       "default": [],
       "description": "IDs der Spieler-Boxen, denen der Spieler zugeordnet ist"
     },
+    "club_placements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "club_network_id": {
+            "type": "string"
+          },
+          "club_name": {
+            "type": "string"
+          },
+          "contact_name": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Historie der Vereins-Platzierungen aus dem Vereinsnetzwerk"
+    },
     "dropbox_documents": {
       "type": "array",
       "items": {

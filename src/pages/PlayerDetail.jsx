@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal, Trash2, IdCard, Move, DoorOpen, Target, UserX } from "lucide-react";
+import { ArrowLeft, ExternalLink, Building2, Link as LinkIcon, Star, Settings, Search, SlidersHorizontal, Trash2, IdCard, Move, DoorOpen, Target, UserX, CalendarDays } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -495,6 +495,11 @@ export default function PlayerDetail() {
                               {currentPlayerData?.player_type === 'free_agent' && (
                                 <Badge className="bg-teal-100 text-teal-700 border border-teal-300 flex items-center gap-1">
                                   <UserX className="w-3.5 h-3.5" /> Vereinslos
+                                </Badge>
+                              )}
+                              {Array.isArray(currentPlayerData?.club_placements) && currentPlayerData.club_placements.length > 0 && (
+                                <Badge className="bg-green-100 text-green-700 border border-green-300 flex items-center gap-1">
+                                  <Building2 className="w-3.5 h-3.5" /> Platziert bei {currentPlayerData.club_placements[currentPlayerData.club_placements.length - 1].club_name}
                                 </Badge>
                               )}
                             </>
