@@ -49,6 +49,7 @@ import PlayerBoxBadges from "../components/players/PlayerBoxBadges";
 import AcquisitionKanban from "../components/players/AcquisitionKanban";
 import TransferListView from "../components/players/TransferListView";
 import FreeAgentsView from "../components/players/FreeAgentsView";
+import CrossCategoryMatchHint from "../components/players/CrossCategoryMatchHint";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -152,6 +153,17 @@ export default function Players() {
     },
     refetchInterval: 3000,
     staleTime: 0,
+  });
+
+  // Players in other categories (Akquise, Abgangsliste, Vereinslos) for cross-category search hints
+  const { data: otherCategoryPlayers = [] } = useQuery({
+    queryKey: ['players', 'otherCategories'],
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.Player.filter({ agency_id: user.agency_id });
+      return all.filter(p => !p.archive_id && (p.is_acquisition_target || p.player_type === 'transfer_list' || p.player_type === 'acquisition' || p.player_type === 'free_agent'));
+    },
+    staleTime: 10000,
   });
 
   // All archived players for duplicate detection
@@ -970,9 +982,20 @@ export default function Players() {
         )}
 
         {filteredPlayers.length === 0 && !isLoading && (
-          <div className="text-center py-16">
-            <UsersIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Spieler gefunden</p>
+          <div className="space-y-4">
+            <div className="text-center py-16">
+              <UsersIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Spieler gefunden</p>
+            </div>
+            {searchTerm && (
+              <CrossCategoryMatchHint
+                matches={otherCategoryPlayers.filter(p =>
+                  p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  p.current_club?.toLowerCase().includes(searchTerm.toLowerCase())
+                )}
+                onNavigateToCategory={setMainView}
+              />
+            )}
           </div>
         )}
 
