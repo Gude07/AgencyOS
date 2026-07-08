@@ -211,6 +211,14 @@ export default function PlayerDetail() {
     console.log("Final secondary_positions:", playerData.secondary_positions);
     console.log("=== SAVE PLAYER END ===");
     
+    if (playerData.market_value && playerData.market_value !== player.market_value) {
+      base44.entities.PlayerMarketValueHistory.create({
+        player_id: playerId,
+        market_value: playerData.market_value,
+        date: new Date().toISOString(),
+      });
+    }
+    
     updatePlayerMutation.mutate({ id: playerId, data: playerData });
   };
 
