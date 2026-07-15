@@ -50,6 +50,7 @@ import AcquisitionKanban from "../components/players/AcquisitionKanban";
 import TransferListView from "../components/players/TransferListView";
 import FreeAgentsView from "../components/players/FreeAgentsView";
 import CrossCategoryMatchHint from "../components/players/CrossCategoryMatchHint";
+import GlobalPlayerSearchResults from "../components/players/GlobalPlayerSearchResults";
 
 const calculateAge = (dateOfBirth) => {
   if (!dateOfBirth) return null;
@@ -153,6 +154,16 @@ export default function Players() {
     },
     refetchInterval: 3000,
     staleTime: 0,
+  });
+
+  // Alle Spieler (alle Kategorien) für die zentrale Suche
+  const { data: allPlayersAll = [] } = useQuery({
+    queryKey: ['players', 'allForSearch'],
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      return base44.entities.Player.filter({ agency_id: user.agency_id });
+    },
+    staleTime: 5000,
   });
 
   // Players in other categories (Akquise, Abgangsliste, Vereinslos) for cross-category search hints
@@ -490,7 +501,38 @@ export default function Players() {
   return (
     <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Zentrale Suchleiste über alle Kategorien */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+          <Input
+            placeholder="Spieler in allen Kategorien suchen (Standard, Akquise, Abgang, Vereinslos)…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 h-12 text-base border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          />
+        </div>
 
+        {searchTerm ? (
+          <GlobalPlayerSearchResults
+            players={allPlayersAll.filter(p =>
+              !p.archive_id && (
+                p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.current_club?.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+            )}
+            onOpenPlayer={(id) => {
+              const params = new URLSearchParams();
+              params.set('search', searchTerm);
+              params.set('scrollY', window.scrollY.toString());
+              navigate(createPageUrl("PlayerDetail") + "?id=" + id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
+            }}
+            onJumpToCategory={(view) => {
+              setMainView(view);
+              setSearchTerm("");
+            }}
+          />
+        ) : (
+        <>
         {/* Main View Toggle */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 w-fit">
           <button
@@ -686,16 +728,7 @@ export default function Players() {
             </Button>
           )}
 
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <Input
-                placeholder="Spieler oder Verein suchen..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              />
-            </div>
+          <div className="flex gap-3 justify-end">
             <div className="flex bg-slate-100 rounded-lg p-1">
               <Button
                 variant={displayMode === 'grid' ? 'default' : 'ghost'}
@@ -1506,6 +1539,8 @@ export default function Players() {
               </div>
             </DialogContent>
           </Dialog>
+        </>
+        )}
       </div>
     </div>
   );
