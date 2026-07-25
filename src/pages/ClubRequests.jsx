@@ -34,12 +34,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User, MessageCircle, Download, Sparkles, Layers, List } from "lucide-react";
+import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizontal, X, User, MessageCircle, Download, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import MultiRequestSummaryDialog from "@/components/clubRequests/MultiRequestSummaryDialog";
-import ClubRequestGroupedView from "@/components/clubRequests/ClubRequestGroupedView";
 
 const priorityColors = {
   niedrig: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -62,7 +61,6 @@ export default function ClubRequests() {
   const urlParams = new URLSearchParams(window.location.search);
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [viewMode, setViewMode] = useState(urlParams.get('view') === 'grouped' ? 'grouped' : 'list');
   const [searchTerm, setSearchTerm] = useState(urlParams.get('search') || "");
   const [searchRequirements, setSearchRequirements] = useState(urlParams.get('searchRequirements') || "");
   const [filterStatus, setFilterStatus] = useState(urlParams.get('status') || "alle");
@@ -475,21 +473,6 @@ export default function ClubRequests() {
     await unarchiveRequestsMutation.mutateAsync(Array.from(selectedRequests));
   };
 
-  const openRequestDetail = (request) => {
-    const params = new URLSearchParams();
-    if (searchTerm) params.set('search', searchTerm);
-    if (searchRequirements) params.set('searchRequirements', searchRequirements);
-    if (filterStatus !== 'alle') params.set('status', filterStatus);
-    if (filterFavorites !== 'alle') params.set('favorites', filterFavorites);
-    if (filterCountry !== 'alle') params.set('country', filterCountry);
-    if (filterBudgetMin) params.set('budgetMin', filterBudgetMin);
-    if (filterBudgetMax) params.set('budgetMax', filterBudgetMax);
-    if (filterSalaryMin) params.set('salaryMin', filterSalaryMin);
-    if (filterSalaryMax) params.set('salaryMax', filterSalaryMax);
-    params.set('scrollY', window.scrollY.toString());
-    navigate(createPageUrl("ClubRequestDetail") + "?id=" + request.id + "&back=" + encodeURIComponent(window.location.pathname + "?" + params.toString()));
-  };
-
   const toggleRequestSelection = (requestId) => {
     const newSelection = new Set(selectedRequests);
     if (newSelection.has(requestId)) {
@@ -564,23 +547,9 @@ export default function ClubRequests() {
               {filteredRequests.length} Anfragen {selectionMode && `(${selectedRequests.size} ausgewählt)`}
             </p>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2">
             {!selectionMode ? (
               <>
-                <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
-                  >
-                    <List className="w-4 h-4" /> Liste
-                  </button>
-                  <button
-                    onClick={() => setViewMode('grouped')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition ${viewMode === 'grouped' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
-                  >
-                    <Layers className="w-4 h-4" /> Vereine
-                  </button>
-                </div>
                 <Button 
                   onClick={() => setShowManageArchivesDialog(true)}
                   variant="outline"
@@ -902,16 +871,7 @@ export default function ClubRequests() {
           </div>
 
           <TabsContent value="alle" className="mt-6">
-            {viewMode === 'grouped' && (
-              <ClubRequestGroupedView
-                requests={filteredRequests}
-                allCommunications={allCommunications}
-                users={users}
-                userFavorites={userFavorites}
-                onOpenRequest={openRequestDetail}
-              />
-            )}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" style={{ display: viewMode === 'grouped' ? 'none' : undefined }}>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence>
             {filteredRequests.map(request => (
               <motion.div
@@ -1077,7 +1037,7 @@ export default function ClubRequests() {
             </AnimatePresence>
             </div>
 
-            {viewMode === 'list' && filteredRequests.length === 0 && !isLoading && (
+            {filteredRequests.length === 0 && !isLoading && (
           <div className="text-center py-16">
             <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Anfragen gefunden</p>
@@ -1086,16 +1046,7 @@ export default function ClubRequests() {
           </TabsContent>
 
           <TabsContent value="favoriten" className="mt-6">
-            {viewMode === 'grouped' && (
-              <ClubRequestGroupedView
-                requests={filteredRequests}
-                allCommunications={allCommunications}
-                users={users}
-                userFavorites={userFavorites}
-                onOpenRequest={openRequestDetail}
-              />
-            )}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" style={{ display: viewMode === 'grouped' ? 'none' : undefined }}>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <AnimatePresence>
                 {filteredRequests.map(request => (
                   <motion.div
@@ -1264,7 +1215,7 @@ export default function ClubRequests() {
 
         </Tabs>
 
-        {viewMode === 'list' && filteredRequests.length === 0 && !isLoading && (
+        {filteredRequests.length === 0 && !isLoading && (
           <div className="text-center py-16">
             <Building2 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Anfragen gefunden</p>
