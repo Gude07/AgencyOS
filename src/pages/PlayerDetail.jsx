@@ -65,6 +65,8 @@ const categoryColors = {
   "Beobachtungsliste": "bg-slate-100 text-slate-800 border-slate-200",
   "Top-Priorität": "bg-red-100 text-red-800 border-red-200",
   "Vertragsende": "bg-green-100 text-green-800 border-green-200",
+  "Gerade gewechselt": "bg-teal-100 text-teal-800 border-teal-200",
+  "Gerade ausgeliehen": "bg-indigo-100 text-indigo-800 border-indigo-200",
 };
 
 export default function PlayerDetail() {
@@ -527,6 +529,8 @@ export default function PlayerDetail() {
                                 <SelectItem value="Beobachtungsliste">Beobachtungsliste</SelectItem>
                                 <SelectItem value="Top-Priorität">Top-Priorität</SelectItem>
                                 <SelectItem value="Vertragsende">Vertragsende</SelectItem>
+                                <SelectItem value="Gerade gewechselt">Gerade gewechselt</SelectItem>
+                                <SelectItem value="Gerade ausgeliehen">Gerade ausgeliehen</SelectItem>
                               </SelectContent>
                             </Select>
                           ) : (

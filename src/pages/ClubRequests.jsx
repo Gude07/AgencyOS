@@ -385,9 +385,10 @@ export default function ClubRequests() {
     const matchesRequirements = searchRequirements === "" || 
                                 request.requirements?.toLowerCase().includes(searchRequirements.toLowerCase());
     const matchesStatus = filterStatus === "alle" || request.status === filterStatus;
-    // Bei Favoriten-Filter: nur nicht-archivierte Vereinsanfragen anzeigen
-    const matchesFavorites = filterFavorites === "alle" || 
-                             (filterFavorites === "favoriten" && userFavorites.includes(request.id) && !request.archive_id);
+    // Bei Favoriten-Filter: nur nicht-archivierte Vereinsanfragen anzeigen.
+    // "vereine" (Gruppenansicht) und jeder andere Wert außer "favoriten" verhalten sich wie "alle".
+    const matchesFavorites = filterFavorites !== "favoriten" || 
+                             (userFavorites.includes(request.id) && !request.archive_id);
     const matchesPriority = filterPriority === "alle" || request.priority === filterPriority;
     const matchesCountry = filterCountry === "alle" || request.country === filterCountry;
     const matchesPosition = filterPosition === "alle" || request.position_needed === filterPosition;

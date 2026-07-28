@@ -64,6 +64,8 @@ const categoryColors = {
   "Beobachtungsliste": "bg-slate-100 text-slate-800 border-slate-200",
   "Top-Priorität": "bg-red-100 text-red-800 border-red-200",
   "Vertragsende": "bg-green-100 text-green-800 border-green-200",
+  "Gerade gewechselt": "bg-teal-100 text-teal-800 border-teal-200",
+  "Gerade ausgeliehen": "bg-indigo-100 text-indigo-800 border-indigo-200",
 };
 
 const categoryAccentColors = {
@@ -73,6 +75,8 @@ const categoryAccentColors = {
   "Beobachtungsliste": "#94a3b8",
   "Top-Priorität": "#ef4444",
   "Vertragsende": "#22c55e",
+  "Gerade gewechselt": "#14b8a6",
+  "Gerade ausgeliehen": "#6366f1",
 };
 
 const isContractExpiringSoon = (contractUntil) => {
@@ -407,6 +411,8 @@ export default function Players() {
     { label: "Aktiv", value: activePlayers.length },
     { label: "Wintertransfer", value: activePlayers.filter(p => p.category === "Wintertransferperiode").length },
     { label: "Sommertransfer", value: activePlayers.filter(p => p.category === "Sommertransferperiode").length },
+    { label: "Gewechselt", value: activePlayers.filter(p => p.category === "Gerade gewechselt").length },
+    { label: "Ausgeliehen", value: activePlayers.filter(p => p.category === "Gerade ausgeliehen").length },
     { label: "Archiviert", value: players.filter(p => !!p.archive_id).length },
   ];
 
@@ -756,6 +762,8 @@ export default function Players() {
               <TabsTrigger value="Sommertransferperiode">Sommer</TabsTrigger>
               <TabsTrigger value="Top-Priorität">Top-Priorität</TabsTrigger>
               <TabsTrigger value="Beobachtungsliste">Beobachtung</TabsTrigger>
+              <TabsTrigger value="Gerade gewechselt">Gewechselt</TabsTrigger>
+              <TabsTrigger value="Gerade ausgeliehen">Ausgeliehen</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -1249,6 +1257,8 @@ export default function Players() {
                       <SelectItem value="Beobachtungsliste">Beobachtungsliste</SelectItem>
                       <SelectItem value="Top-Priorität">Top-Priorität</SelectItem>
                       <SelectItem value="Vertragsende">Vertragsende</SelectItem>
+                      <SelectItem value="Gerade gewechselt">Gerade gewechselt</SelectItem>
+                      <SelectItem value="Gerade ausgeliehen">Gerade ausgeliehen</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

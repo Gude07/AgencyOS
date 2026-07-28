@@ -109,7 +109,9 @@
         "Zukunft",
         "Beobachtungsliste",
         "Top-Priorit\u00e4t",
-        "Vertragsende"
+        "Vertragsende",
+        "Gerade gewechselt",
+        "Gerade ausgeliehen"
       ],
       "default": "Beobachtungsliste",
       "description": "Kategorie f\u00fcr die Organisation"
@@ -124,7 +126,7 @@
       "enum": [
         "Zielidentifikation",
         "Erstkontakt",
-        "In Gespr\u00e4ch",
+        "In Gespr\u00e4chen",
         "Verhandlung",
         "Gewonnen",
         "Abgelehnt"
