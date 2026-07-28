@@ -284,6 +284,19 @@ export default function ClubRequestDetail() {
             ? 'bg-teal-50/30 border-teal-400 hover:border-teal-500'
             : 'bg-slate-50 border-slate-200 hover:border-blue-300';
 
+    const categoryBadgeClasses = {
+      "Wintertransferperiode": "bg-blue-100 text-blue-800 border-blue-300",
+      "Sommertransferperiode": "bg-orange-100 text-orange-800 border-orange-300",
+      "Zukunft": "bg-purple-100 text-purple-800 border-purple-300",
+      "Beobachtungsliste": "bg-slate-100 text-slate-700 border-slate-300",
+      "Top-Priorität": "bg-red-100 text-red-800 border-red-300",
+      "Vertragsende": "bg-green-100 text-green-800 border-green-300",
+      "Gerade gewechselt": "bg-teal-100 text-teal-800 border-teal-300",
+      "Gerade ausgeliehen": "bg-indigo-100 text-indigo-800 border-indigo-300",
+    };
+    const categoryBadgeClass = categoryBadgeClasses[player.category] || "bg-slate-100 text-slate-600 border-slate-300";
+    const hasVisibleCategory = player.category && player.category !== "Beobachtungsliste";
+
     return (
       <HoverDetailCard key={player.id} content={<PlayerHoverCard player={player} />}>
       <div className={`p-4 rounded-lg border transition-colors ${borderClass}`}>
@@ -313,6 +326,11 @@ export default function ClubRequestDetail() {
               )}
               {player.player_type === 'free_agent' && (
                 <Badge className="bg-teal-100 text-teal-700 border border-teal-300 text-xs">Vereinslos</Badge>
+              )}
+              {hasVisibleCategory && (
+                <Badge className={`border text-xs ${categoryBadgeClass}`}>
+                  {player.category}
+                </Badge>
               )}
             </div>
             <p className={`text-sm mt-1 ${isOfferedToThisRequest ? 'text-green-700' : 'text-slate-600'}`}>
