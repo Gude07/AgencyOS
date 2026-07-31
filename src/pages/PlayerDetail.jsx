@@ -34,6 +34,7 @@ import { createPageUrl } from "@/utils";
 import { format, differenceInYears } from "date-fns";
 import { calculateDetailedMatchScore } from "../utils/matchmaking";
 import MatchScoreBreakdown from "../components/clubRequests/MatchScoreBreakdown";
+import KaderLink from "../components/clubRequests/KaderLink";
 import HoverDetailCard from "../components/ui/HoverDetailCard";
 import ClubRequestHoverCard from "../components/clubRequests/ClubRequestHoverCard";
 import { de } from "date-fns/locale";
@@ -1273,6 +1274,7 @@ export default function PlayerDetail() {
                               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{request.league} • {request.country}</p>
                             </div>
                             <div className="flex items-center gap-2">
+                              <KaderLink url={request.transfermarkt_url} />
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
