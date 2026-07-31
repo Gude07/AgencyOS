@@ -357,8 +357,9 @@ function SidebarNav({ onNavClick }) {
 const bottomNavItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Aufgaben", url: createPageUrl("Tasks"), icon: CheckSquare },
-  { title: "Kalender", url: createPageUrl("Calendar"), icon: Calendar },
   { title: "Portfolio", url: createPageUrl("Players"), icon: Briefcase },
+  { title: "Anfragen", url: createPageUrl("ClubRequests"), icon: Building2 },
+  { title: "Kalender", url: createPageUrl("Calendar"), icon: Calendar },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -419,7 +420,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Mobile Bottom Navigation */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
-        <div className="grid grid-cols-4 gap-0 px-1 pt-1">
+        <div className="grid grid-cols-5 gap-0 px-1 pt-1">
           {bottomNavItems.map((item) => {
             const isActive = location.pathname === item.url;
             return (
