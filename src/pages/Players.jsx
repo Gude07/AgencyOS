@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen, UserX, Building2, Clock, RotateCcw, AlertTriangle } from "lucide-react";
+import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen, UserX, Building2, Clock, RotateCcw, AlertTriangle, Layers } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -387,7 +387,10 @@ export default function Players() {
     localStorage.setItem('playersDisplayMode', displayMode);
   }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches, filterArchive, displayMode, activeBox]);
 
-  const filteredPlayers = players.filter(player => {
+  const allActivePlayersData = allPlayersAll.filter(p => !p.archive_id);
+  const playerDataSource = mainView === 'all' ? allActivePlayersData : players;
+
+  const filteredPlayers = playerDataSource.filter(player => {
     const matchesSearch = player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          player.current_club?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === "alle" || player.category === filterCategory;
@@ -406,14 +409,14 @@ export default function Players() {
     return matchesSearch && matchesCategory && matchesPosition && matchesStatus && matchesFavorites && matchesHasMatches && matchesArchive && matchesBox;
   });
 
-  const activePlayers = players.filter(p => !p.archive_id);
+  const activePlayers = playerDataSource.filter(p => !p.archive_id);
   const stats = [
     { label: "Aktiv", value: activePlayers.length },
     { label: "Wintertransfer", value: activePlayers.filter(p => p.category === "Wintertransferperiode").length },
     { label: "Sommertransfer", value: activePlayers.filter(p => p.category === "Sommertransferperiode").length },
     { label: "Gewechselt", value: activePlayers.filter(p => p.category === "Gerade gewechselt").length },
     { label: "Ausgeliehen", value: activePlayers.filter(p => p.category === "Gerade ausgeliehen").length },
-    { label: "Archiviert", value: players.filter(p => !!p.archive_id).length },
+    { label: "Archiviert", value: playerDataSource.filter(p => !!p.archive_id).length },
   ];
 
   const handleArchiveSelected = async (archiveId) => {
@@ -542,6 +545,17 @@ export default function Players() {
         {/* Main View Toggle */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 w-fit">
           <button
+            onClick={() => setMainView('all')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              mainView === 'all'
+                ? 'bg-indigo-700 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            Alle Spieler
+          </button>
+          <button
             onClick={() => setMainView('players')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
               mainView === 'players'
@@ -602,8 +616,8 @@ export default function Players() {
           <FreeAgentsView />
         )}
 
-        {/* Normal Players View */}
-        {mainView === 'players' && (<>
+        {/* Normal Players View (auch "Alle Spieler") */}
+        {(mainView === 'players' || mainView === 'all') && (<>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -706,7 +720,7 @@ export default function Players() {
         {/* Boxes bar */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
           <PlayerBoxesView
-            players={players}
+            players={playerDataSource}
             activeBox={activeBox}
             onBoxSelect={setActiveBox}
           />
@@ -1028,7 +1042,7 @@ export default function Players() {
               <UsersIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Spieler gefunden</p>
             </div>
-            {searchTerm && (
+            {searchTerm && mainView !== 'all' && (
               <CrossCategoryMatchHint
                 matches={otherCategoryPlayers.filter(p =>
                   p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
