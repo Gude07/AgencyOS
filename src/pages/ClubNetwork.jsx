@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Search, Building2, ExternalLink, Users, UserCircle } from "lucide-react";
 import ClubNetworkForm from "@/components/clubNetwork/ClubNetworkForm";
+import { propagateTransfermarktUrl } from "@/utils/clubTransfermarkt";
 
 export default function ClubNetwork() {
   const [search, setSearch] = useState("");
@@ -27,9 +28,28 @@ export default function ClubNetwork() {
       const user = await base44.auth.me();
       return base44.entities.ClubNetwork.create({ ...data, agency_id: user.agency_id });
     },
-    onSuccess: () => {
+    onSuccess: async (created, data) => {
       queryClient.invalidateQueries({ queryKey: ["clubNetwork"] });
       setFormOpen(false);
+      const url = (data.transfermarkt_url || "").trim();
+      if (url && data.club_name) {
+        try {
+          const [allProfiles, allRequests] = await Promise.all([
+            base44.entities.ClubProfile.list(),
+            base44.entities.ClubRequest.list(),
+          ]);
+          await propagateTransfermarktUrl(data.club_name, url, {
+            profiles: allProfiles,
+            requests: allRequests,
+            networks: clubs,
+            skipIds: [created?.id],
+          });
+          queryClient.invalidateQueries({ queryKey: ["clubProfiles"] });
+          queryClient.invalidateQueries({ queryKey: ["clubRequests"] });
+        } catch (e) {
+          console.error("Transfermarkt-Link konnte nicht weitergegeben werden:", e);
+        }
+      }
     },
   });
 

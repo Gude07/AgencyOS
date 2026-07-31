@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Building2, ExternalLink, Pencil, Trash2, UserCircle, Users } from "lucide-react";
 import ClubNetworkForm from "@/components/clubNetwork/ClubNetworkForm";
+import { propagateTransfermarktUrl } from "@/utils/clubTransfermarkt";
 import ContactList from "@/components/clubNetwork/ContactList";
 import PlacementList from "@/components/clubNetwork/PlacementList";
 
@@ -26,7 +27,31 @@ export default function ClubNetworkDetail() {
 
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.ClubNetwork.update(clubId, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["clubNetwork", clubId] }),
+    onSuccess: async (updated, data) => {
+      queryClient.invalidateQueries({ queryKey: ["clubNetwork", clubId] });
+      queryClient.invalidateQueries({ queryKey: ["clubNetwork"] });
+      const url = (data.transfermarkt_url || "").trim();
+      const clubName = data.club_name || updated?.club_name;
+      if (url && clubName) {
+        try {
+          const [allProfiles, allRequests, allNetworks] = await Promise.all([
+            base44.entities.ClubProfile.list(),
+            base44.entities.ClubRequest.list(),
+            base44.entities.ClubNetwork.list(),
+          ]);
+          await propagateTransfermarktUrl(clubName, url, {
+            profiles: allProfiles,
+            requests: allRequests,
+            networks: allNetworks,
+            skipIds: [clubId],
+          });
+          queryClient.invalidateQueries({ queryKey: ["clubProfiles"] });
+          queryClient.invalidateQueries({ queryKey: ["clubRequests"] });
+        } catch (e) {
+          console.error("Transfermarkt-Link konnte nicht weitergegeben werden:", e);
+        }
+      }
+    },
   });
 
   const deleteMutation = useMutation({

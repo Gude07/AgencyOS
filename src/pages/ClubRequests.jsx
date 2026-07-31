@@ -169,6 +169,16 @@ export default function ClubRequests() {
     refetchInterval: 60000,
   });
 
+  // Vereinsnetzwerk als weitere Quelle für Auto-Fill des Transfermarkt-Links
+  const { data: clubNetworksForAutofill = [] } = useQuery({
+    queryKey: ['clubNetworksForAutofill'],
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      return base44.entities.ClubNetwork.filter({ agency_id: user.agency_id });
+    },
+    refetchInterval: 60000,
+  });
+
   const toggleFavoriteMutation = useMutation({
     mutationFn: async (requestId) => {
       const favorites = currentUser?.favorite_club_requests || [];
@@ -321,7 +331,7 @@ export default function ClubRequests() {
     const match = requests
       .filter(r => r.club_name?.toLowerCase() === clubName.toLowerCase())
       .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
-    const url = findTransfermarktUrlForClub(clubName, clubProfiles, requests);
+    const url = findTransfermarktUrlForClub(clubName, clubProfiles, requests, clubNetworksForAutofill);
     setNewRequest(prev => ({
       ...prev,
       club_name: clubName,
