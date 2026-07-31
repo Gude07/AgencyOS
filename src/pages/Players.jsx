@@ -91,6 +91,14 @@ const isProfileOutdated = (updatedDate) => {
   return months >= 6;
 };
 
+// Farbcodierung je nach Spieler-Typ (wie in den Unterkategorien: Akquise=Purple, Abgang=Orange, Vereinslos=Teal)
+const getPlayerAccent = (player) => {
+  if (player.player_type === 'free_agent') return { color: '#0d9488', border: 'border-2 border-teal-200 dark:border-teal-800' };
+  if (player.player_type === 'transfer_list') return { color: '#f97316', border: 'border-2 border-orange-200 dark:border-orange-800' };
+  if (player.player_type === 'acquisition' || player.is_acquisition_target) return { color: '#a855f7', border: 'border-2 border-purple-200 dark:border-purple-800' };
+  return { color: categoryAccentColors[player.category] || '#e2e8f0', border: 'border border-slate-200 dark:border-slate-800' };
+};
+
 export default function Players() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -418,6 +426,12 @@ export default function Players() {
 
     return matchesSearch && matchesCategory && matchesPosition && matchesStatus && matchesFavorites && matchesHasMatches && matchesArchive && matchesBox;
   });
+
+  // Archivierte Spieler ans Ende sortieren, damit aktive Treffer oben stehen
+  const orderedFilteredPlayers = [...filteredPlayers].sort((a, b) =>
+    (b.archive_id ? 1 : 0) - (a.archive_id ? 1 : 0)
+  );
+  const archivedResultsCount = filteredPlayers.filter(p => p.archive_id).length;
 
   const activePlayers = playerDataSource.filter(p => !p.archive_id);
   const stats = [
@@ -859,13 +873,26 @@ export default function Players() {
         {displayMode === 'grid' ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence>
-              {filteredPlayers.map(player => (
-                <motion.div key={player.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                  <Card className={`hover:shadow-xl transition-all duration-200 bg-white dark:bg-slate-900 relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 group ${
-                    selectionMode && selectedPlayers.has(player.id) ? 'ring-2 ring-blue-400' : ''
-                  }`}>
+              {orderedFilteredPlayers.map((player, idx) => {
+                const accent = getPlayerAccent(player);
+                const isArchived = !!player.archive_id;
+                const prev = orderedFilteredPlayers[idx - 1];
+                const isFirstArchived = isArchived && (!prev || !prev.archive_id);
+                return (
+                <React.Fragment key={player.id}>
+                  {isFirstArchived && (
+                    <div className="md:col-span-2 lg:col-span-3 mt-4">
+                      <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                        <Archive className="w-4 h-4" /> Archivierte Spieler ({archivedResultsCount})
+                      </div>
+                    </div>
+                  )}
+                  <motion.div key={player.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+                  <Card className={`hover:shadow-xl transition-all duration-200 bg-white dark:bg-slate-900 relative rounded-xl overflow-hidden ${accent.border} group ${
+                    isArchived ? 'opacity-70' : ''
+                  } ${selectionMode && selectedPlayers.has(player.id) ? 'ring-2 ring-blue-400' : ''}`}>
                     {/* Colored accent bar */}
-                    <div className="h-1 w-full" style={{ backgroundColor: categoryAccentColors[player.category] || '#e2e8f0' }} />
+                    <div className="h-1 w-full" style={{ backgroundColor: accent.color }} />
 
                     {/* Action buttons */}
                     {selectionMode ? (
@@ -959,6 +986,16 @@ export default function Players() {
                               <Target className="w-3 h-3" /> Akquise
                             </Badge>
                           )}
+                          {player.player_type === 'free_agent' && (
+                            <Badge className="bg-teal-100 text-teal-700 border border-teal-300 text-xs flex items-center gap-1">
+                              <UserX className="w-3 h-3" /> Vereinslos
+                            </Badge>
+                          )}
+                          {isArchived && (
+                            <Badge className="bg-slate-200 text-slate-600 border border-slate-300 text-xs flex items-center gap-1">
+                              <Archive className="w-3 h-3" /> Archiviert
+                            </Badge>
+                          )}
                           {Array.isArray(player.club_placements) && player.club_placements.length > 0 && (
                             <Badge className="bg-green-100 text-green-700 border border-green-300 text-xs flex items-center gap-1">
                               <Building2 className="w-3 h-3" /> Platziert bei {player.club_placements[player.club_placements.length - 1].club_name}
@@ -1017,7 +1054,9 @@ export default function Players() {
                     </div>
                   </Card>
                 </motion.div>
-              ))}
+                </React.Fragment>
+              );
+            })}
             </AnimatePresence>
           </div>
         ) : (
