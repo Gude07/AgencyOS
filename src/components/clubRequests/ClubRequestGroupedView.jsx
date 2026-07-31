@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Building2, Search, ChevronDown, ChevronRight, Star, User, MessageCircle, Inbox, Layers, Expand, Shrink } from "lucide-react";
+import KaderLink from "@/components/clubRequests/KaderLink";
 
 const priorityDotColors = {
   dringend: "bg-red-500",
@@ -120,6 +121,7 @@ export default function ClubRequestGroupedView({
             const openCount = reqs.filter(r => r.status === "offen").length;
             const favCount = reqs.filter(r => userFavorites.includes(r.id)).length;
             const commCount = reqs.reduce((sum, r) => sum + allCommunications.filter(c => c.club_request_id === r.id).length, 0);
+            const kaderUrl = reqs.map(r => r.transfermarkt_url).find(Boolean);
 
             return (
               <div
@@ -144,6 +146,7 @@ export default function ClubRequestGroupedView({
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    <KaderLink url={kaderUrl} />
                     <Badge variant="secondary" className="bg-blue-100 text-blue-800 border border-blue-200 text-xs">
                       {reqs.length} Anfragen
                     </Badge>

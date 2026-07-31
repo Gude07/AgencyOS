@@ -41,6 +41,7 @@ import { createPageUrl } from "@/utils";
 import { findTransfermarktUrlForClub } from "@/utils/clubTransfermarkt";
 import MultiRequestSummaryDialog from "@/components/clubRequests/MultiRequestSummaryDialog";
 import ClubRequestGroupedView from "@/components/clubRequests/ClubRequestGroupedView";
+import KaderLink from "@/components/clubRequests/KaderLink";
 
 const priorityColors = {
   niedrig: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -983,6 +984,8 @@ export default function ClubRequests() {
                           <Badge variant="secondary" className={statusColors[request.status] + " border"}>
                             {request.status.replace(/_/g, ' ')}
                           </Badge>
+                          <KaderLink url={request.transfermarkt_url} />
+                          <KaderLink url={request.transfermarkt_url} />
                         </div>
                       </div>
                       </div>
