@@ -128,8 +128,7 @@ export default function ClubRequests() {
     queryKey: ['clubRequests'],
     queryFn: async () => {
       const user = await base44.auth.me();
-      const all = await base44.entities.ClubRequest.list('-created_date');
-      return all.filter(r => r.agency_id === user.agency_id);
+      return base44.entities.ClubRequest.filter({ agency_id: user.agency_id }, '-created_date');
     },
     refetchInterval: 60000,
   });
