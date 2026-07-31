@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen, UserX, Building2, Clock, RotateCcw, AlertTriangle, Layers } from "lucide-react";
+import { Plus, Search, ExternalLink, Users as UsersIcon, Star, MessageCircle, IdCard, Download, GitCompare, Grid3x3, List, Pencil, Archive, CalendarDays, Target, DoorOpen, UserX, Building2, Clock, RotateCcw, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -388,7 +388,14 @@ export default function Players() {
   }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches, filterArchive, displayMode, activeBox]);
 
   const allActivePlayersData = allPlayersAll.filter(p => !p.archive_id);
-  const playerDataSource = mainView === 'all' ? allActivePlayersData : players;
+  // Sobald ein Filter aktiv ist, werden Spieler aller Kategorien (Standard, Akquise, Abgang, Vereinslos) berücksichtigt.
+  const anyFilterActive = searchTerm.trim() !== "" ||
+    filterPosition !== "alle" ||
+    filterStatus !== "alle" ||
+    filterCategory !== "alle" ||
+    filterFavorites !== "alle" ||
+    filterHasMatches !== "alle";
+  const playerDataSource = anyFilterActive ? allActivePlayersData : players;
 
   const filteredPlayers = playerDataSource.filter(player => {
     const matchesSearch = player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -545,17 +552,6 @@ export default function Players() {
         {/* Main View Toggle */}
         <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 w-fit">
           <button
-            onClick={() => setMainView('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-              mainView === 'all'
-                ? 'bg-indigo-700 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            Alle Spieler
-          </button>
-          <button
             onClick={() => setMainView('players')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
               mainView === 'players'
@@ -616,8 +612,8 @@ export default function Players() {
           <FreeAgentsView />
         )}
 
-        {/* Normal Players View (auch "Alle Spieler") */}
-        {(mainView === 'players' || mainView === 'all') && (<>
+        {/* Normal Players View */}
+        {mainView === 'players' && (<>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -1042,7 +1038,7 @@ export default function Players() {
               <UsersIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-600 dark:text-slate-400 text-lg">Keine Spieler gefunden</p>
             </div>
-            {searchTerm && mainView !== 'all' && (
+            {searchTerm && (
               <CrossCategoryMatchHint
                 matches={otherCategoryPlayers.filter(p =>
                   p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
