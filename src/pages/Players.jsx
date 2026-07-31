@@ -160,14 +160,15 @@ export default function Players() {
     staleTime: 0,
   });
 
-  // Alle Spieler (alle Kategorien) für die zentrale Suche
+  // Alle Spieler (alle Kategorien) für die zentrale Suche & kategorieübergreifende Filter
   const { data: allPlayersAll = [] } = useQuery({
     queryKey: ['players', 'allForSearch'],
     queryFn: async () => {
       const user = await base44.auth.me();
       return base44.entities.Player.filter({ agency_id: user.agency_id });
     },
-    staleTime: 5000,
+    refetchInterval: 3000,
+    staleTime: 0,
   });
 
   // Players in other categories (Akquise, Abgangsliste, Vereinslos) for cross-category search hints
@@ -387,15 +388,17 @@ export default function Players() {
     localStorage.setItem('playersDisplayMode', displayMode);
   }, [searchTerm, filterCategory, filterPosition, filterStatus, filterFavorites, filterHasMatches, filterArchive, displayMode, activeBox]);
 
-  const allActivePlayersData = allPlayersAll.filter(p => !p.archive_id);
-  // Sobald ein Filter aktiv ist, werden Spieler aller Kategorien (Standard, Akquise, Abgang, Vereinslos) berücksichtigt.
+  // Sobald irgendein Filter aktiv ist, werden Spieler aller Kategorien (Standard, Akquise, Abgang, Vereinslos) berücksichtigt.
+  // Bei Archiv-Filterung wird die volle Menge (inkl. Archiv) genutzt, damit die Archiv-Auswahl funktioniert.
   const anyFilterActive = searchTerm.trim() !== "" ||
     filterPosition !== "alle" ||
     filterStatus !== "alle" ||
     filterCategory !== "alle" ||
     filterFavorites !== "alle" ||
-    filterHasMatches !== "alle";
-  const playerDataSource = anyFilterActive ? allActivePlayersData : players;
+    filterHasMatches !== "alle" ||
+    filterArchive !== "active" ||
+    !!activeBox;
+  const playerDataSource = anyFilterActive ? allPlayersAll : players;
 
   const filteredPlayers = playerDataSource.filter(player => {
     const matchesSearch = player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
