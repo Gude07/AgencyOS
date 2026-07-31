@@ -985,7 +985,6 @@ export default function ClubRequests() {
                             {request.status.replace(/_/g, ' ')}
                           </Badge>
                           <KaderLink url={request.transfermarkt_url} />
-                          <KaderLink url={request.transfermarkt_url} />
                         </div>
                       </div>
                       </div>
@@ -1161,6 +1160,7 @@ export default function ClubRequests() {
                                 <Badge variant="secondary" className={statusColors[request.status] + " border"}>
                                   {request.status.replace(/_/g, ' ')}
                                 </Badge>
+                                <KaderLink url={request.transfermarkt_url} />
                               </div>
                             </div>
                           </div>
