@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Name des Vereins"
     },
+    "transfermarkt_url": {
+      "type": "string",
+      "description": "Link zum Transfermarkt-Kader des Vereins (automatisch vom Vereinsprofil \u00fcbernommen)"
+    },
     "contact_person": {
       "type": "string",
       "description": "Ansprechpartner beim Verein"

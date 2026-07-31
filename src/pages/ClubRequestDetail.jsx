@@ -27,8 +27,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock, Sparkles, Send, FileText, Footprints } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Users, Star, ListChecks, MessageSquare, Settings, Search, SlidersHorizontal, Trash2, UserPlus, Calendar, Clock, Sparkles, Send, FileText, Footprints, ExternalLink } from "lucide-react";
 import { calculateDetailedMatchScore, getLeagueTierInfo } from "../utils/matchmaking";
+import { propagateTransfermarktUrl } from "@/utils/clubTransfermarkt";
 import SendEmailDialog from "../components/outlook/SendEmailDialog";
 import AIMatchingAnalysis from "../components/clubRequests/AIMatchingAnalysis";
 import MultiUserSelect from "../components/tasks/MultiUserSelect";
@@ -105,6 +106,24 @@ export default function ClubRequestDetail() {
     queryFn: () => base44.entities.Agency.list(),
   });
 
+  const { data: clubProfiles = [] } = useQuery({
+    queryKey: ['clubProfilesForSync'],
+    queryFn: () => base44.entities.ClubProfile.list(),
+    staleTime: 30000,
+  });
+
+  const { data: clubNetworks = [] } = useQuery({
+    queryKey: ['clubNetworksAll'],
+    queryFn: () => base44.entities.ClubNetwork.list(),
+    staleTime: 30000,
+  });
+
+  const { data: allRequests = [] } = useQuery({
+    queryKey: ['clubRequestsForSync'],
+    queryFn: () => base44.entities.ClubRequest.list(),
+    staleTime: 30000,
+  });
+
   const agencyLeagueTierConfigs = agencies.find(a => a.id === currentUser?.agency_id)?.league_tier_configs;
 
   const { data: users = [] } = useQuery({
@@ -129,7 +148,7 @@ export default function ClubRequestDetail() {
     },
   });
 
-  const handleSaveRequest = () => {
+  const handleSaveRequest = async () => {
     const requestData = {
       ...editedRequest,
       budget_min: editedRequest.budget_min ? parseFloat(editedRequest.budget_min) : undefined,
@@ -140,7 +159,26 @@ export default function ClubRequestDetail() {
       age_max: editedRequest.age_max ? parseInt(editedRequest.age_max) : undefined,
       last_modified_date: new Date().toISOString(),
     };
-    updateRequestMutation.mutate({ id: requestId, data: requestData });
+    await updateRequestMutation.mutateAsync({ id: requestId, data: requestData });
+
+    // Transfermarkt-Link an alle Datensätze desselben Vereins weitergeben
+    const url = (requestData.transfermarkt_url || "").trim();
+    const clubName = requestData.club_name || request?.club_name;
+    if (url && clubName) {
+      try {
+        await propagateTransfermarktUrl(clubName, url, {
+          profiles: clubProfiles,
+          requests: allRequests,
+          networks: clubNetworks,
+          skipIds: [requestId],
+        });
+        queryClient.invalidateQueries({ queryKey: ['clubProfiles'] });
+        queryClient.invalidateQueries({ queryKey: ['clubNetworks'] });
+        queryClient.invalidateQueries({ queryKey: ['clubRequestsForSync'] });
+      } catch (e) {
+        console.error("Transfermarkt-Link konnte nicht weitergegeben werden:", e);
+      }
+    }
   };
 
   const handleDeleteRequest = () => {
@@ -518,7 +556,21 @@ export default function ClubRequestDetail() {
                         className="text-xl font-bold"
                       />
                     ) : (
-                      <CardTitle className="text-xl">{currentRequestData.club_name}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-xl">{currentRequestData.club_name}</CardTitle>
+                        {currentRequestData.transfermarkt_url && (
+                          <a
+                            href={currentRequestData.transfermarkt_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Vereinskader auf Transfermarkt öffnen"
+                            className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-green-50 border border-green-300 text-green-800 hover:bg-green-100 transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            Transfermarkt
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
                   {editMode ? (
@@ -535,6 +587,11 @@ export default function ClubRequestDetail() {
                           placeholder="Land"
                         />
                       </div>
+                      <Input
+                        value={editedRequest.transfermarkt_url || ""}
+                        onChange={(e) => setEditedRequest({...editedRequest, transfermarkt_url: e.target.value})}
+                        placeholder="https://www.transfermarkt.de/.../startseite"
+                      />
                       <Select 
                         value={editedRequest.position_needed} 
                         onValueChange={(value) => setEditedRequest({...editedRequest, position_needed: value})}

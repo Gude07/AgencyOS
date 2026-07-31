@@ -38,6 +38,7 @@ import { Plus, Search, Building2, Mail, Phone, ChevronRight, Star, SlidersHorizo
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { findTransfermarktUrlForClub } from "@/utils/clubTransfermarkt";
 import MultiRequestSummaryDialog from "@/components/clubRequests/MultiRequestSummaryDialog";
 import ClubRequestGroupedView from "@/components/clubRequests/ClubRequestGroupedView";
 
@@ -106,6 +107,7 @@ export default function ClubRequests() {
     league: "",
     country: "",
     sought_foot: "",
+    transfermarkt_url: "",
     transfer_types: ["kauf"],
     budget_min: "",
     budget_max: "",
@@ -157,6 +159,13 @@ export default function ClubRequests() {
       const allArchives = await base44.entities.Archive.list();
       return allArchives.filter(a => a.type === 'club' && a.agency_id === user.agency_id);
     },
+    refetchInterval: 60000,
+  });
+
+  // Vereinsprofile für Auto-Fill des Transfermarkt-Links bei bekannten Vereinen
+  const { data: clubProfiles = [] } = useQuery({
+    queryKey: ['clubProfilesForAutofill'],
+    queryFn: () => base44.entities.ClubProfile.list(),
     refetchInterval: 60000,
   });
 
@@ -283,6 +292,8 @@ export default function ClubRequests() {
         position_needed: "",
         league: "",
         country: "",
+        sought_foot: "",
+        transfermarkt_url: "",
         transfer_types: ["kauf"],
         budget_min: "",
         budget_max: "",
@@ -310,20 +321,18 @@ export default function ClubRequests() {
     const match = requests
       .filter(r => r.club_name?.toLowerCase() === clubName.toLowerCase())
       .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
-    if (match) {
-      setNewRequest(prev => ({
-        ...prev,
-        club_name: clubName,
-        league: prev.league || match.league || "",
-        country: prev.country || match.country || "",
-        contact_person: prev.contact_person || match.contact_person || "",
-        contact_email: prev.contact_email || match.contact_email || "",
-        contact_phone: prev.contact_phone || match.contact_phone || "",
-      }));
-      setClubSuggestionApplied(true);
-    } else {
-      setClubSuggestionApplied(false);
-    }
+    const url = findTransfermarktUrlForClub(clubName, clubProfiles, requests);
+    setNewRequest(prev => ({
+      ...prev,
+      club_name: clubName,
+      league: prev.league || match?.league || "",
+      country: prev.country || match?.country || "",
+      contact_person: prev.contact_person || match?.contact_person || "",
+      contact_email: prev.contact_email || match?.contact_email || "",
+      contact_phone: prev.contact_phone || match?.contact_phone || "",
+      transfermarkt_url: url,
+    }));
+    setClubSuggestionApplied(!!url || !!match);
   };
 
   // Partial match suggestions for autocomplete
@@ -1345,6 +1354,24 @@ export default function ClubRequests() {
                     placeholder="+49 123 456789"
                     className="mt-1.5"
                   />
+                </div>
+
+                <div className="col-span-2">
+                  <Label htmlFor="transfermarkt_url">
+                    Transfermarkt-Link (Kader) <span className="text-slate-400 font-normal">(optional)</span>
+                  </Label>
+                  <Input
+                    id="transfermarkt_url"
+                    value={newRequest.transfermarkt_url || ""}
+                    onChange={(e) => setNewRequest({...newRequest, transfermarkt_url: e.target.value})}
+                    placeholder="https://www.transfermarkt.de/..."
+                    className="mt-1.5"
+                  />
+                  {clubSuggestionApplied && newRequest.transfermarkt_url && (
+                    <p className="text-xs text-green-700 mt-1 flex items-center gap-1">
+                      ✅ Transfermarkt-Link vom bekannten Verein übernommen
+                    </p>
+                  )}
                 </div>
 
                 <div className="col-span-2">

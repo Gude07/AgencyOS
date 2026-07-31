@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Building2, Pencil, Trash2, RefreshCw, Loader2, Save, X, Calendar,
-  ChevronDown, ChevronUp, Sparkles, Zap
+  ChevronDown, ChevronUp, Sparkles, Zap, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
+import { propagateTransfermarktUrl } from "@/utils/clubTransfermarkt";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -32,6 +33,7 @@ function EditProfileDialog({ profile, onClose, onSave }) {
   const [isRebuildingProfile, setIsRebuildingProfile] = useState(false);
   const [form, setForm] = useState({
     club_name: profile.club_name || "",
+    transfermarkt_url: profile.transfermarkt_url || "",
     league: profile.league || "",
     country: profile.country || "",
     current_coach: profile.current_coach || "",
@@ -95,6 +97,7 @@ function EditProfileDialog({ profile, onClose, onSave }) {
   const handleSave = () => {
     const updated = {
       club_name: form.club_name,
+      transfermarkt_url: form.transfermarkt_url,
       league: form.league,
       country: form.country,
       current_coach: form.current_coach,
@@ -157,6 +160,17 @@ function EditProfileDialog({ profile, onClose, onSave }) {
             <div><Label>Land</Label><Input value={form.country} onChange={e => set("country", e.target.value)} /></div>
             <div><Label>Aktueller Trainer</Label><Input value={form.current_coach} onChange={e => set("current_coach", e.target.value)} /></div>
           </div>
+          <div>
+            <Label>Transfermarkt-Link (Kader)</Label>
+            <Input
+              value={form.transfermarkt_url}
+              onChange={e => set("transfermarkt_url", e.target.value)}
+              placeholder="https://www.transfermarkt.de/.../startseite"
+            />
+            <p className="text-xs text-slate-500 mt-1">
+              Wird automatisch auf alle Vereinsanfragen dieses Vereins übernommen.
+            </p>
+          </div>
           <div><Label>Spielstil</Label><Textarea rows={2} value={form.playing_style} onChange={e => set("playing_style", e.target.value)} /></div>
           <div><Label>Trainer-Philosophie</Label><Textarea rows={2} value={form.coach_philosophy} onChange={e => set("coach_philosophy", e.target.value)} /></div>
           <div><Label>Vereinskultur</Label><Textarea rows={2} value={form.club_culture} onChange={e => set("club_culture", e.target.value)} /></div>
@@ -199,6 +213,17 @@ function ProfileCard({ profile, onEdit, onDelete, onReanalyze, isReanalyzing, on
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                 Trainer: <span className="font-medium">{profile.current_coach}</span>
               </p>
+            )}
+            {profile.transfermarkt_url && (
+             <a
+               href={profile.transfermarkt_url}
+               target="_blank"
+               rel="noopener noreferrer"
+               className="inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-400 hover:underline mt-2"
+             >
+               <ExternalLink className="w-3.5 h-3.5" />
+               Transfermarkt-Kader öffnen
+             </a>
             )}
             <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1">
@@ -346,8 +371,28 @@ export default function ClubProfiles() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ClubProfile.update(id, data),
-    onSuccess: () => {
+    onSuccess: async (updatedProfile, { id, data }) => {
       queryClient.invalidateQueries({ queryKey: ["clubProfiles"] });
+      const url = (data.transfermarkt_url || "").trim();
+      const clubName = data.club_name || updatedProfile?.club_name;
+      if (url && clubName) {
+        try {
+          const [allRequests, allNetworks] = await Promise.all([
+            base44.entities.ClubRequest.list(),
+            base44.entities.ClubNetwork.list(),
+          ]);
+          await propagateTransfermarktUrl(clubName, url, {
+            profiles,
+            requests: allRequests,
+            networks: allNetworks,
+            skipIds: [id],
+          });
+          queryClient.invalidateQueries({ queryKey: ["clubRequests"] });
+          queryClient.invalidateQueries({ queryKey: ["clubNetworks"] });
+        } catch (e) {
+          console.error("Transfermarkt-Link konnte nicht weitergegeben werden:", e);
+        }
+      }
       toast.success("Vereinsprofil gespeichert");
       setEditingProfile(null);
     },
