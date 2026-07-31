@@ -101,7 +101,10 @@ export default function PlayerDetail() {
 
   const { data: clubRequests = [] } = useQuery({
     queryKey: ['clubRequests'],
-    queryFn: () => base44.entities.ClubRequest.list(),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      return base44.entities.ClubRequest.filter({ agency_id: user?.agency_id }, '-created_date');
+    },
   });
 
   const { data: allComments = [] } = useQuery({
