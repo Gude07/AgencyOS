@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, Plus, Users, Pencil, Save, X, Layers, UserPlus } from "lucide-react";
+import { Building2, Plus, Users, Pencil, Save, X, Layers, UserPlus, Trash2, ArrowRightLeft, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
@@ -27,6 +27,11 @@ export default function AgencyManagement() {
   const [inviteAgency, setInviteAgency] = useState(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("user");
+  const [moveUser, setMoveUser] = useState(null);
+  const [moveTargetAgency, setMoveTargetAgency] = useState("");
+  const [deleteAgency, setDeleteAgency] = useState(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteStep, setDeleteStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
     logo_url: "",
@@ -82,6 +87,38 @@ export default function AgencyManagement() {
     },
     onError: (err) => {
       toast({ title: "Fehler", description: err.message || "Einladung fehlgeschlagen", variant: "destructive" });
+    },
+  });
+
+  const moveUserMutation = useMutation({
+    mutationFn: async ({ userId, targetAgencyId }) => {
+      await base44.entities.User.update(userId, { agency_id: targetAgencyId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({ title: "Nutzer verschoben", description: "Die Agentur-Zuweisung wurde aktualisiert." });
+      setMoveUser(null);
+      setMoveTargetAgency("");
+    },
+    onError: (err) => {
+      toast({ title: "Fehler", description: err.message || "Verschieben fehlgeschlagen", variant: "destructive" });
+    },
+  });
+
+  const deleteAgencyMutation = useMutation({
+    mutationFn: async (agencyId) => {
+      await base44.entities.Agency.delete(agencyId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agencies"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({ title: "Agentur gelöscht", description: "Die Agentur wurde entfernt.", variant: "destructive" });
+      setDeleteAgency(null);
+      setDeleteConfirmText("");
+      setDeleteStep(1);
+    },
+    onError: (err) => {
+      toast({ title: "Fehler", description: err.message || "Löschen fehlgeschlagen", variant: "destructive" });
     },
   });
 
@@ -174,6 +211,9 @@ export default function AgencyManagement() {
                       <Button variant="ghost" size="icon" onClick={() => startEdit(agency)} className="h-8 w-8">
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
+                      <Button variant="ghost" size="icon" onClick={() => { setDeleteAgency(agency); setDeleteStep(1); setDeleteConfirmText(""); }} className="h-8 w-8 hover:bg-red-50" title="Agentur löschen">
+                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -199,13 +239,21 @@ export default function AgencyManagement() {
                   {agencyUsers.length > 0 && (
                     <div className="pt-2 border-t border-slate-100">
                       <span className="text-slate-500 text-xs block mb-1">Benutzer:</span>
-                      <div className="space-y-0.5">
-                        {agencyUsers.slice(0, 3).map(u => (
-                          <p key={u.id} className="text-xs text-slate-600 truncate">{u.full_name} ({u.role})</p>
+                      <div className="space-y-1">
+                        {agencyUsers.map(u => (
+                          <div key={u.id} className="flex items-center justify-between gap-2">
+                            <p className="text-xs text-slate-600 truncate flex-1">{u.full_name} ({u.role})</p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-1.5 text-xs text-slate-500 hover:text-blue-700"
+                              onClick={() => { setMoveUser(u); setMoveTargetAgency(""); }}
+                              title="Nutzer verschieben"
+                            >
+                              <ArrowRightLeft className="w-3 h-3" />
+                            </Button>
+                          </div>
                         ))}
-                        {agencyUsers.length > 3 && (
-                          <p className="text-xs text-slate-400">+{agencyUsers.length - 3} weitere</p>
-                        )}
                       </div>
                     </div>
                   )}
@@ -359,6 +407,118 @@ export default function AgencyManagement() {
                 Einladen
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Move User Dialog */}
+        <Dialog open={!!moveUser} onOpenChange={(open) => { if (!open) { setMoveUser(null); setMoveTargetAgency(""); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ArrowRightLeft className="w-5 h-5 text-blue-600" />
+                Nutzer verschieben
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                <p className="text-xs text-slate-500">Nutzer</p>
+                <p className="font-medium text-slate-900">{moveUser?.full_name}</p>
+                <p className="text-xs text-slate-500">{moveUser?.email}</p>
+              </div>
+              <div>
+                <Label>Ziel-Agentur *</Label>
+                <Select value={moveTargetAgency} onValueChange={setMoveTargetAgency}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Agentur auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agencies.filter(a => a.id !== moveUser?.agency_id).map(a => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500 mt-1">Der Nutzer sieht nach dem Verschieben nur noch die Daten der Ziel-Agentur.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setMoveUser(null); setMoveTargetAgency(""); }}>
+                Abbrechen
+              </Button>
+              <Button
+                onClick={() => moveUserMutation.mutate({ userId: moveUser.id, targetAgencyId: moveTargetAgency })}
+                disabled={!moveTargetAgency || moveUserMutation.isPending}
+                className="bg-blue-900 hover:bg-blue-800"
+              >
+                <ArrowRightLeft className="w-4 h-4 mr-2" />
+                Verschieben
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Agency Dialog (Two-Step) */}
+        <Dialog open={!!deleteAgency} onOpenChange={(open) => { if (!open) { setDeleteAgency(null); setDeleteConfirmText(""); setDeleteStep(1); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-700">
+                <AlertTriangle className="w-5 h-5" />
+                Agentur löschen
+              </DialogTitle>
+            </DialogHeader>
+            {deleteStep === 1 && (
+              <div className="space-y-4 py-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
+                  <p className="font-medium text-red-800">Achtung: Diese Aktion kann nicht rückgängig gemacht werden!</p>
+                  <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+                    <li>Die Agentur „{deleteAgency?.name}" wird dauerhaft entfernt.</li>
+                    <li>Alle verknüpften Daten (Spieler, Anfragen, Deals etc.) bleiben bestehen, werden aber verwaist.</li>
+                    {getAgencyUsers(deleteAgency?.id).length > 0 && (
+                      <li className="font-semibold">Dieser Agentur sind {getAgencyUsers(deleteAgency?.id).length} Nutzer zugewiesen — verschieben Sie diese zuerst!</li>
+                    )}
+                  </ul>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => { setDeleteAgency(null); setDeleteConfirmText(""); }}>
+                    Abbrechen
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setDeleteStep(2)}
+                    disabled={getAgencyUsers(deleteAgency?.id).length > 0}
+                    title={getAgencyUsers(deleteAgency?.id).length > 0 ? "Erst alle Nutzer verschieben" : ""}
+                  >
+                    Weiter
+                  </Button>
+                </div>
+              </div>
+            )}
+            {deleteStep === 2 && (
+              <div className="space-y-4 py-4">
+                <p className="text-sm text-slate-700">
+                  Geben Sie zur Bestätigung den Namen der Agentur exakt ein:
+                </p>
+                <p className="font-mono font-bold text-slate-900 bg-slate-100 rounded px-3 py-2 text-center">{deleteAgency?.name}</p>
+                <Input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Agenturname eingeben"
+                  autoFocus
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setDeleteStep(1)}>
+                    Zurück
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => deleteAgencyMutation.mutate(deleteAgency.id)}
+                    disabled={deleteConfirmText !== deleteAgency?.name || deleteAgencyMutation.isPending}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Endgültig löschen
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 
