@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Users,
   Building2,
@@ -19,9 +20,25 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 
+const ACCESS_PASSWORD = "AdminActivity2026!";
+
 export default function UserActivityOverview() {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem("userActivityUnlocked") === "true");
+
+  const handleUnlock = (e) => {
+    e.preventDefault();
+    if (passwordInput === ACCESS_PASSWORD) {
+      sessionStorage.setItem("userActivityUnlocked", "true");
+      setUnlocked(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
 
   // Aktuellen Admin laden
   const { data: currentUser } = useQuery({
@@ -75,6 +92,12 @@ export default function UserActivityOverview() {
   const { data: clubRequests = [] } = useQuery({
     queryKey: ["clubRequestsAll"],
     queryFn: () => base44.entities.ClubRequest.list(),
+  });
+
+  // Seitenbesuche & Klicks laden
+  const { data: userActivitiesLog = [] } = useQuery({
+    queryKey: ["userActivitiesLog"],
+    queryFn: () => base44.entities.UserActivity.list("-last_seen_at", 500),
   });
 
   // Alle Aktivitäten pro Benutzer aggregieren
@@ -144,13 +167,29 @@ export default function UserActivityOverview() {
       });
     });
 
+    // Seitenbesuche & Klicks aus UserActivity-Log
+    userActivitiesLog.forEach((a) => {
+      const isClick = a.page_name?.startsWith("Klick: ");
+      allItems.push({
+        user_email: a.user_email,
+        type: isClick ? "click" : "page_visit",
+        date: a.last_seen_at || a.session_date,
+        title: isClick ? a.page_name : `Seite besucht: ${a.page_name}`,
+        subtitle: a.duration_seconds > 0 ? `${Math.round(a.duration_seconds / 60)}m ${a.duration_seconds % 60}s verweilt` : "",
+        content: "",
+        icon: isClick ? Activity : TrendingUp,
+        color: isClick ? "text-slate-600" : "text-indigo-600",
+        bgColor: isClick ? "bg-slate-100" : "bg-indigo-100",
+      });
+    });
+
     // Nach Benutzer gruppieren
     const byUser = {};
     users.forEach((u) => {
       byUser[u.email] = {
         user: u,
         activities: [],
-        counts: { player_comment: 0, note_comment: 0, task_comment: 0, communication: 0 },
+        counts: { player_comment: 0, note_comment: 0, task_comment: 0, communication: 0, page_visit: 0, click: 0 },
         lastActivity: null,
       };
     });
@@ -172,7 +211,7 @@ export default function UserActivityOverview() {
       if (!b.lastActivity) return -1;
       return new Date(b.lastActivity) - new Date(a.lastActivity);
     });
-  }, [users, playerComments, noteComments, taskComments, communications, players, notes, tasks, clubRequests]);
+  }, [users, playerComments, noteComments, taskComments, communications, players, notes, tasks, clubRequests, userActivitiesLog]);
 
   const filteredUsers = useMemo(() => {
     if (!search) return userActivities;
@@ -207,15 +246,62 @@ export default function UserActivityOverview() {
     );
   }
 
+  // Passwort-Schutz
+  if (!unlocked) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
+        <Card className="max-w-md w-full border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <CardContent className="p-8">
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-7 h-7 text-slate-500 dark:text-slate-400" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Passwort erforderlich</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Bitte geben Sie das Admin-Passwort ein, um die Benutzer-Aktivitäten einzusehen.
+              </p>
+            </div>
+            <form onSubmit={handleUnlock} className="space-y-4">
+              <Input
+                type="password"
+                placeholder="Passwort"
+                value={passwordInput}
+                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+                className="bg-white dark:bg-slate-800"
+                autoFocus
+              />
+              {passwordError && (
+                <p className="text-sm text-red-600 dark:text-red-400">Falsches Passwort. Bitte erneut versuchen.</p>
+              )}
+              <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800 text-white">
+                Entsperren
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Benutzer-Aktivitäten</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
-            Übersicht über alle Aktionen der Benutzer in Ihrer Agentur
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Benutzer-Aktivitäten</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">
+              Übersicht über alle Aktionen der Benutzer in Ihrer Agentur
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { sessionStorage.removeItem("userActivityUnlocked"); setUnlocked(false); setPasswordInput(""); }}
+            className="flex items-center gap-2 border-slate-300 dark:border-slate-700"
+          >
+            <Shield className="w-4 h-4" /> Sperren
+          </Button>
         </div>
 
         {/* Statistiken */}
@@ -294,6 +380,8 @@ export default function UserActivityOverview() {
                       <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-center">Vereine</th>
                       <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-center">Notizen</th>
                       <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-center">Aufgaben</th>
+                      <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-center">Seiten</th>
+                      <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-center">Klicks</th>
                       <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-center">Gesamt</th>
                       <th className="pb-3 font-medium text-slate-500 dark:text-slate-400">Letzte Aktivität</th>
                       <th className="pb-3 pr-2"></th>
@@ -330,6 +418,8 @@ export default function UserActivityOverview() {
                         <td className="py-3 text-center text-slate-700 dark:text-slate-300">{ua.counts.communication}</td>
                         <td className="py-3 text-center text-slate-700 dark:text-slate-300">{ua.counts.note_comment}</td>
                         <td className="py-3 text-center text-slate-700 dark:text-slate-300">{ua.counts.task_comment}</td>
+                        <td className="py-3 text-center text-slate-700 dark:text-slate-300">{ua.counts.page_visit}</td>
+                        <td className="py-3 text-center text-slate-700 dark:text-slate-300">{ua.counts.click}</td>
                         <td className="py-3 text-center">
                           <span className="font-bold text-slate-900 dark:text-white">{ua.activities.length}</span>
                         </td>
@@ -347,7 +437,7 @@ export default function UserActivityOverview() {
                     ))}
                     {filteredUsers.length === 0 && (
                       <tr>
-                        <td colSpan={9} className="py-8 text-center text-slate-500 dark:text-slate-400">
+                        <td colSpan={11} className="py-8 text-center text-slate-500 dark:text-slate-400">
                           Keine Benutzer gefunden
                         </td>
                       </tr>

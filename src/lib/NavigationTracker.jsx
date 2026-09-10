@@ -93,5 +93,49 @@ export default function NavigationTracker() {
         return () => window.removeEventListener('beforeunload', handleUnload);
     }, [location, isAuthenticated]);
 
+    // Track element clicks (buttons, links, cards, tabs, etc.)
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        const handleClick = (e) => {
+            try {
+                // Find the clicked element or its closest interactive ancestor
+                const el = e.target.closest('button, a, [role="button"], [role="tab"], [data-clickable], .cursor-pointer');
+                if (!el) return;
+
+                // Build a readable label for the clicked element
+                let label = el.getAttribute('aria-label')
+                    || el.getAttribute('title')
+                    || el.textContent?.trim()
+                    || el.tagName.toLowerCase();
+                if (label && label.length > 60) label = label.slice(0, 60) + '…';
+
+                const pageName = currentPageRef.current || getPageName(location.pathname) || 'Unbekannt';
+                const clickLabel = `Klick: ${label}`;
+                const now = new Date().toISOString();
+                const today = now.split('T')[0];
+
+                // Log click as a UserActivity entry (duration 0, just a click event)
+                base44.auth.me().then(user => {
+                    if (!user) return;
+                    base44.entities.UserActivity.create({
+                        user_email: user.email,
+                        user_name: user.full_name,
+                        agency_id: user.agency_id,
+                        page_name: clickLabel,
+                        session_date: today,
+                        duration_seconds: 0,
+                        last_seen_at: now,
+                    }).catch(() => {});
+                }).catch(() => {});
+            } catch (err) {
+                // Silently fail
+            }
+        };
+
+        document.addEventListener('click', handleClick, true);
+        return () => document.removeEventListener('click', handleClick, true);
+    }, [isAuthenticated]);
+
     return null;
 }

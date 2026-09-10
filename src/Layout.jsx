@@ -57,12 +57,6 @@ const navigationItems = [
     icon: TrendingUp,
   },
   {
-    title: "Benutzer-Aktivitäten",
-    url: createPageUrl("UserActivityOverview"),
-    icon: Activity,
-    adminOnly: true,
-  },
-  {
     title: "Posteingang",
     url: createPageUrl("Inbox"),
     icon: MailOpen,
@@ -130,6 +124,12 @@ const adminItems = [
     title: "Archive",
     url: createPageUrl("Archives"),
     icon: Inbox,
+  },
+  {
+    title: "Benutzer-Aktivitäten",
+    url: createPageUrl("UserActivityOverview"),
+    icon: Activity,
+    adminOnly: true,
   },
 ];
 
@@ -289,7 +289,7 @@ function SidebarNav({ onNavClick }) {
             Administration
           </div>
           <div className="space-y-1">
-            {adminItems.map((item) => {
+            {adminItems.filter(item => !item.adminOnly || user?.role === "admin").map((item) => {
               const isActive = location.pathname === item.url;
               return (
                 <Link
