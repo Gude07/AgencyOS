@@ -98,7 +98,15 @@ export default function OrganizationalOverview() {
 
   const { data: allNoteComments = [] } = useQuery({
     queryKey: ['noteComments'],
-    queryFn: () => base44.entities.NoteComment.list(),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const allNotes = await base44.entities.InternalNote.list();
+      const agencyNoteIds = new Set(
+        allNotes.filter(n => n.agency_id === user.agency_id).map(n => n.id)
+      );
+      const allComments = await base44.entities.NoteComment.list();
+      return allComments.filter(c => agencyNoteIds.has(c.note_id));
+    },
     refetchInterval: 5000,
   });
 

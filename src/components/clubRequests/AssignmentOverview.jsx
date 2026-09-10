@@ -29,7 +29,11 @@ export default function AssignmentOverview() {
 
   const { data: requests = [] } = useQuery({
     queryKey: ['clubRequests'],
-    queryFn: () => base44.entities.ClubRequest.list(),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const all = await base44.entities.ClubRequest.list();
+      return all.filter(r => r.agency_id === user.agency_id);
+    },
   });
 
   const { data: users = [] } = useQuery({

@@ -30,8 +30,9 @@ export default function NoteDetail() {
   const { data: note, isLoading } = useQuery({
     queryKey: ['internalNote', noteId],
     queryFn: async () => {
+      const user = await base44.auth.me();
       const notes = await base44.entities.InternalNote.list();
-      return notes.find(n => n.id === noteId);
+      return notes.find(n => n.id === noteId && n.agency_id === user.agency_id);
     },
     enabled: !!noteId,
   });
@@ -60,11 +61,12 @@ export default function NoteDetail() {
     mutationFn: async (commentData) => {
       const comment = await base44.entities.NoteComment.create(commentData);
       
-      // Benachrichtigungen an alle Benutzer senden (außer den Ersteller)
+      // Benachrichtigungen nur an Benutzer derselben Agentur senden (außer den Ersteller)
       const allUsers = await base44.entities.User.list();
       const currentUser = await base44.auth.me();
+      const agencyUsers = allUsers.filter(u => u.agency_id === currentUser.agency_id);
       
-      for (const user of allUsers) {
+      for (const user of agencyUsers) {
         if (user.email !== currentUser.email) {
           await base44.entities.Notification.create({
             user_email: user.email,
