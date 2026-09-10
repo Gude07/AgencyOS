@@ -6,15 +6,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, Plus, Users, Pencil, Save, X, Layers } from "lucide-react";
+import { Building2, Plus, Users, Pencil, Save, X, Layers, UserPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 import LeagueTierEditor from "../components/agency/LeagueTierEditor";
 
 export default function AgencyManagement() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingAgency, setEditingAgency] = useState(null);
   const [leagueTierAgencyId, setLeagueTierAgencyId] = useState(null);
+  const [inviteAgency, setInviteAgency] = useState(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("user");
   const [formData, setFormData] = useState({
     name: "",
     logo_url: "",
@@ -49,6 +61,27 @@ export default function AgencyManagement() {
       queryClient.invalidateQueries({ queryKey: ["agencies"] });
       setEditingAgency(null);
       resetForm();
+    },
+  });
+
+  const inviteUserMutation = useMutation({
+    mutationFn: async ({ email, role, agencyId }) => {
+      await base44.users.inviteUser(email, role);
+      const allUsers = await base44.entities.User.list();
+      const newUser = allUsers.find(u => u.email === email);
+      if (newUser) {
+        await base44.entities.User.update(newUser.id, { agency_id: agencyId });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setInviteAgency(null);
+      setInviteEmail("");
+      setInviteRole("user");
+      toast({ title: "Einladung gesendet", description: `Nutzer wurde zu ${inviteAgency.name} eingeladen.` });
+    },
+    onError: (err) => {
+      toast({ title: "Fehler", description: err.message || "Einladung fehlgeschlagen", variant: "destructive" });
     },
   });
 
@@ -132,6 +165,9 @@ export default function AgencyManagement() {
                       </div>
                     </div>
                     <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => setInviteAgency(agency)} className="h-8 w-8" title="Nutzer einladen">
+                        <UserPlus className="w-3.5 h-3.5 text-green-600" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => setLeagueTierAgencyId(agency.id)} className="h-8 w-8" title="Liga-Tier konfigurieren">
                         <Layers className="w-3.5 h-3.5 text-blue-600" />
                       </Button>
@@ -272,6 +308,55 @@ export default function AgencyManagement() {
               <Button onClick={handleCreate} disabled={!formData.name} className="bg-blue-900 hover:bg-blue-800">
                 <Save className="w-4 h-4 mr-2" />
                 Erstellen
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Invite User Dialog */}
+        <Dialog open={!!inviteAgency} onOpenChange={(open) => { if (!open) { setInviteAgency(null); setInviteEmail(""); setInviteRole("user"); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-green-600" />
+                Nutzer einladen — {inviteAgency?.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label>E-Mail-Adresse *</Label>
+                <Input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="neuer.nutzer@firma.de"
+                />
+              </div>
+              <div>
+                <Label>Rolle</Label>
+                <Select value={inviteRole} onValueChange={setInviteRole}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">Benutzer</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500 mt-1">Der Nutzer wird fest der Agentur „{inviteAgency?.name}" zugewiesen.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setInviteAgency(null); setInviteEmail(""); setInviteRole("user"); }}>
+                Abbrechen
+              </Button>
+              <Button
+                onClick={() => inviteUserMutation.mutate({ email: inviteEmail, role: inviteRole, agencyId: inviteAgency.id })}
+                disabled={!inviteEmail || inviteUserMutation.isPending}
+                className="bg-green-700 hover:bg-green-600"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Einladen
               </Button>
             </div>
           </DialogContent>

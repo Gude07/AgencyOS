@@ -65,5 +65,46 @@
     "agency_id",
     "title",
     "start_date"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.agency_id": "{{user.data.agency_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.agency_id": "{{user.data.agency_id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.agency_id": "{{user.data.agency_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.agency_id": "{{user.data.agency_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

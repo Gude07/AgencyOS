@@ -33,7 +33,7 @@ export default function AgencySwitcher() {
 
   const currentAgency = agencies.find(a => a.id === user?.agency_id);
 
-  if (agencies.length <= 1) return null;
+  if (agencies.length <= 1 || user?.role !== 'admin') return null;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
