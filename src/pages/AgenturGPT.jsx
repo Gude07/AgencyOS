@@ -316,11 +316,14 @@ export default function AgenturGPT() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Load conversations from entity on mount
+  // Load conversations from entity on mount (filtered by current agency)
   useEffect(() => {
     (async () => {
       try {
-        const list = await base44.entities.AgenturGPTConversation.list("-created_date", 100);
+        const me = await base44.auth.me();
+        const agencyId = me?.agency_id;
+        if (!agencyId) { setInitializing(false); return; }
+        const list = await base44.entities.AgenturGPTConversation.filter({ agency_id: agencyId }, "-created_date", 100);
         setConversations(list || []);
         if (list?.length) {
           const first = list[0];
@@ -340,8 +343,9 @@ export default function AgenturGPT() {
   }, []);
 
   const createNewConv = async () => {
+    const me = await base44.auth.me();
     const title = `Chat ${new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`;
-    const conv = await base44.entities.AgenturGPTConversation.create({ title, messages: "[]" });
+    const conv = await base44.entities.AgenturGPTConversation.create({ title, messages: "[]", agency_id: me?.agency_id });
     setConversations(prev => [conv, ...prev]);
     setActiveConv(conv);
     setMessages([]);
@@ -397,8 +401,9 @@ export default function AgenturGPT() {
     // Ensure conversation exists
     let conv = activeConv;
     if (!conv) {
+      const me = await base44.auth.me();
       const title = content.length > 45 ? content.substring(0, 45) + "…" : content;
-      conv = await base44.entities.AgenturGPTConversation.create({ title, messages: "[]", mode: deepMode ? "deep_research" : "normal" });
+      conv = await base44.entities.AgenturGPTConversation.create({ title, messages: "[]", mode: deepMode ? "deep_research" : "normal", agency_id: me?.agency_id });
       setConversations(prev => [conv, ...prev]);
       setActiveConv(conv);
     }

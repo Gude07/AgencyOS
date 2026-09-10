@@ -102,9 +102,15 @@ export default function AIChat() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  const [userAgencyId, setUserAgencyId] = useState(null);
+
   useEffect(() => {
-    loadConversations();
+    base44.auth.me().then(u => setUserAgencyId(u?.agency_id)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (userAgencyId !== null) loadConversations();
+  }, [userAgencyId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -122,7 +128,9 @@ export default function AIChat() {
     setIsInitializing(true);
     try {
       const convs = await base44.agents.listConversations({ agent_name: AGENT_NAME });
-      const sorted = (convs || []).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      // Filter to only conversations belonging to the current agency
+      const filtered = (convs || []).filter(c => c.metadata?.agency_id === userAgencyId);
+      const sorted = filtered.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
       setConversations(sorted);
       // Auto-select the most recent conversation
       if (sorted.length > 0) {
@@ -145,6 +153,7 @@ export default function AIChat() {
       agent_name: AGENT_NAME,
       metadata: {
         name: `Chat ${format(new Date(), "dd.MM.yyyy HH:mm", { locale: de })}`,
+        agency_id: userAgencyId,
       }
     });
     setConversations(prev => [conv, ...prev]);
