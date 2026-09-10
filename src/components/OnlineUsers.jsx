@@ -19,14 +19,18 @@ export default function OnlineUsers() {
   });
 
   // Aktualisiere last_seen alle 2 Minuten
+  // home_agency_id wird beim ersten Mal gesetzt und ändert sich beim Agentur-Wechsel nicht
   useEffect(() => {
     const updateLastSeen = async () => {
       if (currentUser) {
         try {
-          await base44.auth.updateMe({ 
-            last_seen: new Date().toISOString() 
-          });
+          const updates = { last_seen: new Date().toISOString() };
+          if (!currentUser.home_agency_id && currentUser.agency_id) {
+            updates.home_agency_id = currentUser.agency_id;
+          }
+          await base44.auth.updateMe(updates);
           queryClient.invalidateQueries({ queryKey: ['users'] });
+          queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         } catch (error) {
           console.error('Fehler beim Aktualisieren von last_seen:', error);
         }
@@ -40,8 +44,13 @@ export default function OnlineUsers() {
   }, [currentUser, queryClient]);
 
   // Benutzer als online betrachten, wenn last_seen innerhalb der letzten 5 Minuten
+  // und zur selben Stamm-Agentur (home_agency_id) gehören
   const onlineUsers = users.filter(user => {
     if (!user.last_seen) return false;
+    if (!currentUser) return false;
+    const userHomeAgency = user.home_agency_id || user.agency_id;
+    const myHomeAgency = currentUser.home_agency_id || currentUser.agency_id;
+    if (userHomeAgency !== myHomeAgency) return false;
     const lastSeen = new Date(user.last_seen);
     const now = new Date();
     const diffMinutes = (now - lastSeen) / 1000 / 60;

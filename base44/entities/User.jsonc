@@ -13,7 +13,16 @@
     },
     "agency_id": {
       "type": "string",
-      "description": "ID der zugeh\u00f6rigen Agentur"
+      "description": "ID der aktuell ausgew\u00e4hlten Agentur (\u00e4ndert sich beim Agentur-Wechsel)"
+    },
+    "home_agency_id": {
+      "type": "string",
+      "description": "ID der Stamm-Agentur des Benutzers (\u00e4ndert sich nicht beim Agentur-Wechsel, wird f\u00fcr Online-Status verwendet)"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Letzter Zeitstempel der Online-Aktivit\u00e4t"
     },
     "favorite_players": {
       "type": "array",
