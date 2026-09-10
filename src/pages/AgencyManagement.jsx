@@ -196,7 +196,6 @@ export default function AgencyManagement() {
                       )}
                       <div>
                         <CardTitle className="text-base">{agency.name}</CardTitle>
-                        <p className="text-xs text-slate-400 font-mono mt-0.5 select-all" title="Agentur-ID">{agency.id}</p>
                         <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                           <Users className="w-3 h-3" />
                           {agencyUsers.length} Benutzer
@@ -259,6 +258,10 @@ export default function AgencyManagement() {
                       </div>
                     </div>
                   )}
+                  <div className="pt-2 border-t border-slate-100">
+                    <span className="text-slate-500 text-xs block mb-1">Agentur-ID:</span>
+                    <p className="text-xs text-slate-400 font-mono select-all break-all">{agency.id}</p>
+                  </div>
                 </CardContent>
               </Card>
             );
