@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import LeagueTierEditor from "../components/agency/LeagueTierEditor";
+import LogoUploader from "../components/agency/LogoUploader";
 
 export default function AgencyManagement() {
   const queryClient = useQueryClient();
@@ -306,14 +307,10 @@ export default function AgencyManagement() {
                   placeholder="z.B. STS Sports"
                 />
               </div>
-              <div>
-                <Label>Logo URL</Label>
-                <Input
-                  value={formData.logo_url}
-                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
+              <LogoUploader
+                value={formData.logo_url}
+                onChange={(url) => setFormData({ ...formData, logo_url: url })}
+              />
               <div>
                 <Label>Kontakt E-Mail</Label>
                 <Input
@@ -536,13 +533,10 @@ export default function AgencyManagement() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
-              <div>
-                <Label>Logo URL</Label>
-                <Input
-                  value={formData.logo_url}
-                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                />
-              </div>
+              <LogoUploader
+                value={formData.logo_url}
+                onChange={(url) => setFormData({ ...formData, logo_url: url })}
+              />
               <div>
                 <Label>Kontakt E-Mail</Label>
                 <Input
