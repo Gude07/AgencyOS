@@ -2,6 +2,10 @@
   "name": "Notification",
   "type": "object",
   "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur (f\u00fcr Multi-Tenant-Trennung)"
+    },
     "user_email": {
       "type": "string",
       "description": "E-Mail des Benutzers, der die Benachrichtigung erh\u00e4lt"
@@ -53,16 +57,37 @@
   ],
   "rls": {
     "read": {
-      "data.user_email": "{{user.email}}"
+      "$and": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "data.agency_id": "{{user.data.agency_id}}"
+        }
+      ]
     },
     "create": {
-      "data.user_email": "{{user.email}}"
+      "data.agency_id": "{{user.data.agency_id}}"
     },
     "update": {
-      "data.user_email": "{{user.email}}"
+      "$and": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "data.agency_id": "{{user.data.agency_id}}"
+        }
+      ]
     },
     "delete": {
-      "data.user_email": "{{user.email}}"
+      "$and": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "data.agency_id": "{{user.data.agency_id}}"
+        }
+      ]
     }
   }
 }
