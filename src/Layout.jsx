@@ -415,9 +415,24 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden pb-16 lg:pb-0">
-        <div className="hidden lg:flex items-center justify-end gap-2 px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
-          <FeedbackButton />
-          <NotificationCenter />
+        <div className="hidden lg:flex items-center justify-between gap-2 px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+              {mobileAgency?.logo_url ? (
+                <img src={mobileAgency.logo_url} alt={mobileAgency.name} className="w-full h-full object-contain" />
+              ) : (
+                <Building2 className="w-4 h-4 text-slate-400" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-slate-900 dark:text-white text-sm truncate">{mobileAgency?.name || "Agentur"}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{mobileAgency?.company_type || "Spieleragentur"}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <FeedbackButton />
+            <NotificationCenter />
+          </div>
         </div>
         <div className="flex-1 overflow-auto" style={{ overscrollBehavior: 'none' }}>
           <motion.div
