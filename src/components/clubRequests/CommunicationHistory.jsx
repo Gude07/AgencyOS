@@ -71,13 +71,15 @@ export default function CommunicationHistory({ clubRequestId, players = [] }) {
         await base44.entities.ClubRequest.update(clubRequestId, { status: 'in_bearbeitung' });
       }
       
-      // Benachrichtigung an ALLE Benutzer
+      // Benachrichtigung an Benutzer derselben Agentur
       const currentUser = await base44.auth.me();
       const allUsers = await base44.entities.User.list();
+      const agencyUsers = allUsers.filter(u => u.agency_id === currentUser.agency_id);
       
-      for (const user of allUsers) {
+      for (const user of agencyUsers) {
         if (user.email !== currentUser.email) {
           await base44.entities.Notification.create({
+            agency_id: currentUser.agency_id,
             user_email: user.email,
             type: 'neue_antwort',
             title: 'Neue Kommunikation',

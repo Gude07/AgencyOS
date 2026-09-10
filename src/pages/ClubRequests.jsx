@@ -277,6 +277,7 @@ export default function ClubRequests() {
         for (const userEmail of requestData.assigned_to) {
           if (userEmail !== currentUser.email) {
             await base44.entities.Notification.create({
+              agency_id: currentUser.agency_id,
               user_email: userEmail,
               type: 'neue_anfrage',
               title: 'Neue Vereinsanfrage zugewiesen',

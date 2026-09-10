@@ -68,6 +68,7 @@ export default function PlayerCareerStats({ playerId, playerPosition }) {
     }
     // Create reminder notification
     base44.entities.Notification.create({
+      agency_id: currentUser.agency_id,
       user_email: currentUser.email,
       type: "spieler_update",
       title: "Karrierestatistiken aktualisieren",

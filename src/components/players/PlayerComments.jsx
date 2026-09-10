@@ -60,6 +60,7 @@ export default function PlayerComments({ playerId }) {
         // Benachrichtigungen erstellen
         for (const userEmail of notifyUsers) {
           await base44.entities.Notification.create({
+            agency_id: currentUser.agency_id,
             user_email: userEmail,
             type: 'neue_antwort',
             title: commentData.parent_id ? 'Neue Antwort' : 'Neuer Kommentar',

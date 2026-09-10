@@ -100,6 +100,7 @@ export default function Tasks() {
         for (const userEmail of taskData.assigned_to) {
           if (userEmail !== currentUser.email) {
             await base44.entities.Notification.create({
+              agency_id: currentUser.agency_id,
               user_email: userEmail,
               type: 'neue_aufgabe',
               title: 'Neue Aufgabe zugewiesen',

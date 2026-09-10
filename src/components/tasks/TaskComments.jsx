@@ -54,6 +54,7 @@ export default function TaskComments({ taskId }) {
         // Benachrichtigungen erstellen
         for (const userEmail of notifyUsers) {
           await base44.entities.Notification.create({
+            agency_id: currentUser.agency_id,
             user_email: userEmail,
             type: 'neue_antwort',
             title: 'Neuer Kommentar zur Aufgabe',

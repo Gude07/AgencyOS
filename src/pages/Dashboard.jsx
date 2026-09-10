@@ -103,6 +103,7 @@ export default function Dashboard() {
         
         if (!hasRecentNotification && (isOverdue || isDueTomorrow)) {
           await base44.entities.Notification.create({
+            agency_id: user.agency_id,
             user_email: user.email,
             type: 'deadline_erinnerung',
             title: isOverdue ? 'Aufgabe überfällig!' : 'Deadline morgen',

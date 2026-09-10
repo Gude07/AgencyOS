@@ -69,6 +69,7 @@ export default function NoteDetail() {
       for (const user of agencyUsers) {
         if (user.email !== currentUser.email) {
           await base44.entities.Notification.create({
+            agency_id: currentUser.agency_id,
             user_email: user.email,
             type: 'neue_antwort',
             title: 'Neuer Kommentar auf Notiz',
