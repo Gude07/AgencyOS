@@ -196,6 +196,7 @@ export default function AgencyManagement() {
                       )}
                       <div>
                         <CardTitle className="text-base">{agency.name}</CardTitle>
+                        <p className="text-xs text-slate-400 font-mono mt-0.5 select-all" title="Agentur-ID">{agency.id}</p>
                         <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                           <Users className="w-3 h-3" />
                           {agencyUsers.length} Benutzer
