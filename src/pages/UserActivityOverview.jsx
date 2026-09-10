@@ -20,7 +20,7 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 
-const ACCESS_PASSWORD = "AdminActivity2026!";
+const ACCESS_PASSWORD = "Studium23!";
 
 export default function UserActivityOverview() {
   const [search, setSearch] = useState("");
