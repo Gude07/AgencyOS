@@ -18,7 +18,8 @@ import {
   Briefcase,
   Sparkles,
   Newspaper,
-  MailOpen
+  MailOpen,
+  Activity
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,12 @@ const navigationItems = [
     title: "Meine Aktivitäten",
     url: createPageUrl("MyActivity"),
     icon: TrendingUp,
+  },
+  {
+    title: "Benutzer-Aktivitäten",
+    url: createPageUrl("UserActivityOverview"),
+    icon: Activity,
+    adminOnly: true,
   },
   {
     title: "Posteingang",
@@ -204,7 +211,7 @@ function SidebarNav({ onNavClick }) {
             Organisation
           </div>
           <div className="space-y-1">
-            {navigationItems.map((item) => {
+            {navigationItems.filter(item => !item.adminOnly || user?.role === "admin").map((item) => {
               const isActive = location.pathname === item.url;
               return (
                 <Link

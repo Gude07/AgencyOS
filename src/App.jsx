@@ -18,6 +18,7 @@ import PlayerComparison from './pages/PlayerComparison';
 import SavedComparisons from './pages/SavedComparisons';
 import ClubNetwork from './pages/ClubNetwork';
 import ClubNetworkDetail from './pages/ClubNetworkDetail';
+import UserActivityOverview from './pages/UserActivityOverview';
 
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -110,11 +111,19 @@ const AuthenticatedApp = () => {
           </LayoutWrapper>
         }
       />
-      <Route 
+      <Route
         path="/ClubNetworkDetail"
         element={
           <LayoutWrapper currentPageName="ClubNetworkDetail">
             <ClubNetworkDetail />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/UserActivityOverview"
+        element={
+          <LayoutWrapper currentPageName="UserActivityOverview">
+            <UserActivityOverview />
           </LayoutWrapper>
         }
       />
