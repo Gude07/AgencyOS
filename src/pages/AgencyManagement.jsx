@@ -36,6 +36,7 @@ export default function AgencyManagement() {
   const [formData, setFormData] = useState({
     name: "",
     logo_url: "",
+    company_type: "Spieleragentur",
     contact_email: "",
     contact_phone: "",
     address: "",
@@ -127,6 +128,7 @@ export default function AgencyManagement() {
     setFormData({
       name: "",
       logo_url: "",
+      company_type: "Spieleragentur",
       contact_email: "",
       contact_phone: "",
       address: "",
@@ -147,6 +149,7 @@ export default function AgencyManagement() {
     setFormData({
       name: agency.name || "",
       logo_url: agency.logo_url || "",
+      company_type: agency.company_type || "Spieleragentur",
       contact_email: agency.contact_email || "",
       contact_phone: agency.contact_phone || "",
       address: agency.address || "",
@@ -315,6 +318,14 @@ export default function AgencyManagement() {
                 value={formData.logo_url}
                 onChange={(url) => setFormData({ ...formData, logo_url: url })}
               />
+              <div>
+                <Label>Art des Unternehmens</Label>
+                <Input
+                  value={formData.company_type}
+                  onChange={(e) => setFormData({ ...formData, company_type: e.target.value })}
+                  placeholder="z.B. Spieleragentur, Berater, Vermittler, Scout"
+                />
+              </div>
               <div>
                 <Label>Kontakt E-Mail</Label>
                 <Input
@@ -541,6 +552,14 @@ export default function AgencyManagement() {
                 value={formData.logo_url}
                 onChange={(url) => setFormData({ ...formData, logo_url: url })}
               />
+              <div>
+                <Label>Art des Unternehmens</Label>
+                <Input
+                  value={formData.company_type}
+                  onChange={(e) => setFormData({ ...formData, company_type: e.target.value })}
+                  placeholder="z.B. Spieleragentur, Berater, Vermittler, Scout"
+                />
+              </div>
               <div>
                 <Label>Kontakt E-Mail</Label>
                 <Input

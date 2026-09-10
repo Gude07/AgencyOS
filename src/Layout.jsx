@@ -180,7 +180,7 @@ function SidebarNav({ onNavClick }) {
           </div>
           <div>
             <h2 className="font-bold text-slate-900 dark:text-white text-lg">{agency?.name || "Agentur"}</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Spieleragentur</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{agency?.company_type || "Spieleragentur"}</p>
           </div>
         </div>
       </div>
@@ -364,7 +364,17 @@ const bottomNavItems = [
 
 export default function Layout({ children, currentPageName }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileAgency, setMobileAgency] = useState(null);
   const location = useLocation();
+
+  useEffect(() => {
+    base44.auth.me().then(async (u) => {
+      if (u.agency_id) {
+        const agencies = await base44.entities.Agency.list();
+        setMobileAgency(agencies.find(a => a.id === u.agency_id));
+      }
+    }).catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row w-full bg-slate-50 dark:bg-slate-950">
@@ -373,9 +383,13 @@ export default function Layout({ children, currentPageName }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-7 h-7 rounded-md flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-              <Building2 className="w-4 h-4 text-slate-400" />
+              {mobileAgency?.logo_url ? (
+                <img src={mobileAgency.logo_url} alt={mobileAgency.name} className="w-full h-full object-contain" />
+              ) : (
+                <Building2 className="w-4 h-4 text-slate-400" />
+              )}
             </div>
-            <h2 className="font-bold text-slate-900 dark:text-white text-sm truncate">Agentur</h2>
+            <h2 className="font-bold text-slate-900 dark:text-white text-sm truncate">{mobileAgency?.name || "Agentur"}</h2>
           </div>
           <div className="flex items-center gap-1">
             <FeedbackButton />

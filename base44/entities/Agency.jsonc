@@ -10,6 +10,11 @@
       "type": "string",
       "description": "URL zum Logo der Agentur"
     },
+    "company_type": {
+      "type": "string",
+      "default": "Spieleragentur",
+      "description": "Art des Unternehmens (z.B. Spieleragentur, Berater, Vermittler, Scout)"
+    },
     "contact_email": {
       "type": "string",
       "description": "Kontakt-E-Mail"
