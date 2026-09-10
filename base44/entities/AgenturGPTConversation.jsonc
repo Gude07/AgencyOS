@@ -2,6 +2,10 @@
   "name": "AgenturGPTConversation",
   "type": "object",
   "properties": {
+    "agency_id": {
+      "type": "string",
+      "description": "ID der Agentur"
+    },
     "title": {
       "type": "string",
       "description": "Titel des Gespr\u00e4chs"
@@ -25,13 +29,14 @@
     }
   },
   "required": [
+    "agency_id",
     "title"
   ],
   "rls": {
     "read": {
       "$or": [
         {
-          "created_by_id": "{{user.id}}"
+          "data.agency_id": "{{user.data.agency_id}}"
         },
         {
           "user_condition": {
@@ -41,13 +46,31 @@
       ]
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "data.agency_id": "{{user.data.agency_id}}"
     },
     "update": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.agency_id": "{{user.data.agency_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.agency_id": "{{user.data.agency_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }
