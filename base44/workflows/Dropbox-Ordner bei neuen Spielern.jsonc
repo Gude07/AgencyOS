@@ -1,0 +1,37 @@
+{
+  "name": "Dropbox-Ordner bei neuen Spielern",
+  "description": "Erstellt automatisch einen Dropbox-Ordner wenn ein neuer Spieler angelegt wird",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "Player"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "dropbox_ordner_bei_neuen_spielern",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "onPlayerCreated",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "onPlayerCreated"
+  }
+}

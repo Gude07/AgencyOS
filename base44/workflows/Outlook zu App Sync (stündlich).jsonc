@@ -1,0 +1,44 @@
+{
+  "name": "Outlook zu App Sync (st\u00fcndlich)",
+  "description": "Synchronisiert Outlook-Kalender-Events automatisch in die App (st\u00fcndlich)",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 3,
+      "interval_unit": "hours",
+      "interval_anchor": "2026-03-11T15:53:35.403000",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "outlook_zu_app_sync_st_ndlich",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncOutlookToApp",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "syncOutlookToApp"
+  }
+}
